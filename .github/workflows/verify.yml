@@ -1,0 +1,45 @@
+name: private-verification
+
+on:
+  workflow_dispatch:
+    inputs:
+      candidate_repository:
+        description: GitHub repository containing the Julia candidate
+        required: true
+        default: kunyuan/QuSpin.jl
+      candidate_ref:
+        description: Candidate branch, tag, or commit SHA
+        required: true
+        default: main
+
+jobs:
+  oracle:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install the pinned Python QuSpin oracle
+        run: >-
+          python -m pip install
+          "git+https://github.com/QuSpin/QuSpin.git@5bf9e5b266e6d8b70e5cf5973c7c7d59d62e412f"
+      - name: Reproduce frozen observations
+        run: |
+          python oracle/generate_reference.py --output /tmp/reference.json
+          diff -u oracle/reference.json /tmp/reference.json
+
+  candidate:
+    needs: oracle
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: julia-actions/setup-julia@v2
+        with:
+          version: "1.12"
+      - uses: julia-actions/cache@v2
+      - name: Run held-out Julia verification
+        env:
+          A_REPO_URL: https://github.com/${{ inputs.candidate_repository }}.git
+          A_REF: ${{ inputs.candidate_ref }}
+        run: julia --startup-file=no ci/runcandidate.jl

@@ -1,0 +1,56 @@
+{
+  "cases": [
+    {
+      "dimension": 6,
+      "id": "spin_basis_1d_L4_Nup2",
+      "parameters": {
+        "L": 4,
+        "nup": 2,
+        "pauli": false
+      },
+      "states_as_set": [
+        3,
+        5,
+        6,
+        9,
+        10,
+        12
+      ],
+      "target_symbol": "SpinBasis1D"
+    },
+    {
+      "dimension": 6,
+      "frobenius_norm": 2.715695122800054,
+      "id": "xxz_open_L4_Nup2",
+      "parameters": {
+        "L": 4,
+        "boundary": "open",
+        "hz": 0.5773502691896258,
+        "jxy": 1.4142135623730951,
+        "jzz": 1.0,
+        "nup": 2,
+        "pauli": false,
+        "site_indexing": "one_based"
+      },
+      "spectrum": [
+        -2.06671263224485,
+        -1.116025403784439,
+        -0.25,
+        0.13427005520587385,
+        0.6160254037844387,
+        1.1824425770389764
+      ],
+      "target_symbol": "Hamiltonian",
+      "trace": -1.5
+    }
+  ],
+  "source": {
+    "package": "quspin",
+    "reported_version": "1.0.1"
+  },
+  "target": {
+    "contract": "Julia-native API; Python is an offline oracle only",
+    "language": "Julia",
+    "package": "QuSpin.jl"
+  }
+}
