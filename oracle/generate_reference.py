@@ -17,6 +17,12 @@ from quspin.basis import spin_basis_1d
 from quspin.operators import hamiltonian
 
 
+def canonical_float(value: float, significant_digits: int = 12) -> float:
+    """Remove platform-specific BLAS tails from serialized observations."""
+
+    return float(f"{float(value):.{significant_digits}g}")
+
+
 def spin_basis_case() -> dict:
     basis = spin_basis_1d(L=4, Nup=2, pauli=False)
     return {
@@ -69,15 +75,15 @@ def xxz_spectrum_case() -> dict:
             "nup": 2,
             "pauli": False,
             "site_indexing": "one_based",
-            "jxy": float(jxy),
+            "jxy": canonical_float(jxy),
             "jzz": jzz,
-            "hz": float(hz),
+            "hz": canonical_float(hz),
             "boundary": "open",
         },
         "dimension": int(basis.Ns),
-        "spectrum": [float(x) for x in eigenvalues],
-        "trace": float(np.trace(dense)),
-        "frobenius_norm": float(np.linalg.norm(dense)),
+        "spectrum": [canonical_float(x) for x in eigenvalues],
+        "trace": canonical_float(np.trace(dense)),
+        "frobenius_norm": canonical_float(np.linalg.norm(dense)),
     }
 
 
