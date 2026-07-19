@@ -29,7 +29,7 @@ jobs:
       - name: Reproduce frozen observations
         run: |
           python oracle/generate_reference.py --output /tmp/reference.json
-          diff -u oracle/reference.json /tmp/reference.json
+          python ci/compare_reference.py oracle/reference.json /tmp/reference.json
 
   candidate:
     needs: oracle

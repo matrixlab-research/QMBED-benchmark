@@ -28,7 +28,10 @@ ci/runcandidate.jl   develop + test the package the MR proposes.
 1. A maintainer dispatches `private-verification` with the public candidate
    repository and an immutable commit SHA or selected ref.
 2. The oracle job installs the pinned Python QuSpin commit, regenerates its
-   deterministic observations, and diffs them against the frozen reference.
+   deterministic observations, and compares them structurally against the
+   frozen reference. Keys, shapes, integer values, and strings remain exact;
+   floating-point values use a `5e-12` relative/absolute tolerance for
+   platform-specific BLAS tails.
 3. Only after that passes, the Julia job installs the candidate and runs
    `Pkg.test()` with the held-out suite.
 
