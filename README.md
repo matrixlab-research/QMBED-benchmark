@@ -36,6 +36,31 @@ Failure logs — including any expected values Test.jl prints — stay in this
 private repository. Repository privacy replaces log redaction; no blind
 evaluation harness is involved.
 
+## Timing and performance baselines
+
+Every candidate run produces two private timing artifacts:
+
+1. `verification-timing-*` records every API/integration test file's wall,
+   compile, recompile, GC, allocation, and lock-conflict measurements. These
+   are cold, ordered verification-suite timings and answer which test files
+   dominate CI time.
+2. `quspin-performance-*` compares the pinned Python QuSpin commit with the
+   Julia candidate on the same GitHub Actions runner. It covers basis and
+   Hamiltonian construction, matrix-vector action, full diagonalization,
+   Lanczos, time evolution, entanglement entropy, and fresh-process package
+   load.
+
+Operation benchmarks run three warm-ups followed by 15 samples. Each sample is
+adaptively batched to target at least 80 ms, and the raw CSV reports minimum,
+p05, p25, median, mean, p75, p95, maximum, standard deviation, and iterations
+per sample. Julia allocation medians are recorded separately. BLAS, OpenMP,
+and Julia are fixed to one thread.
+
+The performance job is observational: it reports `Python median / Julia
+median` but does not fail a candidate on noisy hosted-runner timing. The CSV
+artifacts are retained for 90 days. A regression threshold should only be
+introduced after enough runs establish runner variance.
+
 ## Extending the suite
 
 Each namespace has a directory under `test/full_api/`; add one file per public
