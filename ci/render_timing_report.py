@@ -68,6 +68,12 @@ def render_benchmarks(paths: list[Path]) -> str:
             "Speedup is `Python median / Julia median`; values above 1 mean Julia is faster."
         ),
         "",
+        (
+            "These are end-to-end public-API timings. They intentionally include each "
+            "package's current storage/backend choices (for example, Python sparse "
+            "versus the Julia candidate's current dense Hamiltonian representation)."
+        ),
+        "",
         "| Workload | Category | Python median (ms) | Julia median (ms) | Julia IQR (ms) | Speedup | Julia allocation |",
         "|---|---:|---:|---:|---:|---:|---:|",
     ]
@@ -97,7 +103,8 @@ def render_benchmarks(paths: list[Path]) -> str:
     lines.extend(
         [
             "",
-            "The uploaded CSV files retain all 15 samples' aggregate statistics: "
+            "Operation benchmarks use 15 samples; fresh-process loading uses 9. "
+            "The uploaded CSV files retain aggregate statistics for both: "
             "minimum, p05, p25, median, mean, p75, p95, maximum, standard deviation, "
             "and iterations per sample.",
         ]

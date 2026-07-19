@@ -56,8 +56,11 @@ Every candidate run produces two private timing artifacts:
 Operation benchmarks run three warm-ups followed by 15 samples. Each sample is
 adaptively batched to target at least 80 ms, and the raw CSV reports minimum,
 p05, p25, median, mean, p75, p95, maximum, standard deviation, and iterations
-per sample. Julia allocation medians are recorded separately. BLAS, OpenMP,
-and Julia are fixed to one thread.
+per sample. Fresh-process package loading uses one warm-up and nine new
+processes. Julia allocation medians are recorded separately. BLAS, OpenMP, and
+Julia are fixed to one thread. These are end-to-end public-API timings, so
+backend choices such as Python sparse versus the Julia candidate's current
+dense Hamiltonian representation are intentionally part of the result.
 
 The performance job is observational: it reports `Python median / Julia
 median` but does not fail a candidate on noisy hosted-runner timing. The CSV
