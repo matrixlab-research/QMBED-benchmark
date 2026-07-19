@@ -11,7 +11,11 @@ const TARGET_SAMPLE_SECONDS = 0.08
 const MAX_ITERATIONS = 1_000
 const SINK = Ref{Any}(nothing)
 
-function xxz_hamiltonian(length::Int, nup::Int)
+function xxz_hamiltonian(
+    length::Int,
+    nup::Int;
+    static_fmt=:dense,
+)
     basis = SpinBasis1D(length; nup, pauli=false)
     jxy = sqrt(2.0)
     jzz = 1.0
@@ -31,7 +35,7 @@ function xxz_hamiltonian(length::Int, nup::Int)
         ),
         OperatorTerm("z", [(hz, site) for site in 1:length]),
     ]
-    return basis, Hamiltonian(basis, terms)
+    return basis, Hamiltonian(basis, terms; static_fmt)
 end
 
 function deterministic_state(size::Int)
@@ -53,15 +57,18 @@ struct BenchmarkCase
 end
 
 function make_cases()
-    basis_12, hamiltonian_12 = xxz_hamiltonian(12, 6)
-    matrix_12_dense = Matrix(hamiltonian_12)
-    matrix_12_csc = sparse(matrix_12_dense)
+    basis_12, hamiltonian_12_dense = xxz_hamiltonian(12, 6; static_fmt=:dense)
+    _, hamiltonian_12_csc = xxz_hamiltonian(12, 6; static_fmt=:csc)
+    matrix_12_dense = Matrix(hamiltonian_12_dense)
+    matrix_12_csc = hamiltonian_12_csc.data
     vector_12 = deterministic_state(length(basis_12))
-    basis_10, hamiltonian_10 = xxz_hamiltonian(10, 5)
-    matrix_10_dense = Matrix(hamiltonian_10)
-    matrix_10_csc = sparse(matrix_10_dense)
+    basis_10, hamiltonian_10_dense = xxz_hamiltonian(10, 5; static_fmt=:dense)
+    _, hamiltonian_10_csc = xxz_hamiltonian(10, 5; static_fmt=:csc)
+    matrix_10_dense = Matrix(hamiltonian_10_dense)
+    matrix_10_csc = hamiltonian_10_csc.data
     vector_10 = deterministic_state(length(basis_10))
-    basis_8, hamiltonian_8 = xxz_hamiltonian(8, 4)
+    eigsh_seed_10 = normalize(real.(vector_10))
+    basis_8, hamiltonian_8 = xxz_hamiltonian(8, 4; static_fmt=:csc)
     vector_8 = deterministic_state(length(basis_8))
     full_basis_12 = SpinBasis1D(12; pauli=false)
     full_state_12 = deterministic_state(length(full_basis_12))
@@ -84,27 +91,27 @@ function make_cases()
             "controlled",
             "dense",
             "L=10;nup=5;dimension=252;open=true",
-            () -> last(xxz_hamiltonian(10, 5)),
+            () -> last(xxz_hamiltonian(10, 5; static_fmt=:dense)),
             true,
             "",
         ),
         BenchmarkCase(
             "xxz_hamiltonian_construction_sparse",
             "integration",
-            "capability",
-            "unsupported",
+            "controlled",
+            "csc",
             "L=10;nup=5;dimension=252;open=true",
-            nothing,
-            false,
-            "Julia Hamiltonian currently stores a dense Matrix; static_fmt is accepted but not implemented as native sparse storage.",
+            () -> last(xxz_hamiltonian(10, 5; static_fmt=:csc)),
+            true,
+            "Native CSC triplet assembly; no intermediate dense Hamiltonian.",
         ),
         BenchmarkCase(
             "hamiltonian_matvec_current_storage",
             "api",
             "current_backend",
-            "dense",
+            "csc",
             "L=12;nup=6;dimension=924",
-            () -> hamiltonian_12 * vector_12,
+            () -> hamiltonian_12_csc * vector_12,
             true,
             "",
         ),
@@ -159,14 +166,30 @@ function make_cases()
             "",
         ),
         BenchmarkCase(
+            "partial_eigenspectrum_sparse_csc",
+            "integration",
+            "controlled",
+            "csc",
+            "L=10;nup=5;dimension=252;k=4;which=SA",
+            () -> eigsh(
+                hamiltonian_10_csc;
+                k=4,
+                which=:SA,
+                v0=eigsh_seed_10,
+                tol=1e-10,
+            ),
+            true,
+            "ARPACK iterative eigensolve on the native CSC Hamiltonian.",
+        ),
+        BenchmarkCase(
             "static_time_evolution_current_storage",
             "integration",
             "current_backend",
-            "dense",
+            "csc_input_dense_solver",
             "L=8;nup=4;dimension=70;times=9;tmax=1",
             () -> evolve(hamiltonian_8, vector_8, 0.0, times),
             true,
-            "",
+            "The Hamiltonian is CSC; exact evolution currently uses a dense full eigendecomposition.",
         ),
         BenchmarkCase(
             "entanglement_entropy",

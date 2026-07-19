@@ -19,6 +19,7 @@ import quspin
 from quspin.basis import spin_basis_1d
 from quspin.operators import hamiltonian
 from quspin.tools.lanczos import lanczos_full
+from scipy.sparse.linalg import eigsh
 
 
 SAMPLES = 15
@@ -78,6 +79,8 @@ def make_cases() -> list[Case]:
     hamiltonian_10_csc = hamiltonian_10_csr.tocsc()
     matrix_10_dense = hamiltonian_10_dense.toarray()
     vector_10 = deterministic_state(basis_10.Ns)
+    eigsh_seed_10 = np.real(vector_10)
+    eigsh_seed_10 /= np.linalg.norm(eigsh_seed_10)
     basis_8, hamiltonian_8_csr = xxz_hamiltonian(8, 4, "csr")
     vector_8 = deterministic_state(basis_8.Ns)
     full_basis_12 = spin_basis_1d(L=12, pauli=False)
@@ -104,7 +107,7 @@ def make_cases() -> list[Case]:
         Case(
             "xxz_hamiltonian_construction_sparse",
             "integration",
-            "capability",
+            "controlled",
             "csc",
             "L=10;nup=5;dimension=252;open=true",
             lambda: xxz_hamiltonian(10, 5, "csc")[1],
@@ -156,6 +159,20 @@ def make_cases() -> list[Case]:
             "csc",
             "L=10;nup=5;dimension=252;m=32",
             lambda: lanczos_full(hamiltonian_10_csc, vector_10, 32),
+        ),
+        Case(
+            "partial_eigenspectrum_sparse_csc",
+            "integration",
+            "controlled",
+            "csc",
+            "L=10;nup=5;dimension=252;k=4;which=SA",
+            lambda: eigsh(
+                hamiltonian_10_csc,
+                k=4,
+                which="SA",
+                v0=eigsh_seed_10,
+                tol=1e-10,
+            ),
         ),
         Case(
             "static_time_evolution_current_storage",

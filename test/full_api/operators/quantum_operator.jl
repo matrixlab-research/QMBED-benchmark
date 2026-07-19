@@ -30,7 +30,7 @@
     @test toarray(operator; pars) == expected
     @test todense(operator; pars) == expected
     @test Matrix(tocsc(operator; pars)) == expected
-    @test Matrix(tocsr(operator; pars)) == expected
+    @test_throws ArgumentError tocsr(operator; pars)
     @test diagonal(operator; pars) == diag(expected)
     @test tr(operator; pars) == 0.0
     @test toarray(operator.H; pars) == expected'
@@ -52,7 +52,7 @@
     values, vectors = eigh(operator; pars)
     @test expected * vectors ≈ vectors * Diagonal(values) atol=2e-14
     selected, selected_vectors = eigsh(operator; pars, k=2, which=:SA)
-    @test selected == values[1:2]
+    @test selected ≈ values[1:2] atol=2e-13
     @test size(selected_vectors) == (4, 2)
     expectation = dot(vector, expected * vector)
     @test expt_value(operator, vector; pars) ≈ expectation
@@ -61,5 +61,25 @@
         dot(vector, expected^2 * vector) - expectation^2 atol=3e-15
     @test Matrix(tohamiltonian(operator; pars)) == expected
     @test Matrix(aslinearoperator(operator; pars)) == expected
-    @test update_matrix_formats!(operator, Dict(:x => :dense)) === operator
+    @test update_matrix_formats!(operator, Dict(:x => :csc)) === operator
+    @test operator.components[:x] isa SparseMatrixCSC
+    @test operator.is_dense
+    @test update_matrix_formats!(operator, Dict(:z => :csc)) === operator
+    @test !operator.is_dense
+    @test_throws ArgumentError update_matrix_formats!(
+        operator,
+        Dict(:x => :csr),
+    )
+
+    sparse_operator = QuantumOperator(
+        basis,
+        Dict(:x => x_terms, :z => z_terms);
+        matrix_formats=Dict(:x => :csc, :z => :csc),
+    )
+    @test !sparse_operator.is_dense
+    @test all(
+        value isa SparseMatrixCSC
+        for value in Base.values(sparse_operator.components)
+    )
+    @test tohamiltonian(sparse_operator; pars).data isa SparseMatrixCSC
 end

@@ -31,4 +31,23 @@
         (exp((-im * time) .* (Z + X)) * psi for time in times),
     )
     @test evolved ≈ exact atol=8e-12
+
+    sparse_H = Hamiltonian(
+        Any[Any["z", [(1.0, 1)]]],
+        Any[Any[X, drive, (2.0,)]];
+        basis,
+        dtype=ComplexF64,
+        static_fmt=:csc,
+        dynamic_fmt=:csc,
+    )
+    @test sparse_H.data isa SparseMatrixCSC
+    @test all(first(term) isa SparseMatrixCSC for term in sparse_H.dynamic_terms)
+    @test tocsc(sparse_H; time=0.0) isa SparseMatrixCSC
+    @test Matrix(tocsc(sparse_H; time=0.0)) ≈ Z + X atol=2e-16
+    @test_throws ArgumentError Hamiltonian(
+        Any[Any["z", [(1.0, 1)]]],
+        Any[];
+        basis,
+        static_fmt=:csr,
+    )
 end

@@ -1,6 +1,7 @@
 using Test
 using QuSpin
 using LinearAlgebra
+using SparseArrays
 
 include("timing.jl")
 
@@ -27,4 +28,5 @@ include("timing.jl")
     timed_include("full_api/tools/diag_ensemble.jl", "integration")
     timed_include("full_api/tools/measurements.jl", "integration")
     timed_include("full_api/tools/misc.jl", "mixed")
+    timed_include("full_api/integration/paper_workflows_sparse.jl", "integration")
 end
