@@ -20,6 +20,8 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
+      - name: Validate the full API migration denominator
+        run: python ci/check_full_api_plan.py
       - name: Install the pinned Python QuSpin oracle
         run: >-
           python -m pip install

@@ -13,8 +13,10 @@ runs this private Test.jl suite. Python is not present in the candidate job.
 ```
 Project.toml         deps: Test (+ the package under test, added at CI time)
 test/runtests.jl     the private suite — ordinary @testset / @test; the answer
-                     key. Pre-filled from the frozen bundle's held-out goldens,
-                     then hand-extended with properties + integration tests.
+                     key. It delegates to namespace/object files under
+                     test/full_api/, which mirror the 64-object migration plan.
+test/full_api_migration_plan.json
+                     frozen 64-object / 282-method / 180-attribute denominator.
 ci/runcandidate.jl   develop + test the package the MR proposes.
 .github/workflows/verify.yml
                      first reproduces the pinned Python oracle, then runs the
@@ -36,9 +38,8 @@ evaluation harness is involved.
 
 ## Extending the suite
 
-`test/runtests.jl` is a normal Julia test file — write whatever `@testset`,
-`@test`, `@test_throws`, loops, and helpers you like. The held-out goldens are a
-floor, not a ceiling: add randomized property checks and real multi-call
-integration tests. The richer this file, the stronger the gate. Regenerate the
-scaffold after a spec re-freeze with `minos build`, but hand-written tests are
-yours to maintain.
+Each namespace has a directory under `test/full_api/`; add one file per public
+object or tightly coupled helper family, then include it from `test/runtests.jl`.
+The held-out goldens are a floor, not a ceiling: add randomized property checks
+and real multi-call integration tests. `ci/check_full_api_plan.py` prevents the
+source denominator from silently shrinking.
