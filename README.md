@@ -49,18 +49,20 @@ Every candidate run produces two private timing artifacts:
    dominate CI time.
 2. `quspin-performance-*` compares the pinned Python QuSpin commit with the
    Julia candidate on the same GitHub Actions runner. It covers basis and
-   Hamiltonian construction, matrix-vector action, full diagonalization,
-   Lanczos, time evolution, entanglement entropy, and fresh-process package
-   load.
+   Hamiltonian construction, dense and CSC matrix-vector action, dense and CSC
+   Lanczos, dense full diagonalization, current-backend time evolution,
+   entanglement entropy, and fresh-process package load. Dense/CSC controlled
+   comparisons are reported separately from current-backend comparisons.
 
 Operation benchmarks run three warm-ups followed by 15 samples. Each sample is
 adaptively batched to target at least 80 ms, and the raw CSV reports minimum,
 p05, p25, median, mean, p75, p95, maximum, standard deviation, and iterations
 per sample. Fresh-process package loading uses one warm-up and nine new
 processes. Julia allocation medians are recorded separately. BLAS, OpenMP, and
-Julia are fixed to one thread. These are end-to-end public-API timings, so
-backend choices such as Python sparse versus the Julia candidate's current
-dense Hamiltonian representation are intentionally part of the result.
+Julia are fixed to one thread. The report explicitly lists Python and Julia
+storage formats for every row. Julia's current lack of native sparse
+Hamiltonian construction is reported as an unsupported capability rather than
+timed against Python sparse construction as though the formats were equal.
 
 The performance job is observational: it reports `Python median / Julia
 median` but does not fail a candidate on noisy hosted-runner timing. The CSV

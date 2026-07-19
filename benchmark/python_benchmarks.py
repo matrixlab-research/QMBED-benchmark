@@ -31,11 +31,13 @@ SINK: Optional[object] = None
 class Case:
     name: str
     category: str
+    comparison: str
+    storage: str
     parameters: str
     function: Callable[[], object]
 
 
-def xxz_hamiltonian(length: int, nup: int):
+def xxz_hamiltonian(length: int, nup: int, static_fmt: str):
     basis = spin_basis_1d(L=length, Nup=nup, pauli=False)
     jxy = math.sqrt(2.0)
     jzz = 1.0
@@ -54,6 +56,7 @@ def xxz_hamiltonian(length: int, nup: int):
         check_herm=False,
         check_symm=False,
         check_pcon=False,
+        static_fmt=static_fmt,
     )
     return basis, operator
 
@@ -65,11 +68,17 @@ def deterministic_state(size: int) -> np.ndarray:
 
 
 def make_cases() -> list[Case]:
-    basis_12, hamiltonian_12 = xxz_hamiltonian(12, 6)
+    basis_12, hamiltonian_12_csr = xxz_hamiltonian(12, 6, "csr")
+    _, hamiltonian_12_dense = xxz_hamiltonian(12, 6, "dense")
+    hamiltonian_12_csc = hamiltonian_12_csr.tocsc()
+    matrix_12_dense = hamiltonian_12_dense.toarray()
     vector_12 = deterministic_state(basis_12.Ns)
-    basis_10, hamiltonian_10 = xxz_hamiltonian(10, 5)
+    basis_10, hamiltonian_10_csr = xxz_hamiltonian(10, 5, "csr")
+    _, hamiltonian_10_dense = xxz_hamiltonian(10, 5, "dense")
+    hamiltonian_10_csc = hamiltonian_10_csr.tocsc()
+    matrix_10_dense = hamiltonian_10_dense.toarray()
     vector_10 = deterministic_state(basis_10.Ns)
-    basis_8, hamiltonian_8 = xxz_hamiltonian(8, 4)
+    basis_8, hamiltonian_8_csr = xxz_hamiltonian(8, 4, "csr")
     vector_8 = deterministic_state(basis_8.Ns)
     full_basis_12 = spin_basis_1d(L=12, pauli=False)
     full_state_12 = deterministic_state(full_basis_12.Ns)
@@ -79,42 +88,88 @@ def make_cases() -> list[Case]:
         Case(
             "spin_basis_construction",
             "api",
+            "storage_independent",
+            "n/a",
             "L=16;nup=8;dimension=12870",
             lambda: spin_basis_1d(L=16, Nup=8, pauli=False),
         ),
         Case(
-            "xxz_hamiltonian_construction",
+            "xxz_hamiltonian_construction_dense",
             "integration",
+            "controlled",
+            "dense",
             "L=10;nup=5;dimension=252;open=true",
-            lambda: xxz_hamiltonian(10, 5)[1],
+            lambda: xxz_hamiltonian(10, 5, "dense")[1],
         ),
         Case(
-            "hamiltonian_matvec",
-            "kernel",
+            "xxz_hamiltonian_construction_sparse",
+            "integration",
+            "capability",
+            "csc",
+            "L=10;nup=5;dimension=252;open=true",
+            lambda: xxz_hamiltonian(10, 5, "csc")[1],
+        ),
+        Case(
+            "hamiltonian_matvec_current_storage",
+            "api",
+            "current_backend",
+            "csr",
             "L=12;nup=6;dimension=924",
-            lambda: hamiltonian_12.dot(vector_12),
+            lambda: hamiltonian_12_csr.dot(vector_12),
         ),
         Case(
-            "full_eigenspectrum",
+            "matrix_matvec_dense",
             "kernel",
+            "controlled",
+            "dense",
+            "L=12;nup=6;dimension=924",
+            lambda: matrix_12_dense @ vector_12,
+        ),
+        Case(
+            "matrix_matvec_sparse_csc",
+            "kernel",
+            "controlled",
+            "csc",
+            "L=12;nup=6;dimension=924",
+            lambda: hamiltonian_12_csc @ vector_12,
+        ),
+        Case(
+            "full_eigenspectrum_dense",
+            "kernel",
+            "controlled",
+            "dense",
             "L=10;nup=5;dimension=252",
-            lambda: hamiltonian_10.eigvalsh(),
+            lambda: np.linalg.eigvalsh(matrix_10_dense),
         ),
         Case(
-            "lanczos_decomposition",
+            "lanczos_decomposition_dense",
             "integration",
+            "controlled",
+            "dense",
             "L=10;nup=5;dimension=252;m=32",
-            lambda: lanczos_full(hamiltonian_10, vector_10, 32),
+            lambda: lanczos_full(matrix_10_dense, vector_10, 32),
         ),
         Case(
-            "static_time_evolution",
+            "lanczos_decomposition_sparse_csc",
             "integration",
+            "controlled",
+            "csc",
+            "L=10;nup=5;dimension=252;m=32",
+            lambda: lanczos_full(hamiltonian_10_csc, vector_10, 32),
+        ),
+        Case(
+            "static_time_evolution_current_storage",
+            "integration",
+            "current_backend",
+            "csr",
             "L=8;nup=4;dimension=70;times=9;tmax=1",
-            lambda: hamiltonian_8.evolve(vector_8, 0.0, times),
+            lambda: hamiltonian_8_csr.evolve(vector_8, 0.0, times),
         ),
         Case(
             "entanglement_entropy",
             "integration",
+            "storage_independent",
+            "state_vector",
             "L=12;dimension=4096;subsystem=6",
             lambda: full_basis_12.ent_entropy(
                 full_state_12, sub_sys_A=range(6)
@@ -165,6 +220,10 @@ def time_case(case: Case) -> dict[str, object]:
         "language": "python",
         "benchmark": case.name,
         "category": case.category,
+        "comparison": case.comparison,
+        "storage": case.storage,
+        "supported": "true",
+        "note": "",
         "parameters": case.parameters,
         "samples": len(timings),
         "iterations_per_sample": iterations,

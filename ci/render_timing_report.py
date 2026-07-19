@@ -69,37 +69,58 @@ def render_benchmarks(paths: list[Path]) -> str:
         ),
         "",
         (
-            "These are end-to-end public-API timings. They intentionally include each "
-            "package's current storage/backend choices (for example, Python sparse "
-            "versus the Julia candidate's current dense Hamiltonian representation)."
+            "`controlled` rows compare the same dense or CSC representation. "
+            "`current_backend` rows intentionally retain each package's present "
+            "public-API storage choice."
         ),
         "",
-        "| Workload | Category | Python median (ms) | Julia median (ms) | Julia IQR (ms) | Speedup | Julia allocation |",
-        "|---|---:|---:|---:|---:|---:|---:|",
+        "| Workload | Mode | Python storage | Julia storage | Python median (ms) | Julia median (ms) | Julia IQR (ms) | Speedup | Julia allocation |",
+        "|---|---:|---:|---:|---:|---:|---:|---:|---:|",
     ]
+    notes = []
     for name, languages in cases.items():
         if set(languages) != {"python", "julia"}:
             continue
         python = languages["python"]
         julia = languages["julia"]
-        speedup = float(python["median_seconds"]) / float(julia["median_seconds"])
-        allocation = julia.get("median_allocated_bytes")
-        allocation_text = (
-            f"{int(allocation) / 1024:.1f} KiB" if allocation else "n/a"
-        )
+        julia_supported = julia.get("supported", "true").lower() == "true"
+        if julia_supported:
+            speedup = (
+                float(python["median_seconds"]) / float(julia["median_seconds"])
+            )
+            julia_ms = milliseconds(julia["median_seconds"])
+            julia_iqr = (
+                f"{milliseconds(julia['p25_seconds'])}–"
+                f"{milliseconds(julia['p75_seconds'])}"
+            )
+            speedup_text = f"{speedup:.2f}×"
+            allocation = julia.get("median_allocated_bytes")
+            allocation_text = (
+                f"{int(allocation) / 1024:.1f} KiB" if allocation else "n/a"
+            )
+        else:
+            julia_ms = "unsupported"
+            julia_iqr = "n/a"
+            speedup_text = "n/a"
+            allocation_text = "n/a"
+            if julia.get("note"):
+                notes.append(f"- `{name}`: {julia['note']}")
         lines.append(
-            "| `{name}` | {category} | {python_ms} | {julia_ms} | "
-            "{julia_p25}–{julia_p75} | {speedup:.2f}× | {allocation} |".format(
+            "| `{name}` | {comparison} | {python_storage} | {julia_storage} | "
+            "{python_ms} | {julia_ms} | {julia_iqr} | {speedup} | {allocation} |".format(
                 name=name,
-                category=julia["category"],
+                comparison=julia.get("comparison", "unspecified"),
+                python_storage=python.get("storage", "unspecified"),
+                julia_storage=julia.get("storage", "unspecified"),
                 python_ms=milliseconds(python["median_seconds"]),
-                julia_ms=milliseconds(julia["median_seconds"]),
-                julia_p25=milliseconds(julia["p25_seconds"]),
-                julia_p75=milliseconds(julia["p75_seconds"]),
-                speedup=speedup,
+                julia_ms=julia_ms,
+                julia_iqr=julia_iqr,
+                speedup=speedup_text,
                 allocation=allocation_text,
             )
         )
+    if notes:
+        lines.extend(["", "Capability gaps:", "", *notes])
     lines.extend(
         [
             "",

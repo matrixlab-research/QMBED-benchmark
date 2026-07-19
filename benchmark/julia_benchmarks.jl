@@ -2,6 +2,7 @@
 
 using LinearAlgebra
 using QuSpin
+using SparseArrays
 
 BLAS.set_num_threads(1)
 
@@ -40,17 +41,25 @@ function deterministic_state(size::Int)
     return state / norm(state)
 end
 
-struct BenchmarkCase{F}
+struct BenchmarkCase
     name::String
     category::String
+    comparison::String
+    storage::String
     parameters::String
-    function_value::F
+    function_value::Any
+    supported::Bool
+    note::String
 end
 
 function make_cases()
     basis_12, hamiltonian_12 = xxz_hamiltonian(12, 6)
+    matrix_12_dense = Matrix(hamiltonian_12)
+    matrix_12_csc = sparse(matrix_12_dense)
     vector_12 = deterministic_state(length(basis_12))
     basis_10, hamiltonian_10 = xxz_hamiltonian(10, 5)
+    matrix_10_dense = Matrix(hamiltonian_10)
+    matrix_10_csc = sparse(matrix_10_dense)
     vector_10 = deterministic_state(length(basis_10))
     basis_8, hamiltonian_8 = xxz_hamiltonian(8, 4)
     vector_8 = deterministic_state(length(basis_8))
@@ -62,48 +71,116 @@ function make_cases()
         BenchmarkCase(
             "spin_basis_construction",
             "api",
+            "storage_independent",
+            "n/a",
             "L=16;nup=8;dimension=12870",
             () -> SpinBasis1D(16; nup=8, pauli=false),
+            true,
+            "",
         ),
         BenchmarkCase(
-            "xxz_hamiltonian_construction",
+            "xxz_hamiltonian_construction_dense",
             "integration",
+            "controlled",
+            "dense",
             "L=10;nup=5;dimension=252;open=true",
             () -> last(xxz_hamiltonian(10, 5)),
+            true,
+            "",
         ),
         BenchmarkCase(
-            "hamiltonian_matvec",
-            "kernel",
+            "xxz_hamiltonian_construction_sparse",
+            "integration",
+            "capability",
+            "unsupported",
+            "L=10;nup=5;dimension=252;open=true",
+            nothing,
+            false,
+            "Julia Hamiltonian currently stores a dense Matrix; static_fmt is accepted but not implemented as native sparse storage.",
+        ),
+        BenchmarkCase(
+            "hamiltonian_matvec_current_storage",
+            "api",
+            "current_backend",
+            "dense",
             "L=12;nup=6;dimension=924",
             () -> hamiltonian_12 * vector_12,
+            true,
+            "",
         ),
         BenchmarkCase(
-            "full_eigenspectrum",
+            "matrix_matvec_dense",
             "kernel",
+            "controlled",
+            "dense",
+            "L=12;nup=6;dimension=924",
+            () -> matrix_12_dense * vector_12,
+            true,
+            "",
+        ),
+        BenchmarkCase(
+            "matrix_matvec_sparse_csc",
+            "kernel",
+            "controlled",
+            "csc",
+            "L=12;nup=6;dimension=924",
+            () -> matrix_12_csc * vector_12,
+            true,
+            "",
+        ),
+        BenchmarkCase(
+            "full_eigenspectrum_dense",
+            "kernel",
+            "controlled",
+            "dense",
             "L=10;nup=5;dimension=252",
-            () -> first(eigh(hamiltonian_10)),
+            () -> eigvals(Hermitian(matrix_10_dense)),
+            true,
+            "",
         ),
         BenchmarkCase(
-            "lanczos_decomposition",
+            "lanczos_decomposition_dense",
             "integration",
+            "controlled",
+            "dense",
             "L=10;nup=5;dimension=252;m=32",
-            () -> lanczos_full(hamiltonian_10, vector_10, 32),
+            () -> lanczos_full(matrix_10_dense, vector_10, 32),
+            true,
+            "",
         ),
         BenchmarkCase(
-            "static_time_evolution",
+            "lanczos_decomposition_sparse_csc",
             "integration",
+            "controlled",
+            "csc",
+            "L=10;nup=5;dimension=252;m=32",
+            () -> lanczos_full(matrix_10_csc, vector_10, 32),
+            true,
+            "",
+        ),
+        BenchmarkCase(
+            "static_time_evolution_current_storage",
+            "integration",
+            "current_backend",
+            "dense",
             "L=8;nup=4;dimension=70;times=9;tmax=1",
             () -> evolve(hamiltonian_8, vector_8, 0.0, times),
+            true,
+            "",
         ),
         BenchmarkCase(
             "entanglement_entropy",
             "integration",
+            "storage_independent",
+            "state_vector",
             "L=12;dimension=4096;subsystem=6",
             () -> ent_entropy(
                 full_basis_12,
                 full_state_12;
                 sub_sys_A=collect(1:6),
             ),
+            true,
+            "",
         ),
     ]
 end
@@ -126,6 +203,32 @@ function median_value(values::Vector{Float64})
 end
 
 function time_case(case::BenchmarkCase)
+    if !case.supported
+        return (
+            language="julia",
+            benchmark=case.name,
+            category=case.category,
+            comparison=case.comparison,
+            storage=case.storage,
+            supported="false",
+            note=case.note,
+            parameters=case.parameters,
+            samples="",
+            iterations_per_sample="",
+            median_seconds="",
+            mean_seconds="",
+            stdev_seconds="",
+            min_seconds="",
+            p05_seconds="",
+            p25_seconds="",
+            p75_seconds="",
+            p95_seconds="",
+            max_seconds="",
+            median_allocated_bytes="",
+            runtime="Julia $(VERSION); QuSpin candidate",
+        )
+    end
+
     for _ in 1:3
         SINK[] = case.function_value()
     end
@@ -162,6 +265,10 @@ function time_case(case::BenchmarkCase)
         language="julia",
         benchmark=case.name,
         category=case.category,
+        comparison=case.comparison,
+        storage=case.storage,
+        supported="true",
+        note=case.note,
         parameters=case.parameters,
         samples=length(timings),
         iterations_per_sample=iterations,
@@ -194,7 +301,7 @@ function main()
         error("--output requires a path")
     output = ARGS[output_index + 1]
     mkpath(dirname(output))
-    rows = [time_case(case) for case in make_cases()]
+    rows = Any[time_case(case) for case in make_cases()]
     columns = propertynames(first(rows))
     open(output, "w") do io
         println(io, join(columns, ","))
