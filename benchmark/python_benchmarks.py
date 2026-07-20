@@ -180,6 +180,16 @@ def make_cases() -> list[Case]:
         * np.cos(0.019 * ensemble_indices[:, None] - 0.023 * ensemble_indices[None, :])
     )
     ensemble_observable = ensemble_observable + ensemble_observable.T.conj()
+    # diag_ensemble's legacy fluctuation guard evaluates ``bool(Obs)``.
+    # NumPy arrays intentionally reject that operation, whereas the documented
+    # QuSpin Hamiltonian observable protocol supplies an unambiguous truth
+    # value and preserves the dense matrix action used by this benchmark.
+    ensemble_observable_operator = hamiltonian(
+        [ensemble_observable],
+        [],
+        dtype=np.complex128,
+        static_fmt="dense",
+    )
     ensemble_state = deterministic_state(ensemble_dimension)
     ensemble_energies = np.arange(1, ensemble_dimension + 1, dtype=np.float64)
     ensemble_vectors = np.eye(ensemble_dimension, dtype=np.complex128)
@@ -385,7 +395,7 @@ def make_cases() -> list[Case]:
                 ensemble_energies,
                 ensemble_vectors,
                 density=False,
-                Obs=ensemble_observable,
+                Obs=ensemble_observable_operator,
                 delta_t_Obs=True,
                 delta_q_Obs=True,
             ),
