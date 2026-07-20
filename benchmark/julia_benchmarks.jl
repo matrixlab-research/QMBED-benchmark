@@ -35,7 +35,14 @@ function xxz_hamiltonian(
         ),
         OperatorTerm("z", [(hz, site) for site in 1:length]),
     ]
-    return basis, Hamiltonian(basis, terms; static_fmt)
+    return basis, Hamiltonian(
+        basis,
+        terms;
+        static_fmt,
+        check_symm=false,
+        check_herm=false,
+        check_pcon=false,
+    )
 end
 
 function deterministic_state(size::Int)
@@ -59,9 +66,20 @@ end
 function make_cases()
     basis_12, hamiltonian_12_dense = xxz_hamiltonian(12, 6; static_fmt=:dense)
     _, hamiltonian_12_csc = xxz_hamiltonian(12, 6; static_fmt=:csc)
+    _, hamiltonian_12_csr = xxz_hamiltonian(12, 6; static_fmt=:csr)
+    _, hamiltonian_12_dia = xxz_hamiltonian(12, 6; static_fmt=:dia)
     matrix_12_dense = Matrix(hamiltonian_12_dense)
     matrix_12_csc = hamiltonian_12_csc.data
+    matrix_12_csr = hamiltonian_12_csr.data
+    matrix_12_dia = hamiltonian_12_dia.data
     vector_12 = deterministic_state(length(basis_12))
+    linear_operator_12 = QuantumLinearOperator(
+        basis_12,
+        hamiltonian_12_csc.terms,
+        check_symm=false,
+        check_herm=false,
+        check_pcon=false,
+    )
     basis_10, hamiltonian_10_dense = xxz_hamiltonian(10, 5; static_fmt=:dense)
     _, hamiltonian_10_csc = xxz_hamiltonian(10, 5; static_fmt=:csc)
     matrix_10_dense = Matrix(hamiltonian_10_dense)
@@ -84,6 +102,21 @@ function make_cases()
             () -> SpinBasis1D(16; nup=8, pauli=false),
             true,
             "",
+        ),
+        BenchmarkCase(
+            "symmetry_basis_construction",
+            "integration",
+            "storage_independent",
+            "projector",
+            "L=14;nup=7;kblock=3;parent_dimension=3432",
+            () -> SpinBasis1D(
+                14;
+                nup=7,
+                pauli=false,
+                kblock=3,
+            ),
+            true,
+            "Constructs an orthonormal translation-sector projector.",
         ),
         BenchmarkCase(
             "xxz_hamiltonian_construction_dense",
@@ -132,6 +165,52 @@ function make_cases()
             "csc",
             "L=12;nup=6;dimension=924",
             () -> matrix_12_csc * vector_12,
+            true,
+            "",
+        ),
+        BenchmarkCase(
+            "matrix_matvec_sparse_csr",
+            "kernel",
+            "controlled",
+            "csr",
+            "L=12;nup=6;dimension=924",
+            () -> matrix_12_csr * vector_12,
+            true,
+            "",
+        ),
+        BenchmarkCase(
+            "matrix_matvec_sparse_dia",
+            "kernel",
+            "controlled",
+            "dia",
+            "L=12;nup=6;dimension=924",
+            () -> matrix_12_dia * vector_12,
+            true,
+            "",
+        ),
+        BenchmarkCase(
+            "quantum_linear_operator_construction",
+            "integration",
+            "controlled",
+            "matrix_free",
+            "L=12;nup=6;dimension=924",
+            () -> QuantumLinearOperator(
+                basis_12,
+                hamiltonian_12_csc.terms,
+                check_symm=false,
+                check_herm=false,
+                check_pcon=false,
+            ),
+            true,
+            "Construction retains local terms and no explicit matrix.",
+        ),
+        BenchmarkCase(
+            "quantum_linear_operator_matvec",
+            "kernel",
+            "controlled",
+            "matrix_free",
+            "L=12;nup=6;dimension=924",
+            () -> linear_operator_12 * vector_12,
             true,
             "",
         ),
@@ -185,11 +264,11 @@ function make_cases()
             "static_time_evolution_current_storage",
             "integration",
             "current_backend",
-            "csc_input_dense_solver",
+            "csc_krylov",
             "L=8;nup=4;dimension=70;times=9;tmax=1",
             () -> evolve(hamiltonian_8, vector_8, 0.0, times),
             true,
-            "The Hamiltonian is CSC; exact evolution currently uses a dense full eigendecomposition.",
+            "Native CSC Arnoldi exponential action; no full eigendecomposition.",
         ),
         BenchmarkCase(
             "entanglement_entropy",

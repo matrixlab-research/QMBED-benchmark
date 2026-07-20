@@ -69,7 +69,7 @@ def render_benchmarks(paths: list[Path]) -> str:
         ),
         "",
         (
-            "`controlled` rows compare the same dense or CSC representation. "
+            "`controlled` rows compare the same dense or named sparse representation. "
             "`current_backend` rows intentionally retain each package's present "
             "public-API storage choice."
         ),

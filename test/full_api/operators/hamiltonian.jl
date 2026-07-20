@@ -93,7 +93,7 @@ end
     @test toarray(H) == matrix
     @test todense(H) == matrix
     @test Matrix(tocsc(H)) == matrix
-    @test_throws ArgumentError tocsr(H)
+    @test Matrix(tocsr(H)) == matrix
     @test tr(H) == tr(matrix)
     sparse_H = as_sparse_format(H; static_fmt=:csc)
     @test sparse_H.data isa SparseMatrixCSC
@@ -105,5 +105,6 @@ end
     @test !check_is_dense(H)
     @test update_matrix_formats!(H, :dense, Dict()) === H
     @test H.data isa Matrix
-    @test_throws ArgumentError update_matrix_formats!(H, :csr, Dict())
+    @test update_matrix_formats!(H, :csr, Dict()) === H
+    @test H.data isa SparseMatrixCSR
 end

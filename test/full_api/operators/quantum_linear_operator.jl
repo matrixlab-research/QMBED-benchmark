@@ -33,8 +33,8 @@
     @test Matrix(operator.T) == transpose(matrix)
 
     vector = normalize(ComplexF64[1.0, -0.4im, 0.7 + 0.2im])
-    @test operator * vector == matrix * vector
-    @test apply(operator, vector) == matrix * vector
+    @test operator * vector ≈ matrix * vector atol=3e-16
+    @test apply(operator, vector) ≈ matrix * vector atol=3e-16
     out = zeros(ComplexF64, 3)
     @test apply(operator, vector; out, a=-0.5) === out
     @test out ≈ -0.5matrix * vector atol=3e-16

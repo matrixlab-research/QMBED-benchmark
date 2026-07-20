@@ -14,6 +14,7 @@ from pathlib import Path
 import numpy as np
 import quspin
 from quspin.basis import (
+    boson_basis_1d,
     basis_int_to_python_int,
     bitwise_and,
     bitwise_leftshift,
@@ -26,6 +27,8 @@ from quspin.basis import (
     photon_Hspace_dim,
     python_int_to_basis_int,
     spin_basis_1d,
+    spinful_fermion_basis_1d,
+    spinless_fermion_basis_1d,
     uint1024,
     uint16384,
     uint256,
@@ -582,6 +585,180 @@ def quantum_operator_case() -> dict:
     }
 
 
+def completion_gaps_case() -> dict:
+    """Independent observations for the previously missing implementation paths."""
+
+    boson_basis = boson_basis_1d(L=3, Nb=2, sps=4)
+    boson_static = [
+        ["+-", [[-0.4, 0, 1], [-0.7, 1, 2]]],
+        ["-+", [[-0.4, 0, 1], [-0.7, 1, 2]]],
+        ["n", [[0.2, 0], [-0.1, 1], [0.3, 2]]],
+    ]
+    boson_hamiltonian = hamiltonian(
+        boson_static,
+        [],
+        basis=boson_basis,
+        dtype=np.float64,
+        check_herm=False,
+        check_symm=False,
+        check_pcon=False,
+        static_fmt="csr",
+    )
+    boson_matrix = boson_hamiltonian.toarray()
+
+    spinless_basis = spinless_fermion_basis_1d(L=4, Nf=1)
+    spinless_static = [
+        ["+-", [[-0.6, 0, 1], [-0.6, 1, 2], [-0.6, 2, 3]]],
+        ["-+", [[0.6, 0, 1], [0.6, 1, 2], [0.6, 2, 3]]],
+    ]
+    spinless_hamiltonian = hamiltonian(
+        spinless_static,
+        [],
+        basis=spinless_basis,
+        dtype=np.float64,
+        check_herm=False,
+        check_symm=False,
+        check_pcon=False,
+        static_fmt="dia",
+    )
+
+    spinful_basis = spinful_fermion_basis_1d(L=3, Nf=(1, 1))
+    spinful_static = [
+        ["+-|", [[-0.9, 0, 1], [-0.9, 1, 2]]],
+        ["-+|", [[0.9, 0, 1], [0.9, 1, 2]]],
+        ["|+-", [[-0.9, 0, 1], [-0.9, 1, 2]]],
+        ["|-+", [[0.9, 0, 1], [0.9, 1, 2]]],
+        ["n|n", [[1.7, 0, 0], [1.7, 1, 1], [1.7, 2, 2]]],
+    ]
+    spinful_hamiltonian = hamiltonian(
+        spinful_static,
+        [],
+        basis=spinful_basis,
+        dtype=np.float64,
+        check_herm=False,
+        check_symm=False,
+        check_pcon=False,
+        static_fmt="csr",
+    )
+
+    symmetry_static = [
+        ["zz", [[0.73, site, (site + 1) % 6] for site in range(6)]],
+        ["+-", [[-0.31, site, (site + 1) % 6] for site in range(6)]],
+        ["-+", [[-0.31, site, (site + 1) % 6] for site in range(6)]],
+    ]
+    momentum_dimensions = []
+    momentum_two = None
+    for momentum in range(6):
+        basis = spin_basis_1d(
+            L=6,
+            Nup=3,
+            pauli=False,
+            kblock=momentum,
+        )
+        momentum_dimensions.append(int(basis.Ns))
+        if momentum == 2:
+            operator = hamiltonian(
+                symmetry_static,
+                [],
+                basis=basis,
+                dtype=np.complex128,
+                check_herm=False,
+                check_symm=False,
+                check_pcon=False,
+            )
+            momentum_two = np.linalg.eigvalsh(operator.toarray())
+
+    linear_basis = spin_basis_1d(L=5, Nup=2, pauli=False)
+    linear_static = [
+        ["zz", [[0.41, site, site + 1] for site in range(4)]],
+        ["+-", [[-0.23, site, site + 1] for site in range(4)]],
+        ["-+", [[-0.23, site, site + 1] for site in range(4)]],
+        ["z", [[0.07 * (site - 2), site] for site in range(5)]],
+    ]
+    linear_operator = quantum_LinearOperator(
+        linear_static,
+        basis=linear_basis,
+        dtype=np.complex128,
+        check_herm=False,
+        check_symm=False,
+        check_pcon=False,
+    )
+    linear_states = np.asarray(linear_basis.states, dtype=np.int64)
+    # Python QuSpin labels site 0 with the most-significant bit, while
+    # QuSpin.jl labels site 1 with the least-significant bit.  Compare the
+    # physical occupation patterns through a shared Julia-style state label.
+    linear_canonical_states = np.array(
+        [
+            sum(
+                ((int(state) >> (4 - site)) & 1) << site
+                for site in range(5)
+            )
+            for state in linear_states
+        ],
+        dtype=np.int64,
+    )
+    linear_vector = np.array(
+        [
+            np.sin(0.21 * (state + 1)) + 1j * np.cos(0.16 * (state + 1))
+            for state in linear_canonical_states
+        ],
+        dtype=np.complex128,
+    )
+    linear_vector /= np.linalg.norm(linear_vector)
+    linear_action = linear_operator.dot(linear_vector)
+
+    return {
+        "id": "completion_gaps",
+        "target_symbol": "Hamiltonian",
+        "boson": {
+            "dimension": int(boson_basis.Ns),
+            "trace": canonical_float(np.trace(boson_matrix)),
+            "frobenius_norm": canonical_float(np.linalg.norm(boson_matrix)),
+            "spectrum": [
+                canonical_float(value)
+                for value in np.linalg.eigvalsh(boson_matrix)
+            ],
+            "storage": boson_hamiltonian.static.format,
+            "nnz": int(boson_hamiltonian.static.nnz),
+        },
+        "spinless": {
+            "dimension": int(spinless_basis.Ns),
+            "spectrum": [
+                canonical_float(value)
+                for value in spinless_hamiltonian.eigvalsh()
+            ],
+            "storage": spinless_hamiltonian.static.format,
+            "nnz": int(spinless_hamiltonian.static.nnz),
+        },
+        "spinful": {
+            "dimension": int(spinful_basis.Ns),
+            "spectrum": [
+                canonical_float(value)
+                for value in spinful_hamiltonian.eigvalsh()
+            ],
+            "storage": spinful_hamiltonian.static.format,
+            "nnz": int(spinful_hamiltonian.static.nnz),
+        },
+        "symmetry": {
+            "momentum_dimensions": momentum_dimensions,
+            "kblock_2_spectrum": [
+                canonical_float(value) for value in momentum_two
+            ],
+        },
+        "matrix_free": {
+            "dimension": int(linear_basis.Ns),
+            "action_by_state": [
+                {
+                    "state": int(linear_canonical_states[index]),
+                    "real": canonical_float(linear_action[index].real),
+                    "imag": canonical_float(linear_action[index].imag),
+                }
+                for index in np.argsort(linear_canonical_states)
+            ],
+        },
+    }
+
+
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument(
@@ -595,6 +772,7 @@ def main() -> None:
         "source": {
             "package": "quspin",
             "reported_version": str(quspin.__version__),
+            "commit": "5bf9e5b266e6d8b70e5cf5973c7c7d59d62e412f",
         },
         "target": {
             "package": "QuSpin.jl",
@@ -605,6 +783,7 @@ def main() -> None:
             basis_integer_case(),
             bitwise_case(),
             block_tools_case(),
+            completion_gaps_case(),
             diagonal_ensemble_case(),
             exp_op_case(),
             expm_multiply_parallel_case(),

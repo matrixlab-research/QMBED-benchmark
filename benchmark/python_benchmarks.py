@@ -17,7 +17,7 @@ from typing import Callable, Optional
 import numpy as np
 import quspin
 from quspin.basis import spin_basis_1d
-from quspin.operators import hamiltonian
+from quspin.operators import hamiltonian, quantum_LinearOperator
 from quspin.tools.lanczos import lanczos_full
 from scipy.sparse.linalg import eigsh
 
@@ -38,17 +38,21 @@ class Case:
     function: Callable[[], object]
 
 
-def xxz_hamiltonian(length: int, nup: int, static_fmt: str):
-    basis = spin_basis_1d(L=length, Nup=nup, pauli=False)
+def xxz_static(length: int):
     jxy = math.sqrt(2.0)
     jzz = 1.0
     hz = 1.0 / math.sqrt(3.0)
-    static = [
+    return [
         ["+-", [[jxy / 2.0, site, site + 1] for site in range(length - 1)]],
         ["-+", [[jxy / 2.0, site, site + 1] for site in range(length - 1)]],
         ["zz", [[jzz, site, site + 1] for site in range(length - 1)]],
         ["z", [[hz, site] for site in range(length)]],
     ]
+
+
+def xxz_hamiltonian(length: int, nup: int, static_fmt: str):
+    basis = spin_basis_1d(L=length, Nup=nup, pauli=False)
+    static = xxz_static(length)
     operator = hamiltonian(
         static,
         [],
@@ -71,9 +75,19 @@ def deterministic_state(size: int) -> np.ndarray:
 def make_cases() -> list[Case]:
     basis_12, hamiltonian_12_csr = xxz_hamiltonian(12, 6, "csr")
     _, hamiltonian_12_dense = xxz_hamiltonian(12, 6, "dense")
+    _, hamiltonian_12_dia = xxz_hamiltonian(12, 6, "dia")
     hamiltonian_12_csc = hamiltonian_12_csr.tocsc()
     matrix_12_dense = hamiltonian_12_dense.toarray()
     vector_12 = deterministic_state(basis_12.Ns)
+    linear_static_12 = xxz_static(12)
+    linear_operator_12 = quantum_LinearOperator(
+        linear_static_12,
+        basis=basis_12,
+        dtype=np.complex128,
+        check_herm=False,
+        check_symm=False,
+        check_pcon=False,
+    )
     basis_10, hamiltonian_10_csr = xxz_hamiltonian(10, 5, "csr")
     _, hamiltonian_10_dense = xxz_hamiltonian(10, 5, "dense")
     hamiltonian_10_csc = hamiltonian_10_csr.tocsc()
@@ -95,6 +109,19 @@ def make_cases() -> list[Case]:
             "n/a",
             "L=16;nup=8;dimension=12870",
             lambda: spin_basis_1d(L=16, Nup=8, pauli=False),
+        ),
+        Case(
+            "symmetry_basis_construction",
+            "integration",
+            "storage_independent",
+            "projector",
+            "L=14;nup=7;kblock=3;parent_dimension=3432",
+            lambda: spin_basis_1d(
+                L=14,
+                Nup=7,
+                pauli=False,
+                kblock=3,
+            ),
         ),
         Case(
             "xxz_hamiltonian_construction_dense",
@@ -135,6 +162,45 @@ def make_cases() -> list[Case]:
             "csc",
             "L=12;nup=6;dimension=924",
             lambda: hamiltonian_12_csc @ vector_12,
+        ),
+        Case(
+            "matrix_matvec_sparse_csr",
+            "kernel",
+            "controlled",
+            "csr",
+            "L=12;nup=6;dimension=924",
+            lambda: hamiltonian_12_csr.static @ vector_12,
+        ),
+        Case(
+            "matrix_matvec_sparse_dia",
+            "kernel",
+            "controlled",
+            "dia",
+            "L=12;nup=6;dimension=924",
+            lambda: hamiltonian_12_dia.static @ vector_12,
+        ),
+        Case(
+            "quantum_linear_operator_construction",
+            "integration",
+            "controlled",
+            "matrix_free",
+            "L=12;nup=6;dimension=924",
+            lambda: quantum_LinearOperator(
+                linear_static_12,
+                basis=basis_12,
+                dtype=np.complex128,
+                check_herm=False,
+                check_symm=False,
+                check_pcon=False,
+            ),
+        ),
+        Case(
+            "quantum_linear_operator_matvec",
+            "kernel",
+            "controlled",
+            "matrix_free",
+            "L=12;nup=6;dimension=924",
+            lambda: linear_operator_12.dot(vector_12),
         ),
         Case(
             "full_eigenspectrum_dense",
