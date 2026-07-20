@@ -48,12 +48,16 @@ def render_tests(path: Path) -> str:
     return "\n".join(lines) + "\n"
 
 
-def read_benchmarks(paths: list[Path]) -> dict[str, dict[str, dict[str, str]]]:
-    cases: dict[str, dict[str, dict[str, str]]] = {}
+def read_benchmarks(
+    paths: list[Path],
+) -> dict[tuple[str, str], dict[str, dict[str, str]]]:
+    cases: dict[tuple[str, str], dict[str, dict[str, str]]] = {}
     for path in paths:
         with path.open(newline="") as stream:
             for row in csv.DictReader(stream):
-                cases.setdefault(row["benchmark"], {})[row["language"]] = row
+                suite = row.get("suite") or "micro"
+                case_id = row.get("case_id") or row["benchmark"]
+                cases.setdefault((suite, case_id), {})[row["language"]] = row
     return cases
 
 
@@ -74,15 +78,22 @@ def render_benchmarks(paths: list[Path]) -> str:
             "public-API storage choice."
         ),
         "",
-        "| Workload | Mode | Python storage | Julia storage | Python median (ms) | Julia median (ms) | Julia IQR (ms) | Speedup | Julia allocation |",
-        "|---|---:|---:|---:|---:|---:|---:|---:|---:|",
+        "| Suite | Workload | Mode | Validation | Python storage | Julia storage | Python median (ms) | Julia median (ms) | Julia IQR (ms) | Speedup | Julia allocation |",
+        "|---|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|",
     ]
     notes = []
-    for name, languages in cases.items():
+    julia_only = []
+    missing_pairs = []
+    for (suite, case_id), languages in cases.items():
         if set(languages) != {"python", "julia"}:
+            if set(languages) == {"julia"}:
+                julia_only.append((suite, case_id, languages["julia"]))
+            elif suite == "paper":
+                missing_pairs.append((suite, case_id, sorted(languages)))
             continue
         python = languages["python"]
         julia = languages["julia"]
+        name = julia.get("benchmark") or python.get("benchmark") or case_id
         julia_supported = julia.get("supported", "true").lower() == "true"
         if julia_supported:
             speedup = (
@@ -105,11 +116,19 @@ def render_benchmarks(paths: list[Path]) -> str:
             allocation_text = "n/a"
             if julia.get("note"):
                 notes.append(f"- `{name}`: {julia['note']}")
+        validation = (
+            julia.get("validation")
+            or python.get("validation")
+            or "not_recorded"
+        )
         lines.append(
-            "| `{name}` | {comparison} | {python_storage} | {julia_storage} | "
+            "| {suite} | `{name}` | {comparison} | {validation} | "
+            "{python_storage} | {julia_storage} | "
             "{python_ms} | {julia_ms} | {julia_iqr} | {speedup} | {allocation} |".format(
+                suite=suite,
                 name=name,
                 comparison=julia.get("comparison", "unspecified"),
+                validation=validation,
                 python_storage=python.get("storage", "unspecified"),
                 julia_storage=julia.get("storage", "unspecified"),
                 python_ms=milliseconds(python["median_seconds"]),
@@ -121,11 +140,53 @@ def render_benchmarks(paths: list[Path]) -> str:
         )
     if notes:
         lines.extend(["", "Capability gaps:", "", *notes])
+    if julia_only:
+        lines.extend(
+            [
+                "",
+                "## Julia workflow coverage timings",
+                "",
+                (
+                    "These rows are end-to-end coverage/regression timings, not "
+                    "cross-language speedup claims."
+                ),
+                "",
+                "| Suite | Family | Workflow | Parameters | Validation | Median (ms) | IQR (ms) | Allocation |",
+                "|---|---:|---|---|---:|---:|---:|---:|",
+            ]
+        )
+        for suite, case_id, julia in julia_only:
+            allocation = julia.get("median_allocated_bytes")
+            allocation_text = (
+                f"{int(allocation) / 1024:.1f} KiB"
+                if allocation not in (None, "")
+                else "n/a"
+            )
+            lines.append(
+                "| {suite} | {family} | `{name}` | {parameters} | "
+                "{validation} | {median} | {p25}–{p75} | {allocation} |".format(
+                    suite=suite,
+                    family=julia.get("family_id", "n/a"),
+                    name=julia.get("benchmark", case_id),
+                    parameters=julia.get("parameters", ""),
+                    validation=julia.get("validation", "not_recorded"),
+                    median=milliseconds(julia["median_seconds"]),
+                    p25=milliseconds(julia["p25_seconds"]),
+                    p75=milliseconds(julia["p75_seconds"]),
+                    allocation=allocation_text,
+                )
+            )
+    if missing_pairs:
+        lines.extend(["", "## Missing paper benchmark counterparts", ""])
+        for suite, case_id, languages in missing_pairs:
+            lines.append(
+                f"- `{suite}/{case_id}` only has: {', '.join(languages)}."
+            )
     lines.extend(
         [
             "",
-            "Operation benchmarks use 15 samples; fresh-process loading uses 9. "
-            "The uploaded CSV files retain aggregate statistics for both: "
+            "The uploaded CSV files retain aggregate statistics and workflow "
+            "benchmarks additionally retain raw samples: "
             "minimum, p05, p25, median, mean, p75, p95, maximum, standard deviation, "
             "and iterations per sample.",
         ]

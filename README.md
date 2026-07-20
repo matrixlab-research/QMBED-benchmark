@@ -82,6 +82,24 @@ median` but does not fail a candidate on noisy hosted-runner timing. The CSV
 artifacts are retained for 90 days. A regression threshold should only be
 introduced after enough runs establish runner variance.
 
+### Workflow-derived ED coverage
+
+The verification suite also contains 21 end-to-end ED scenarios derived from
+13 LKM exact-diagonalization workflow families. See
+[`docs/ED_WORKFLOW_COVERAGE.md`](docs/ED_WORKFLOW_COVERAGE.md) for the model,
+observable, integration size, representative paper scale, and explicit
+direct/assisted/proxy boundary of every scenario.
+The first paired local paper-scale result is recorded in
+[`docs/PAPER_PERFORMANCE_BASELINE.md`](docs/PAPER_PERFORMANCE_BASELINE.md).
+
+Small Julia workflow timings run on every candidate performance job after a
+correctness preflight. Select `benchmark_tier=paper` in the manual workflow to
+add six paired, paper-shaped Python QuSpin vs Julia measurements. Paper
+workflows use lazy per-case construction, one warm-up, five samples, physical
+residual/norm/unitarity checks, and preserve raw samples in the uploaded CSV.
+They are observational performance evidence rather than a noisy hosted-runner
+pass/fail gate.
+
 ## Extending the suite
 
 Each namespace has a directory under `test/full_api/`; add one file per public
