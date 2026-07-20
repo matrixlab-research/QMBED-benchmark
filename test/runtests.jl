@@ -34,5 +34,6 @@ include("timing.jl")
     timed_include("full_api/tools/sparse_krylov_paths.jl", "integration")
     timed_include("full_api/integration/general_basis_hamiltonians.jl", "integration")
     timed_include("full_api/integration/paper_workflows_sparse.jl", "integration")
+    timed_include("full_api/integration/ed_workflow_catalog.jl", "integration")
     timed_include("full_api/integration/algorithm_regressions.jl", "integration")
 end

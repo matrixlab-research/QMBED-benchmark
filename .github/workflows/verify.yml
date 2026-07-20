@@ -11,6 +11,14 @@ on:
         description: Candidate branch, tag, or commit SHA
         required: true
         default: main
+      benchmark_tier:
+        description: Add paper-scale end-to-end workflows to the default small suite
+        required: true
+        default: small
+        type: choice
+        options:
+          - small
+          - paper
 
 jobs:
   oracle:
@@ -72,6 +80,9 @@ jobs:
       OPENBLAS_NUM_THREADS: "1"
       MKL_NUM_THREADS: "1"
       NUMEXPR_NUM_THREADS: "1"
+      BLIS_NUM_THREADS: "1"
+      VECLIB_MAXIMUM_THREADS: "1"
+      PYTHONHASHSEED: "0"
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -99,6 +110,22 @@ jobs:
           julia --startup-file=no --project=.
           benchmark/julia_benchmarks.jl
           --output artifacts/julia-benchmarks.csv
+      - name: Measure small end-to-end Julia ED workflows
+        run: >-
+          julia --startup-file=no --project=.
+          benchmark/julia_ed_workflow_benchmarks.jl
+          --output artifacts/julia-ed-workflow-benchmarks.csv
+      - name: Measure paper-scale Python QuSpin workflows
+        if: inputs.benchmark_tier == 'paper'
+        run: >-
+          python benchmark/python_paper_workflow_benchmarks.py
+          --output artifacts/python-paper-workflow-benchmarks.csv
+      - name: Measure paper-scale Julia workflows
+        if: inputs.benchmark_tier == 'paper'
+        run: >-
+          julia --startup-file=no --project=.
+          benchmark/julia_paper_workflow_benchmarks.jl
+          --output artifacts/julia-paper-workflow-benchmarks.csv
       - name: Measure fresh-process package load
         run: >-
           python benchmark/startup_benchmarks.py
@@ -109,8 +136,17 @@ jobs:
           python ci/render_timing_report.py benchmarks
           artifacts/python-benchmarks.csv
           artifacts/julia-benchmarks.csv
+          artifacts/julia-ed-workflow-benchmarks.csv
           artifacts/startup-benchmarks.csv
           --output artifacts/performance-report.md
+          >> "$GITHUB_STEP_SUMMARY"
+      - name: Render paper-scale workflow comparison
+        if: inputs.benchmark_tier == 'paper'
+        run: >-
+          python ci/render_timing_report.py benchmarks
+          artifacts/python-paper-workflow-benchmarks.csv
+          artifacts/julia-paper-workflow-benchmarks.csv
+          --output artifacts/paper-performance-report.md
           >> "$GITHUB_STEP_SUMMARY"
       - name: Upload performance baseline and candidate timing
         uses: actions/upload-artifact@v4
