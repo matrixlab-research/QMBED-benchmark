@@ -53,8 +53,10 @@ Every candidate run produces two private timing artifacts:
    Lanczos, CSC ARPACK partial eigenspectra, dense full diagonalization,
    CSR/DIA kernels, physical momentum-sector construction, matrix-free
    operator construction and action, CSC Krylov time evolution, entanglement
-   entropy, and fresh-process package load. Dense/CSC/CSR/DIA controlled
-   comparisons are reported separately from current-backend comparisons.
+   entropy, spinful sparse construction and matrix-free action, sparse ExpOp
+   vector/grid action, diagonal-ensemble fluctuations, and fresh-process
+   package load. Dense/CSC/CSR/DIA controlled comparisons are reported
+   separately from current-backend comparisons.
 
 Operation benchmarks run three warm-ups followed by 15 samples. Each sample is
 adaptively batched to target at least 80 ms, and the raw CSV reports minimum,

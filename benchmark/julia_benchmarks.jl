@@ -52,6 +52,34 @@ function deterministic_state(size::Int)
     return state / norm(state)
 end
 
+function spinful_terms(length::Int)
+    bonds = [(site, site + 1) for site in 1:(length - 1)]
+    return [
+        OperatorTerm("+-|", [(-1.0, left, right) for (left, right) in bonds]),
+        OperatorTerm("-+|", [(1.0, left, right) for (left, right) in bonds]),
+        OperatorTerm("|+-", [(-1.0, left, right) for (left, right) in bonds]),
+        OperatorTerm("|-+", [(1.0, left, right) for (left, right) in bonds]),
+        OperatorTerm("n|n", [(2.0, site, site) for site in 1:length]),
+    ]
+end
+
+function spinful_hamiltonian(length::Int)
+    particles = length ÷ 2
+    basis = SpinfulFermionBasis1D(
+        length;
+        Nf=(particles, particles),
+    )
+    operator = Hamiltonian(
+        basis,
+        spinful_terms(length);
+        static_fmt=:csc,
+        check_herm=false,
+        check_symm=false,
+        check_pcon=false,
+    )
+    return basis, operator
+end
+
 struct BenchmarkCase
     name::String
     category::String
@@ -91,6 +119,48 @@ function make_cases()
     full_basis_12 = SpinBasis1D(12; pauli=false)
     full_state_12 = deterministic_state(length(full_basis_12))
     times = collect(range(0.0, 1.0; length=9))
+    spinful_basis_6, spinful_hamiltonian_6 = spinful_hamiltonian(6)
+    spinful_state_6 = deterministic_state(length(spinful_basis_6))
+    spinful_qlo_6 = QuantumLinearOperator(
+        spinful_basis_6,
+        spinful_terms(6);
+        check_herm=false,
+        check_symm=false,
+        check_pcon=false,
+    )
+    exp_dimension = 256
+    exp_matrix = spdiagm(
+        -1 => fill(0.15, exp_dimension - 1),
+        0 => collect(range(-1.0, 1.0; length=exp_dimension)),
+        1 => fill(0.15, exp_dimension - 1),
+    )
+    exp_state = deterministic_state(exp_dimension)
+    exp_operator = ExpOp(exp_matrix; a=-0.2im)
+    exp_grid_dimension = 128
+    exp_grid_matrix = spdiagm(
+        -1 => fill(0.15, exp_grid_dimension - 1),
+        0 => collect(range(-1.0, 1.0; length=exp_grid_dimension)),
+        1 => fill(0.15, exp_grid_dimension - 1),
+    )
+    exp_grid_state = deterministic_state(exp_grid_dimension)
+    exp_grid_operator = ExpOp(
+        exp_grid_matrix;
+        a=-0.2im,
+        start=0.0,
+        stop=1.0,
+        num=9,
+    )
+    ensemble_dimension = 256
+    ensemble_observable = ComplexF64[
+        sin(0.013row + 0.017column) +
+        im * cos(0.019row - 0.023column)
+        for row in 0:(ensemble_dimension - 1),
+            column in 0:(ensemble_dimension - 1)
+    ]
+    ensemble_observable = ensemble_observable + ensemble_observable'
+    ensemble_state = deterministic_state(ensemble_dimension)
+    ensemble_energies = collect(1.0:ensemble_dimension)
+    ensemble_vectors = Matrix{ComplexF64}(I, ensemble_dimension, ensemble_dimension)
 
     return [
         BenchmarkCase(
@@ -202,7 +272,8 @@ function make_cases()
                 check_pcon=false,
             ),
             true,
-            "Construction retains local terms and no explicit matrix.",
+            "Off-diagonal terms stay matrix-free; one diagonal vector is " *
+            "precomputed to accelerate repeated actions.",
         ),
         BenchmarkCase(
             "quantum_linear_operator_matvec",
@@ -283,6 +354,65 @@ function make_cases()
             ),
             true,
             "",
+        ),
+        BenchmarkCase(
+            "spinful_hamiltonian_construction_sparse",
+            "integration",
+            "controlled",
+            "csc",
+            "L=6;Nf=(3,3);dimension=400",
+            () -> last(spinful_hamiltonian(6)),
+            true,
+            "Native sparse assembly for a spinful fermion Hamiltonian.",
+        ),
+        BenchmarkCase(
+            "spinful_quantum_linear_operator_matvec",
+            "kernel",
+            "controlled",
+            "matrix_free",
+            "L=6;Nf=(3,3);dimension=400",
+            () -> spinful_qlo_6 * spinful_state_6,
+            true,
+            "Encoded-state matrix-free action without per-column occupation copies.",
+        ),
+        BenchmarkCase(
+            "expop_sparse_vector_action",
+            "kernel",
+            "controlled",
+            "csc_expm_action",
+            "dimension=256;a=-0.2im",
+            () -> exp_operator * exp_state,
+            true,
+            "Sparse exponential action; no dense matrix exponential.",
+        ),
+        BenchmarkCase(
+            "expop_sparse_grid_action",
+            "integration",
+            "controlled",
+            "csc_expm_action",
+            "dimension=128;times=9;a=-0.2im",
+            () -> exp_grid_operator * exp_grid_state,
+            true,
+            "One Krylov analysis reused across the time grid.",
+        ),
+        BenchmarkCase(
+            "diag_ensemble_quantum_fluctuation",
+            "integration",
+            "controlled",
+            "dense",
+            "dimension=256;delta_t=true;delta_q=true",
+            () -> diag_ensemble(
+                1,
+                ensemble_state,
+                ensemble_energies,
+                ensemble_vectors;
+                density=false,
+                Obs=ensemble_observable,
+                delta_t_Obs=true,
+                delta_q_Obs=true,
+            ),
+            true,
+            "Diagonal of the squared observable uses an O(n^2) contraction.",
         ),
     ]
 end
