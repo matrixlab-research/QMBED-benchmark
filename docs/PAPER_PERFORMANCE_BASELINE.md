@@ -51,3 +51,24 @@ The result is mixed rather than a blanket Julia win:
 Hosted runners vary, so no performance threshold is used as a correctness
 gate. The committed CI workflow records raw samples and reports missing
 language counterparts explicitly.
+
+## Same-runner GitHub Actions snapshot
+
+The first complete `paper`-tier run on GitHub Actions
+([run 29749615993](https://github.com/kunyuan/quspin-julia-verify/actions/runs/29749615993))
+passed the oracle, all 670 verification assertions, all 21 small workflows,
+and all six paired paper workflows. On that Ubuntu x86-64 runner the paired
+medians were:
+
+| Workflow | Python (ms) | Julia (ms) | Julia speedup |
+|---|---:|---:|---:|
+| MBL mid-spectrum shift-invert | 346.837 | 181.030 | **1.92×** |
+| XXZ Lanczos quench | 225.234 | 165.977 | **1.36×** |
+| Floquet full-unitary heating | 461.019 | 381.832 | **1.21×** |
+| Spinful Hubbard low-energy spectrum | 44.101 | 45.935 | 0.96× |
+| interacting SSH low-energy spectrum | 75.870 | 92.765 | 0.82× |
+| translation-sector XXZ spectrum | 51.539 | 74.088 | 0.70× |
+
+The geometric-mean speedup is `1.09×` on this runner. Together with the local
+`0.92×` result, this shows that the candidate has real workload-specific gains
+but does not justify a hardware-independent blanket speedup claim.
