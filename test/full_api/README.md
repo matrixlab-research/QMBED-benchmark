@@ -20,5 +20,11 @@ not considered complete until its object and documented members have:
 4. an integration test when upstream examples use it;
 5. a pinned Python-oracle comparison for numerical behavior.
 
+Regression families that close an implementation gap must also use held-out
+sizes and coefficients, verify the underlying representation (for example,
+CSR row pointers or absence of an explicit matrix), and test a physical
+invariant such as block-spectrum reconstruction, ARPACK residual, norm
+preservation, or Floquet unitarity.
+
 The candidate repository never imports Python at runtime. Python is available
 only in the separate oracle CI job.

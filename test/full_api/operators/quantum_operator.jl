@@ -30,7 +30,7 @@
     @test toarray(operator; pars) == expected
     @test todense(operator; pars) == expected
     @test Matrix(tocsc(operator; pars)) == expected
-    @test_throws ArgumentError tocsr(operator; pars)
+    @test Matrix(tocsr(operator; pars)) == expected
     @test diagonal(operator; pars) == diag(expected)
     @test tr(operator; pars) == 0.0
     @test toarray(operator.H; pars) == expected'
@@ -66,10 +66,11 @@
     @test operator.is_dense
     @test update_matrix_formats!(operator, Dict(:z => :csc)) === operator
     @test !operator.is_dense
-    @test_throws ArgumentError update_matrix_formats!(
+    @test update_matrix_formats!(
         operator,
         Dict(:x => :csr),
-    )
+    ) === operator
+    @test operator.components[:x] isa SparseMatrixCSR
 
     sparse_operator = QuantumOperator(
         basis,

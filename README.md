@@ -51,9 +51,12 @@ Every candidate run produces two private timing artifacts:
    Julia candidate on the same GitHub Actions runner. It covers basis and
    Hamiltonian construction, dense and CSC matrix-vector action, dense and CSC
    Lanczos, CSC ARPACK partial eigenspectra, dense full diagonalization,
-   current-backend time evolution, entanglement entropy, and fresh-process
-   package load. Dense/CSC controlled comparisons are reported separately
-   from current-backend comparisons.
+   CSR/DIA kernels, physical momentum-sector construction, matrix-free
+   operator construction and action, CSC Krylov time evolution, entanglement
+   entropy, spinful sparse construction and matrix-free action, sparse ExpOp
+   vector/grid action, diagonal-ensemble fluctuations, and fresh-process
+   package load. Dense/CSC/CSR/DIA controlled comparisons are reported
+   separately from current-backend comparisons.
 
 Operation benchmarks run three warm-ups followed by 15 samples. Each sample is
 adaptively batched to target at least 80 ms, and the raw CSV reports minimum,
@@ -65,6 +68,14 @@ storage formats for every row. Native Julia CSC construction is measured
 directly against Python CSC construction. The suite separately asserts the
 stored matrix types, sparse ARPACK residuals, and reduced workflows from
 published MBL, quantum-quench, and Floquet spin-chain studies.
+
+The completion gate also keeps independent cases for boson, spinless-fermion,
+spinful-fermion, and user-defined Hamiltonians; translation/parity/inversion
+sector reconstruction; actual CSR/DIA storage; Hermiticity, particle-number,
+and symmetry rejection; matrix-free ARPACK residuals; and sparse Krylov
+evolution/Floquet unitarity. These cases intentionally use different lattice
+sizes and coefficients from the public package tests. Their numerical anchors
+come from the pinned Python commit recorded in `oracle/reference.json`.
 
 The performance job is observational: it reports `Python median / Julia
 median` but does not fail a candidate on noisy hosted-runner timing. The CSV

@@ -44,10 +44,11 @@
     @test all(first(term) isa SparseMatrixCSC for term in sparse_H.dynamic_terms)
     @test tocsc(sparse_H; time=0.0) isa SparseMatrixCSC
     @test Matrix(tocsc(sparse_H; time=0.0)) ≈ Z + X atol=2e-16
-    @test_throws ArgumentError Hamiltonian(
+    csr_H = Hamiltonian(
         Any[Any["z", [(1.0, 1)]]],
         Any[];
         basis,
         static_fmt=:csr,
     )
+    @test csr_H.data isa SparseMatrixCSR
 end

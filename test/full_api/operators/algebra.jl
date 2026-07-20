@@ -20,8 +20,16 @@
     ] atol=1e-15
 
     basis = SpinBasis1D(3; pauli=false)
-    Hx = Hamiltonian(basis, [OperatorTerm("+-", [(1.0, 1, 2)])])
-    Hy = Hamiltonian(basis, [OperatorTerm("-+", [(1.0, 1, 2)])])
+    Hx = Hamiltonian(
+        basis,
+        [OperatorTerm("+-", [(1.0, 1, 2)])];
+        check_herm=false,
+    )
+    Hy = Hamiltonian(
+        basis,
+        [OperatorTerm("-+", [(1.0, 1, 2)])];
+        check_herm=false,
+    )
     @test commutator(Hx, Hy) == Matrix(Hx) * Matrix(Hy) - Matrix(Hy) * Matrix(Hx)
     @test anti_commutator(Hx, Hy) ==
         Matrix(Hx) * Matrix(Hy) + Matrix(Hy) * Matrix(Hx)

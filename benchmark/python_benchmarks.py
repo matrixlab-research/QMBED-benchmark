@@ -16,9 +16,11 @@ from typing import Callable, Optional
 
 import numpy as np
 import quspin
-from quspin.basis import spin_basis_1d
-from quspin.operators import hamiltonian
+from quspin.basis import spin_basis_1d, spinful_fermion_basis_1d
+from quspin.operators import exp_op, hamiltonian, quantum_LinearOperator
 from quspin.tools.lanczos import lanczos_full
+from quspin.tools.measurements import diag_ensemble
+from scipy import sparse
 from scipy.sparse.linalg import eigsh
 
 
@@ -38,17 +40,21 @@ class Case:
     function: Callable[[], object]
 
 
-def xxz_hamiltonian(length: int, nup: int, static_fmt: str):
-    basis = spin_basis_1d(L=length, Nup=nup, pauli=False)
+def xxz_static(length: int):
     jxy = math.sqrt(2.0)
     jzz = 1.0
     hz = 1.0 / math.sqrt(3.0)
-    static = [
+    return [
         ["+-", [[jxy / 2.0, site, site + 1] for site in range(length - 1)]],
         ["-+", [[jxy / 2.0, site, site + 1] for site in range(length - 1)]],
         ["zz", [[jzz, site, site + 1] for site in range(length - 1)]],
         ["z", [[hz, site] for site in range(length)]],
     ]
+
+
+def xxz_hamiltonian(length: int, nup: int, static_fmt: str):
+    basis = spin_basis_1d(L=length, Nup=nup, pauli=False)
+    static = xxz_static(length)
     operator = hamiltonian(
         static,
         [],
@@ -68,12 +74,52 @@ def deterministic_state(size: int) -> np.ndarray:
     return state / np.linalg.norm(state)
 
 
+def spinful_static(length: int):
+    bonds = [(site, site + 1) for site in range(length - 1)]
+    return [
+        ["+-|", [[-1.0, left, right] for left, right in bonds]],
+        ["-+|", [[1.0, left, right] for left, right in bonds]],
+        ["|+-", [[-1.0, left, right] for left, right in bonds]],
+        ["|-+", [[1.0, left, right] for left, right in bonds]],
+        ["n|n", [[2.0, site, site] for site in range(length)]],
+    ]
+
+
+def spinful_hamiltonian(length: int):
+    particles = length // 2
+    basis = spinful_fermion_basis_1d(
+        L=length,
+        Nf=(particles, particles),
+    )
+    operator = hamiltonian(
+        spinful_static(length),
+        [],
+        basis=basis,
+        dtype=np.float64,
+        static_fmt="csc",
+        check_herm=False,
+        check_symm=False,
+        check_pcon=False,
+    )
+    return basis, operator
+
+
 def make_cases() -> list[Case]:
     basis_12, hamiltonian_12_csr = xxz_hamiltonian(12, 6, "csr")
     _, hamiltonian_12_dense = xxz_hamiltonian(12, 6, "dense")
+    _, hamiltonian_12_dia = xxz_hamiltonian(12, 6, "dia")
     hamiltonian_12_csc = hamiltonian_12_csr.tocsc()
     matrix_12_dense = hamiltonian_12_dense.toarray()
     vector_12 = deterministic_state(basis_12.Ns)
+    linear_static_12 = xxz_static(12)
+    linear_operator_12 = quantum_LinearOperator(
+        linear_static_12,
+        basis=basis_12,
+        dtype=np.complex128,
+        check_herm=False,
+        check_symm=False,
+        check_pcon=False,
+    )
     basis_10, hamiltonian_10_csr = xxz_hamiltonian(10, 5, "csr")
     _, hamiltonian_10_dense = xxz_hamiltonian(10, 5, "dense")
     hamiltonian_10_csc = hamiltonian_10_csr.tocsc()
@@ -86,6 +132,67 @@ def make_cases() -> list[Case]:
     full_basis_12 = spin_basis_1d(L=12, pauli=False)
     full_state_12 = deterministic_state(full_basis_12.Ns)
     times = np.linspace(0.0, 1.0, 9)
+    spinful_basis_6, spinful_hamiltonian_6 = spinful_hamiltonian(6)
+    spinful_state_6 = deterministic_state(spinful_basis_6.Ns)
+    spinful_qlo_6 = quantum_LinearOperator(
+        spinful_static(6),
+        basis=spinful_basis_6,
+        dtype=np.complex128,
+        check_herm=False,
+        check_symm=False,
+        check_pcon=False,
+    )
+    exp_dimension = 256
+    exp_matrix = sparse.diags(
+        (
+            np.full(exp_dimension - 1, 0.15),
+            np.linspace(-1.0, 1.0, exp_dimension),
+            np.full(exp_dimension - 1, 0.15),
+        ),
+        offsets=(-1, 0, 1),
+        format="csc",
+    )
+    exp_state = deterministic_state(exp_dimension)
+    exp_operator = exp_op(exp_matrix, a=-0.2j)
+    exp_grid_dimension = 128
+    exp_grid_matrix = sparse.diags(
+        (
+            np.full(exp_grid_dimension - 1, 0.15),
+            np.linspace(-1.0, 1.0, exp_grid_dimension),
+            np.full(exp_grid_dimension - 1, 0.15),
+        ),
+        offsets=(-1, 0, 1),
+        format="csc",
+    )
+    exp_grid_state = deterministic_state(exp_grid_dimension)
+    exp_grid_operator = exp_op(
+        exp_grid_matrix,
+        a=-0.2j,
+        start=0.0,
+        stop=1.0,
+        num=9,
+    )
+    ensemble_dimension = 256
+    ensemble_indices = np.arange(ensemble_dimension, dtype=np.float64)
+    ensemble_observable = (
+        np.sin(0.013 * ensemble_indices[:, None] + 0.017 * ensemble_indices[None, :])
+        + 1j
+        * np.cos(0.019 * ensemble_indices[:, None] - 0.023 * ensemble_indices[None, :])
+    )
+    ensemble_observable = ensemble_observable + ensemble_observable.T.conj()
+    # diag_ensemble's legacy fluctuation guard evaluates ``bool(Obs)``.
+    # NumPy arrays intentionally reject that operation, whereas the documented
+    # QuSpin Hamiltonian observable protocol supplies an unambiguous truth
+    # value and preserves the dense matrix action used by this benchmark.
+    ensemble_observable_operator = hamiltonian(
+        [ensemble_observable],
+        [],
+        dtype=np.complex128,
+        static_fmt="dense",
+    )
+    ensemble_state = deterministic_state(ensemble_dimension)
+    ensemble_energies = np.arange(1, ensemble_dimension + 1, dtype=np.float64)
+    ensemble_vectors = np.eye(ensemble_dimension, dtype=np.complex128)
 
     return [
         Case(
@@ -95,6 +202,19 @@ def make_cases() -> list[Case]:
             "n/a",
             "L=16;nup=8;dimension=12870",
             lambda: spin_basis_1d(L=16, Nup=8, pauli=False),
+        ),
+        Case(
+            "symmetry_basis_construction",
+            "integration",
+            "storage_independent",
+            "projector",
+            "L=14;nup=7;kblock=3;parent_dimension=3432",
+            lambda: spin_basis_1d(
+                L=14,
+                Nup=7,
+                pauli=False,
+                kblock=3,
+            ),
         ),
         Case(
             "xxz_hamiltonian_construction_dense",
@@ -135,6 +255,45 @@ def make_cases() -> list[Case]:
             "csc",
             "L=12;nup=6;dimension=924",
             lambda: hamiltonian_12_csc @ vector_12,
+        ),
+        Case(
+            "matrix_matvec_sparse_csr",
+            "kernel",
+            "controlled",
+            "csr",
+            "L=12;nup=6;dimension=924",
+            lambda: hamiltonian_12_csr.static @ vector_12,
+        ),
+        Case(
+            "matrix_matvec_sparse_dia",
+            "kernel",
+            "controlled",
+            "dia",
+            "L=12;nup=6;dimension=924",
+            lambda: hamiltonian_12_dia.static @ vector_12,
+        ),
+        Case(
+            "quantum_linear_operator_construction",
+            "integration",
+            "controlled",
+            "matrix_free",
+            "L=12;nup=6;dimension=924",
+            lambda: quantum_LinearOperator(
+                linear_static_12,
+                basis=basis_12,
+                dtype=np.complex128,
+                check_herm=False,
+                check_symm=False,
+                check_pcon=False,
+            ),
+        ),
+        Case(
+            "quantum_linear_operator_matvec",
+            "kernel",
+            "controlled",
+            "matrix_free",
+            "L=12;nup=6;dimension=924",
+            lambda: linear_operator_12.dot(vector_12),
         ),
         Case(
             "full_eigenspectrum_dense",
@@ -190,6 +349,55 @@ def make_cases() -> list[Case]:
             "L=12;dimension=4096;subsystem=6",
             lambda: full_basis_12.ent_entropy(
                 full_state_12, sub_sys_A=range(6)
+            ),
+        ),
+        Case(
+            "spinful_hamiltonian_construction_sparse",
+            "integration",
+            "controlled",
+            "csc",
+            "L=6;Nf=(3,3);dimension=400",
+            lambda: spinful_hamiltonian(6)[1],
+        ),
+        Case(
+            "spinful_quantum_linear_operator_matvec",
+            "kernel",
+            "controlled",
+            "matrix_free",
+            "L=6;Nf=(3,3);dimension=400",
+            lambda: spinful_qlo_6.dot(spinful_state_6),
+        ),
+        Case(
+            "expop_sparse_vector_action",
+            "kernel",
+            "controlled",
+            "csc_expm_action",
+            "dimension=256;a=-0.2im",
+            lambda: exp_operator.dot(exp_state),
+        ),
+        Case(
+            "expop_sparse_grid_action",
+            "integration",
+            "controlled",
+            "csc_expm_action",
+            "dimension=128;times=9;a=-0.2im",
+            lambda: exp_grid_operator.dot(exp_grid_state),
+        ),
+        Case(
+            "diag_ensemble_quantum_fluctuation",
+            "integration",
+            "controlled",
+            "dense",
+            "dimension=256;delta_t=true;delta_q=true",
+            lambda: diag_ensemble(
+                1,
+                ensemble_state,
+                ensemble_energies,
+                ensemble_vectors,
+                density=False,
+                Obs=ensemble_observable_operator,
+                delta_t_Obs=True,
+                delta_q_Obs=True,
             ),
         ),
     ]
