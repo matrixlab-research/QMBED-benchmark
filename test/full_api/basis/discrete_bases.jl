@@ -63,6 +63,67 @@ end
     @test plus * minus - minus * plus ≈ 2z atol=4e-14
 end
 
+@testset "discrete Hamiltonian CSC composition" begin
+    cases = [
+        (
+            BosonBasis1D(4; Nb=3, sps=3),
+            [
+                OperatorTerm("+-", [(0.7, 1, 2), (-0.2, 3, 4)]),
+                OperatorTerm("n", [(0.3, site) for site in 1:4]),
+            ],
+        ),
+        (
+            SpinBasis1D(4; S=1, Nup=4, pauli=false),
+            [
+                OperatorTerm("+-", [(0.4, 1, 2), (-0.6, 3, 4)]),
+                OperatorTerm("zz", [(0.2, 1, 3), (-0.1, 2, 4)]),
+            ],
+        ),
+        (
+            SpinlessFermionBasis1D(6; Nf=3),
+            [
+                OperatorTerm("+-", [(0.8, 1, 2), (-0.4, 4, 6)]),
+                OperatorTerm("n", [(0.25, site) for site in 1:6]),
+            ],
+        ),
+        (
+            SpinfulFermionBasis1D(4; Nf=(2, 1)),
+            [
+                OperatorTerm("+-|", [(0.6, 1, 3), (-0.2, 2, 4)]),
+                OperatorTerm("|+-", [(0.5, 1, 4)]),
+                OperatorTerm("n|n", [(0.7, 2, 3)]),
+            ],
+        ),
+    ]
+
+    for (basis, terms) in cases
+        expected = sum(
+            sparse(operator_matrix(
+                basis,
+                term.op,
+                term.couplings;
+                sparse=true,
+            ))
+            for term in terms
+        )
+        assembled = Hamiltonian(
+            basis,
+            terms;
+            static_fmt=:csc,
+            check_symm=false,
+            check_herm=false,
+            check_pcon=false,
+        ).data
+        @test assembled isa SparseMatrixCSC
+        @test assembled == expected
+        @test all(
+            issorted(rowvals(assembled)[nzrange(assembled, column)])
+            for column in axes(assembled, 2)
+        )
+        @test all(!iszero, nonzeros(assembled))
+    end
+end
+
 @testset "spinful multiple sectors and Majorana algebra" begin
     basis = SpinfulFermionBasis1D(2; Nf=[(1, 0), (0, 1)])
     @test length(basis) == 4

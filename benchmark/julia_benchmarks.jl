@@ -193,6 +193,42 @@ function spinful_hamiltonian(length::Int)
     return basis, operator
 end
 
+function spinless_hamiltonian(length::Int)
+    particles = length ÷ 2
+    bonds = [(site, site + 1) for site in 1:(length - 1)]
+    hopping = [isodd(site) ? 0.6 : 1.0 for site in 1:(length - 1)]
+    basis = SpinlessFermionBasis1D(length; Nf=particles)
+    terms = [
+        OperatorTerm(
+            "+-",
+            [
+                (-hopping[index], left, right)
+                for (index, (left, right)) in enumerate(bonds)
+            ],
+        ),
+        OperatorTerm(
+            "-+",
+            [
+                (hopping[index], left, right)
+                for (index, (left, right)) in enumerate(bonds)
+            ],
+        ),
+        OperatorTerm(
+            "nn",
+            [(2.0, left, right) for (left, right) in bonds],
+        ),
+    ]
+    operator = Hamiltonian(
+        basis,
+        terms;
+        static_fmt=:csc,
+        check_herm=false,
+        check_symm=false,
+        check_pcon=false,
+    )
+    return basis, operator
+end
+
 struct BenchmarkCase
     name::String
     category::String
@@ -604,6 +640,19 @@ function make_cases()
             () -> last(spinful_hamiltonian(6)),
             true,
             "Native sparse assembly for a spinful fermion Hamiltonian.",
+        ),
+        BenchmarkCase(
+            "spinless_hamiltonian_construction_sparse",
+            "integration",
+            "controlled",
+            "csc",
+            "L=16;Nf=8;dimension=12870;open=true",
+            () -> last(spinless_hamiltonian(16)),
+            true,
+            "Column-wise transition-to-CSC assembly for an interacting " *
+            "spinless-fermion Hamiltonian.",
+            operator -> size(operator) == (12870, 12870) &&
+                ishermitian(operator.data) && nnz(operator.data) > 12870,
         ),
         BenchmarkCase(
             "spinful_quantum_linear_operator_matvec",
