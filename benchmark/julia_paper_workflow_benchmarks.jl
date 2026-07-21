@@ -23,6 +23,11 @@ end
 uniform_seed(dimension::Integer) =
     fill(inv(sqrt(Float64(dimension))), dimension)
 
+function deterministic_seed(dimension::Integer)
+    values = sin.(Float64.(1:dimension))
+    return values ./ norm(values)
+end
+
 periodic_bonds(length::Integer, coefficient::Real=1.0) = [
     (coefficient, site, mod1(site + 1, length))
     for site in 1:length
@@ -355,6 +360,415 @@ end
 
 validate_translation_xxz(_, result) = result.valid
 
+setup_tfim_fidelity_scan() = nothing
+
+function run_tfim_fidelity_scan(_)
+    L = 16
+    basis = SpinBasis1D(L; pauli=true)
+    bonds = [(site, mod1(site + 1, L)) for site in 1:L]
+    fields = (0.8, 0.9, 1.0, 1.1, 1.2)
+    spaces = Matrix{ComplexF64}[]
+    residuals = Float64[]
+    for field in fields
+        H = sparse_hamiltonian(
+            basis,
+            [
+                OperatorTerm(
+                    "zz",
+                    [(-1.0, left, right) for (left, right) in bonds],
+                ),
+                OperatorTerm("x", [(-field, site) for site in 1:L]),
+            ],
+        )
+        values, vectors = eigsh(
+            H;
+            k=2,
+            which=:SA,
+            v0=deterministic_seed(length(basis)),
+            ncv=20,
+            tol=1e-9,
+            maxiter=5_000,
+        )
+        order = sortperm(values)
+        push!(spaces, ComplexF64.(vectors[:, order]))
+        push!(residuals, eigensystem_residual(H, values, vectors))
+    end
+    tracked = track_eigenspaces(spaces)
+    residual = maximum(residuals)
+    return (
+        valid=residual < 3e-7 &&
+            all(isfinite, tracked.fidelities) &&
+            all(0 .< tracked.fidelities .<= 1 + 1e-12) &&
+            argmin(tracked.fidelities) in 2:3,
+        residual=residual,
+        value=tracked.fidelities,
+    )
+end
+
+validate_tfim_fidelity_scan(_, result) = result.valid
+
+setup_pxp_revival() = nothing
+
+function run_pxp_revival(_)
+    L = 24
+    constrained = constraint_states(
+        L;
+        prefix_allowed=(occupations, site) ->
+            site == 1 || occupations[site - 1] + occupations[site] <= 1,
+        state_allowed=occupations -> occupations[1] + occupations[end] <= 1,
+    )
+    basis = UserBasis(
+        UInt64,
+        L,
+        Dict('x' => ComplexF64[0 1; 1 0]);
+        states=constrained,
+        allowed_ops=('x',),
+    )
+    H = sparse_hamiltonian(
+        basis,
+        [OperatorTerm("x", [(1.0, site) for site in 1:L])],
+    )
+    neel = sum(UInt64(1) << (site - 1) for site in 1:2:L)
+    initial = zeros(ComplexF64, length(basis))
+    initial[state_index(basis, neel)] = 1
+    energies, vectors, basis_vectors = lanczos_full(
+        H,
+        initial,
+        100;
+        full_ortho=true,
+    )
+    times = (0.0, 2.4, 4.8, 7.2, 9.6)
+    evolved = [
+        expm_lanczos(energies, vectors, basis_vectors; a=-im * time)
+        for time in times
+    ]
+    norm_error = maximum(abs(norm(state) - 1) for state in evolved)
+    fidelities = [abs2(dot(initial, state)) for state in evolved]
+    return (
+        valid=length(basis) == 103_682 &&
+            norm_error < 5e-8 &&
+            fidelities[3] > fidelities[2],
+        residual=norm_error,
+        value=fidelities,
+    )
+end
+
+validate_pxp_revival(_, result) = result.valid
+
+setup_bose_hubbard_mott_quench() = nothing
+
+function run_bose_hubbard_mott_quench(_)
+    L = 11
+    hopping = 0.1
+    interaction = 1.0
+    basis = BosonBasis1D(L; Nb=L, sps=3)
+    bonds = [(site, site + 1) for site in 1:(L - 1)]
+    H = sparse_hamiltonian(
+        basis,
+        [
+            OperatorTerm(
+                "+-",
+                [(-hopping, left, right) for (left, right) in bonds],
+            ),
+            OperatorTerm(
+                "-+",
+                [(-hopping, left, right) for (left, right) in bonds],
+            ),
+            OperatorTerm(
+                "nn",
+                [(0.5 * interaction, site, site) for site in 1:L],
+            ),
+            OperatorTerm("n", [(-0.5 * interaction, site) for site in 1:L]),
+        ],
+    )
+    mott = sum(UInt64(3)^(site - 1) for site in 1:L)
+    initial = zeros(ComplexF64, length(basis))
+    initial[state_index(basis, mott)] = 1
+    energies, vectors, basis_vectors = lanczos_full(
+        H,
+        initial,
+        100;
+        full_ortho=true,
+    )
+    times = (0.0, 25.0, 50.0, 100.0, 200.0)
+    evolved = [
+        expm_lanczos(energies, vectors, basis_vectors; a=-im * time)
+        for time in times
+    ]
+    norm_error = maximum(abs(norm(state) - 1) for state in evolved)
+    returns = [abs2(dot(initial, state)) for state in evolved]
+    return (
+        valid=norm_error < 5e-8 && minimum(returns[2:end]) < 0.99,
+        residual=norm_error,
+        value=returns,
+    )
+end
+
+validate_bose_hubbard_mott_quench(_, result) = result.valid
+
+setup_spinful_hubbard_current_quench() = nothing
+
+function run_spinful_hubbard_current_quench(_)
+    L = 10
+    basis = SpinfulFermionBasis1D(L; Nf=(5, 5))
+    bonds = [(site, site + 1) for site in 1:(L - 1)]
+    kinetic = OperatorTerm[
+        OperatorTerm(
+            "+-|",
+            [(-1.0, left, right) for (left, right) in bonds],
+        ),
+        OperatorTerm(
+            "-+|",
+            [(1.0, left, right) for (left, right) in bonds],
+        ),
+        OperatorTerm(
+            "|+-",
+            [(-1.0, left, right) for (left, right) in bonds],
+        ),
+        OperatorTerm(
+            "|-+",
+            [(1.0, left, right) for (left, right) in bonds],
+        ),
+    ]
+    interaction = OperatorTerm(
+        "n|n",
+        [(8.0, site, site) for site in 1:L],
+    )
+    unbiased = sparse_hamiltonian(basis, vcat(kinetic, [interaction]))
+    bias = OperatorTerm[
+        OperatorTerm(
+            "n|",
+            [(site <= L ÷ 2 ? -1.5 : 1.5, site) for site in 1:L],
+        ),
+        OperatorTerm(
+            "|n",
+            [(site <= L ÷ 2 ? -1.5 : 1.5, site) for site in 1:L],
+        ),
+    ]
+    biased = sparse_hamiltonian(
+        basis,
+        vcat(kinetic, [interaction], bias),
+    )
+    values, vectors = eigsh(
+        biased;
+        k=1,
+        which=:SA,
+        v0=deterministic_seed(length(basis)),
+        ncv=20,
+        tol=1e-9,
+        maxiter=5_000,
+    )
+    initial = vectors[:, 1]
+    ground_residual = norm(biased * initial - values[1] * initial)
+    center = L ÷ 2
+    forward =
+        operator_matrix(
+            basis,
+            "+-|",
+            [(1.0, center, center + 1)];
+            sparse=true,
+        ) +
+        operator_matrix(
+            basis,
+            "|+-",
+            [(1.0, center, center + 1)];
+            sparse=true,
+        )
+    current = -im .* (forward - forward')
+    energies, lanczos_vectors, basis_vectors = lanczos_full(
+        unbiased,
+        initial,
+        100;
+        full_ortho=true,
+    )
+    evolved = [
+        expm_lanczos(
+            energies,
+            lanczos_vectors,
+            basis_vectors;
+            a=-im * time,
+        )
+        for time in (0.0, 0.5, 1.0, 1.5, 2.0)
+    ]
+    norm_error = maximum(abs(norm(state) - 1) for state in evolved)
+    currents = [real(dot(state, current * state)) for state in evolved]
+    residual = max(ground_residual, norm_error)
+    return (
+        valid=residual < 3e-7 && maximum(abs.(currents)) > 1e-3,
+        residual=residual,
+        value=currents,
+    )
+end
+
+validate_spinful_hubbard_current_quench(_, result) = result.valid
+
+setup_conb_dynamical_structure_factor() = nothing
+
+function run_conb_dynamical_structure_factor(_)
+    L = 16
+    basis = SpinBasis1D(L; pauli=false)
+    nearest = [(site, mod1(site + 1, L)) for site in 1:L]
+    next_nearest = [(site, mod1(site + 2, L)) for site in 1:L]
+    transverse_field = 3.21 * 0.0578838 * 7.0 / 2.88
+    H = sparse_hamiltonian(
+        basis,
+        [
+            OperatorTerm(
+                "zz",
+                [(-1.0, left, right) for (left, right) in nearest],
+            ),
+            OperatorTerm(
+                "xx",
+                [(-0.205, left, right) for (left, right) in nearest],
+            ),
+            OperatorTerm(
+                "yy",
+                [(-0.205, left, right) for (left, right) in nearest],
+            ),
+            OperatorTerm(
+                "zz",
+                [(0.135, left, right) for (left, right) in next_nearest],
+            ),
+            OperatorTerm(
+                "xx",
+                [(0.003, left, right) for (left, right) in next_nearest],
+            ),
+            OperatorTerm(
+                "yy",
+                [(0.003, left, right) for (left, right) in next_nearest],
+            ),
+            OperatorTerm(
+                "x",
+                [(-transverse_field, site) for site in 1:L],
+            ),
+        ],
+    )
+    values, vectors = eigsh(
+        H;
+        k=1,
+        which=:SA,
+        v0=ComplexF64.(deterministic_seed(length(basis))),
+        ncv=20,
+        tol=1e-9,
+        maxiter=5_000,
+    )
+    ground = vectors[:, 1]
+    spin_q = operator_matrix(
+        basis,
+        "z",
+        [((-1.0)^(site - 1), site) for site in 1:L];
+        sparse=true,
+    )
+    frequencies = collect(range(0.0, 4.0; length=81))
+    spectrum = spectral_function(
+        H,
+        ground,
+        spin_q,
+        frequencies;
+        reference_energy=values[1],
+        broadening=0.05,
+        method=:krylov,
+        krylov_dim=100,
+    )
+    residual = norm(H * ground - values[1] * ground)
+    return (
+        valid=residual < 3e-7 &&
+            all(isfinite, spectrum) &&
+            minimum(spectrum) >= -1e-12 &&
+            maximum(spectrum) > 1e-3,
+        residual=residual,
+        value=spectrum,
+    )
+end
+
+validate_conb_dynamical_structure_factor(_, result) = result.valid
+
+setup_particle_addition_spectrum() = nothing
+
+function triangular_bonds(length_x::Integer, length_y::Integer)
+    bonds = Set{Tuple{Int,Int}}()
+    for y in 0:(length_y - 1), x in 0:(length_x - 1)
+        site = x + length_x * y + 1
+        for (next_x, next_y) in (
+            (mod(x + 1, length_x), y),
+            (x, mod(y + 1, length_y)),
+            (mod(x + 1, length_x), mod(y + 1, length_y)),
+        )
+            neighbor = next_x + length_x * next_y + 1
+            push!(bonds, minmax(site, neighbor))
+        end
+    end
+    return sort!(collect(bonds))
+end
+
+function run_particle_addition_spectrum(_)
+    length_x, length_y = 6, 3
+    L = length_x * length_y
+    source_basis = SpinlessFermionBasisGeneral(L; Nf=6)
+    target_basis = SpinlessFermionBasisGeneral(L; Nf=7)
+    bonds = triangular_bonds(length_x, length_y)
+    function interacting_model(basis)
+        return sparse_hamiltonian(
+            basis,
+            [
+                OperatorTerm(
+                    "+-",
+                    [(-1.0, left, right) for (left, right) in bonds],
+                ),
+                OperatorTerm(
+                    "-+",
+                    [(1.0, left, right) for (left, right) in bonds],
+                ),
+                OperatorTerm(
+                    "nn",
+                    [(2.0, left, right) for (left, right) in bonds],
+                ),
+            ],
+        )
+    end
+    source_hamiltonian = interacting_model(source_basis)
+    target_hamiltonian = interacting_model(target_basis)
+    values, vectors = eigsh(
+        source_hamiltonian;
+        k=1,
+        which=:SA,
+        v0=deterministic_seed(length(source_basis)),
+        ncv=20,
+        tol=1e-9,
+        maxiter=5_000,
+    )
+    source_state = vectors[:, 1]
+    transition = op_shift_sector(
+        target_basis,
+        source_basis,
+        [("+", [L ÷ 2 + 1], 1.0)],
+        source_state,
+    )
+    identity_target = sparse(I, length(target_basis), length(target_basis))
+    frequencies = collect(range(-4.0, 12.0; length=81))
+    spectrum = spectral_function(
+        target_hamiltonian,
+        transition,
+        identity_target,
+        frequencies;
+        reference_energy=values[1],
+        broadening=0.1,
+        method=:krylov,
+        krylov_dim=100,
+    )
+    residual = norm(source_hamiltonian * source_state - values[1] * source_state)
+    return (
+        valid=residual < 3e-7 &&
+            norm(transition) > 1e-6 &&
+            all(isfinite, spectrum) &&
+            maximum(spectrum) > 1e-4,
+        residual=residual,
+        value=spectrum,
+    )
+end
+
+validate_particle_addition_spectrum(_, result) = result.valid
+
 function make_cases()
     return PaperCase[
         PaperCase(
@@ -410,6 +824,60 @@ function make_cases()
             setup_translation_xxz,
             run_translation_xxz,
             validate_translation_xxz,
+        ),
+        PaperCase(
+            "paper_tfim_fidelity_l16",
+            "30690",
+            "TFIM degenerate-subspace fidelity scan",
+            "L=16;dimension=65536;fields=0.8:0.1:1.2;k=2",
+            setup_tfim_fidelity_scan,
+            run_tfim_fidelity_scan,
+            validate_tfim_fidelity_scan,
+        ),
+        PaperCase(
+            "paper_pxp_revival_l24",
+            "PXP",
+            "PXP constrained-state revival",
+            "L=24;periodic=true;dimension=103682;m=100;times=5",
+            setup_pxp_revival,
+            run_pxp_revival,
+            validate_pxp_revival,
+        ),
+        PaperCase(
+            "paper_bose_hubbard_quench_l11",
+            "BHM",
+            "Bose-Hubbard Mott quench",
+            "L=11;Nb=11;sps=3;dimension=25653;J/U=0.1;m=100;times=5",
+            setup_bose_hubbard_mott_quench,
+            run_bose_hubbard_mott_quench,
+            validate_bose_hubbard_mott_quench,
+        ),
+        PaperCase(
+            "paper_hubbard_current_l10",
+            "32600",
+            "Spinful-Hubbard current quench",
+            "L=10;Nf=(5,5);dimension=63504;U/t=8;m=100;times=5",
+            setup_spinful_hubbard_current_quench,
+            run_spinful_hubbard_current_quench,
+            validate_spinful_hubbard_current_quench,
+        ),
+        PaperCase(
+            "paper_conb_dsf_l16",
+            "CoNb2O6",
+            "CoNb2O6 dynamical structure factor",
+            "L=16;dimension=65536;B=7T;m=100;frequencies=81",
+            setup_conb_dynamical_structure_factor,
+            run_conb_dynamical_structure_factor,
+            validate_conb_dynamical_structure_factor,
+        ),
+        PaperCase(
+            "paper_particle_addition_6x3",
+            "FQAH",
+            "Particle-addition spectrum (6x3 proxy)",
+            "Lx=6;Ly=3;Nf=6->7;dimensions=18564->31824;m=100;frequencies=81",
+            setup_particle_addition_spectrum,
+            run_particle_addition_spectrum,
+            validate_particle_addition_spectrum,
         ),
     ]
 end

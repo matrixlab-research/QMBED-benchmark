@@ -3,7 +3,7 @@
 This verification layer starts from 13 scientific application areas identified
 in a literature search for `exact diagonalization` on 2026-07-20. LKM was used
 as one paper index during the search; its internal result identifiers are not
-scientific references. The paper sources for the six timed workflows are
+scientific references. The paper sources for the twelve timed workflows are
 linked in the README. Each row below states explicitly whether the current
 QuSpin.jl scenario is direct, assisted, or only a proxy.
 
@@ -73,7 +73,7 @@ The principal current boundaries are:
    a correctness preflight. These timings detect regressions and are not
    Python/Julia speedup claims.
 2. The paired `python_paper_workflow_benchmarks.py` and
-   `julia_paper_workflow_benchmarks.jl` scripts cover six common paper-shaped
+   `julia_paper_workflow_benchmarks.jl` scripts cover twelve common paper-shaped
    workloads:
 
    - MBL shift-invert, `L=14`, `Nup=7`, dim 3432;
@@ -81,7 +81,14 @@ The principal current boundaries are:
    - Floquet full-unitary heating, `L=9`, dim 512;
    - spinful Hubbard, `L=8`, `Nf=(4,4)`, dim 4900;
    - interacting SSH, `L=16`, `Nf=8`, dim 12870;
-   - translation-sector XXZ, `L=18`, `Nup=9`.
+   - translation-sector XXZ, `L=18`, `Nup=9`;
+   - TFIM subspace-fidelity scan, `L=16`, five fields and `k=2`;
+   - periodic PXP revival, `L=24`, constrained dim 103682 and `m=100`;
+   - Bose–Hubbard Mott quench, `L=11`, `Nb=11`, `sps=3`, `J/U=0.1`;
+   - spinful-Hubbard current quench, `L=10`, `Nf=(5,5)`, dim 63504;
+   - CoNb2O6 dynamical structure factor, full `L=16`, `m=100`;
+   - particle-addition spectrum, `6×3`, `Nf=6→7`, explicitly a reduced
+     cross-sector/spectral-kernel proxy for the paper's `6×4` Chern-band ED.
 
 Paper benchmarks run only when `benchmark_tier=paper` is selected. Each
 operation validates residual, norm, or unitarity before measuring one warm-up

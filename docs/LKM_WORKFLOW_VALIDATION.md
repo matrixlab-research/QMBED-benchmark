@@ -34,13 +34,13 @@ observational and do not introduce a noisy CI threshold.
 
 | Validation workflow | Size/path | Verified scientific or numerical invariant | Source |
 |---|---|---|---|
-| TFIM fidelity scan | `L=10`, six fields | adjacent fidelity minimum and finite-size gap response near the transition | LKM family 30690, fidelity-based transition detection |
+| TFIM fidelity scan | `L=10`, six fields | adjacent fidelity minimum and finite-size gap response near the transition | [Xie, Liu, and Wang](https://doi.org/10.1103/PhysRevB.101.245139) |
 | Kitaev parity-sector gap | `L=8`, even/odd Fock sectors | exponentially small topological parity splitting versus a finite trivial splitting | [Sau and Das Sarma](https://doi.org/10.48550/arXiv.1111.6600) |
 | PXP scar revival | periodic `L=14`, constrained dimension 843 | norm conservation and revival of the staggered state | [Pal et al.](https://doi.org/10.48550/arXiv.2411.02500) |
 | Bose-Hubbard Mott quench | `L=7`, `Nb=7`, `sps=3` | number/norm conservation and decay of the Mott return probability | [Queisser et al.](https://doi.org/10.1103/PhysRevA.89.033616) |
 | Loschmidt return | TFIM `L=10` quench | nontrivial return-rate growth after crossing the critical region | [Mueller et al.](https://doi.org/10.48550/arXiv.2210.03089) |
 | Dicke cutoff convergence | three spins, photon cutoffs 4 and 6 | ground energy and photon occupation converge with truncation | [Lewis-Swan et al.](https://doi.org/10.1103/PhysRevResearch.3.L022020) |
-| Spinful-Hubbard transport | half-filled `L=6`, dimension 400 | bias-induced current and relaxation of density imbalance | LKM family 32600, time-dependent lattice transport |
+| Spinful-Hubbard transport | half-filled `L=6`, dimension 400 | bias-induced current and relaxation of density imbalance | [Balzer et al.](https://doi.org/10.48550/arXiv.2005.13498) |
 | Doublon dynamics | two particles on `L=6` | large-`U` doublon survival exceeds the free result | LKM family 31254, strong-coupling doublon dynamics |
 | Dynamical spin structure factor | Heisenberg `L=10`, dimension 252 | positivity, spectral sum rule, and finite-frequency peak | [Shimokawa et al.](https://doi.org/10.48550/arXiv.2206.13064) |
 | Particle-addition spectrum | spinless `L=8`, `N=3 -> 4` | cross-sector spectral weight equals the operator sum rule | [Pichler et al.](https://doi.org/10.48550/arXiv.2410.07319) |

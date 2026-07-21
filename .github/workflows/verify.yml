@@ -152,7 +152,7 @@ jobs:
           artifacts/julia-paper-workflow-benchmarks.csv
           --output artifacts/paper-performance-report.md
           >> "$GITHUB_STEP_SUMMARY"
-      - name: Render six-workflow timing chart
+      - name: Render paper-workflow timing chart
         if: inputs.benchmark_tier == 'paper'
         env:
           BENCHMARK_RUN_ID: ${{ github.run_id }}
@@ -181,12 +181,12 @@ jobs:
       contents: write
     steps:
       - uses: actions/checkout@v4
-      - name: Download six-workflow timing chart
+      - name: Download paper-workflow timing chart
         uses: actions/download-artifact@v4
         with:
           name: quspin-performance-${{ github.run_id }}
           path: artifacts
-      - name: Publish latest six-workflow chart
+      - name: Publish latest paper-workflow chart
         run: |
           cp artifacts/paper-workflow-timings.svg docs/paper-workflow-timings.svg
           git config user.name "github-actions[bot]"
@@ -195,6 +195,6 @@ jobs:
           if git diff --cached --quiet; then
             exit 0
           fi
-          git commit -m "Update six-workflow benchmark chart"
+          git commit -m "Update paper-workflow benchmark chart"
           git pull --rebase origin main
           git push origin HEAD:main

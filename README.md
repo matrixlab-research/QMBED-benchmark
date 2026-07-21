@@ -103,7 +103,7 @@ The first paired local paper-scale result is recorded in
 
 Small Julia workflow timings run on every candidate performance job after a
 correctness preflight. Select `benchmark_tier=paper` in the manual workflow to
-add six paired, paper-shaped Python QuSpin vs Julia measurements. Paper
+add twelve paired, paper-shaped Python QuSpin vs Julia measurements. Paper
 workflows use lazy per-case construction, one warm-up, five samples, physical
 residual/norm/unitarity checks, and preserve raw samples in the uploaded CSV.
 They are observational performance evidence rather than a noisy hosted-runner
@@ -126,7 +126,7 @@ The verification inputs have three distinct sources:
    direct/assisted/proxy boundaries are listed in
    [`docs/ED_WORKFLOW_COVERAGE.md`](docs/ED_WORKFLOW_COVERAGE.md).
 
-The six timed `paper`-tier workflows are larger paired Python/Julia instances
+The twelve timed `paper`-tier workflows are larger paired Python/Julia instances
 of that catalog. The paper links below were rechecked against the LKM
 literature index on 2026-07-21. A citation means that the paper supplies the
 physical model or numerical method represented by the benchmark; it does not
@@ -140,6 +140,12 @@ mean that this repository reproduces the paper's parameters or results.
 | Spinful Hubbard spectrum | [*QuSpin part II: bosons, fermions and higher spins*](https://doi.org/10.21468/SciPostPhys.7.2.020) | Direct package-method anchor for spinful-fermion ED. The clean, half-filled `L=8` Hubbard spectrum is a benchmark constructed in this repository, not a reproduction of one paper. |
 | Interacting SSH spectrum | [*Topological phase transitions, Majorana modes, and quantum simulation of the Su-Schrieffer-Heeger model with nearest-neighbor interactions*](https://doi.org/10.1103/PhysRevB.101.045422); [*QuSpin part II*](https://doi.org/10.21468/SciPostPhys.7.2.020) | Direct model anchor for a half-filled SSH chain with nearest-neighbor interaction and ED; QuSpin part II supplies the fermion/SSH implementation context. |
 | Translation-sector XXZ spectrum | [*QuSpin part I*](https://doi.org/10.21468/SciPostPhys.2.1.003); [*The ALPS project release 1.3*](https://doi.org/10.1016/j.jmmm.2006.10.304) | The sources anchor symmetry-resolved XXZ ED and translation reduction into momentum sectors. The `L=18`, `k=0` instance is defined by this benchmark. |
+| TFIM degenerate-subspace fidelity scan | [*Automatic differentiation of dominant eigensolver and its applications in quantum physics*](https://doi.org/10.1103/PhysRevB.101.245139) | The paper computes 1D TFIM fidelity susceptibility by ED through `N=20`. The benchmark uses `L=16`, five fields across `g=1`, and a two-state subspace fidelity so near-degeneracy is treated gauge-invariantly. |
+| PXP constrained-state revival | [*Scar-induced imbalance in staggered Rydberg ladders*](https://doi.org/10.48550/arXiv.2411.02500) | The paper reports PXP revivals through `N=28` and a revival period near `4.8`. The benchmark uses periodic `L=24` (constrained dimension 103682), the staggered state, and five times through two revival periods. |
+| Bose–Hubbard Mott quench | [*Equilibration and prethermalization in the Bose-Hubbard and Fermi-Hubbard models*](https://doi.org/10.1103/PhysRevA.89.033616) | The paper compares its strong-coupling treatment with ED on an 11-site 1D lattice. The benchmark uses that `L=11`, unit filling, `sps=3`, and `J/U=0.1`. |
+| Spinful-Hubbard current quench | [*Electron-light interaction in nonequilibrium — exact diagonalization for time dependent Hubbard Hamiltonians*](https://doi.org/10.48550/arXiv.2005.13498) | The method supports time-dependent Hubbard ED through 14 sites. The benchmark uses half-filled `L=10`, `U/t=8`, a bias-release quench, Krylov propagation, and the center-bond current. |
+| CoNb2O6 dynamical structure factor | [*“Quasiparticle breakdown” in the quasi-one-dimensional Ising ferromagnet CoNb2O6*](https://doi.org/10.48550/arXiv.1407.2794) | The paper uses full ED through `L=16` and larger continued-fraction calculations. The benchmark uses `L=16`, its fitted dimensionless couplings at `B=7 T`, a staggered spin source, and a 100-step Lanczos spectrum. |
+| Particle-addition spectrum (`6×3` proxy) | [*Particle spectral functions for fractional quantum anomalous Hall states*](https://doi.org/10.48550/arXiv.2410.07319) | The paper evaluates a projected-Chern-band spectrum on `6×4`. The CI benchmark deliberately reduces to a `6×3` interacting triangular lattice and tests only the shared `N=6→7` sector shift and Krylov spectral kernel; it is not an FQAH reproduction. |
 
 These are **paper-shaped workflow benchmarks**, not complete paper
 reproductions and not timings copied from the papers. Lattice sizes,
@@ -149,15 +155,21 @@ benchmark choices defined in
 and
 [`julia_paper_workflow_benchmarks.jl`](benchmark/julia_paper_workflow_benchmarks.jl).
 
-### Latest six-workflow timing chart
+The first six rows preserve the original general QuSpin workflow baseline. The
+last six are the literature-derived medium-size extension and exercise the new
+workflow-analysis APIs. Basis construction, Hamiltonian assembly, solver, and
+observable are timed end to end.
+
+### Latest twelve-workflow timing chart
 
 The grouped bar chart below is updated automatically after a successful
 `paper`-tier run dispatched from `main`. It reports the latest same-runner
 median wall time for Python QuSpin and the selected Julia candidate; lower is
 better. PR and non-`main` runs still upload the SVG as an Actions artifact but
-do not rewrite this README snapshot.
+do not rewrite this README snapshot. Until the first successful twelve-case
+run reaches `main`, the committed SVG remains the historical six-case snapshot.
 
-![Python and Julia median timings for six paper workflows](docs/paper-workflow-timings.svg)
+![Python and Julia median timings for twelve paper workflows](docs/paper-workflow-timings.svg)
 
 ## Extending the suite
 
