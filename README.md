@@ -95,6 +95,9 @@ exact-diagonalization workflows. See
 [`docs/ED_WORKFLOW_COVERAGE.md`](docs/ED_WORKFLOW_COVERAGE.md) for the model,
 observable, integration size, representative paper scale, and explicit
 direct/assisted/proxy boundary of every scenario.
+The newer workflow-analysis capabilities use a deliberate public-test/private-
+validation split documented in
+[`docs/LKM_WORKFLOW_VALIDATION.md`](docs/LKM_WORKFLOW_VALIDATION.md).
 The first paired local paper-scale result is recorded in
 [`docs/PAPER_PERFORMANCE_BASELINE.md`](docs/PAPER_PERFORMANCE_BASELINE.md).
 

@@ -17,6 +17,11 @@ QuSpin.jl scenario is direct, assisted, or only a proxy.
 The integration sizes are intentionally small and deterministic. They are
 correctness and user-scenario checks, not attempted paper reproductions.
 
+An additional set of larger workflow validations covers fidelity tracking,
+constrained dynamics, response functions, transport, and open-system
+evolution. Its public-CI/private-validation split and literature sources are
+documented in [`LKM_WORKFLOW_VALIDATION.md`](LKM_WORKFLOW_VALIDATION.md).
+
 | ID | Literature topic | ED application | Integration size | Verified quantity | Coverage | Representative paper-scale range |
 |---:|---|---|---|---|---|---|
 | 01 | spin-chain spectra | Heisenberg dimer | `L=2`, dim 4 | singlet/triplet energies and degeneracy | Direct | dimer is exact; clusters `N=2–16` |
@@ -51,10 +56,12 @@ support.
 
 The principal current boundaries are:
 
-- spin models are spin-1/2 and built-in spatial symmetries are one-dimensional;
+- built-in spatial symmetries remain one-dimensional, although on-site
+  higher-spin bases are supported;
 - FQHE/FCI tests are honest algebraic proxies, not paper-level implementations;
-- collective emission uses an effective non-Hermitian Hamiltonian, not a
-  density-matrix Lindblad solver;
+- the original collective-emission catalog case uses an effective
+  non-Hermitian Hamiltonian; the separate workflow validation now also checks
+  first-class matrix-free Lindblad density-matrix evolution;
 - Floquet full-spectrum paths materialize a dense unitary and scale as
   `O(dim²)` memory and `O(dim³)` diagonalization time;
 - paper studies normally require sweep/disorder/statistical orchestration above

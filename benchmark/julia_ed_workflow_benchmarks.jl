@@ -1013,6 +1013,49 @@ function make_cases()
         ),
     )
 
+    push!(
+        cases,
+        WorkflowCase(
+            "22",
+            "PXP",
+            "constrained_prefix_state_generation",
+            "L=20;periodic_blockade=true;algorithm=prefix_pruning",
+            () -> nothing,
+            _ -> constraint_states(
+                20;
+                prefix_allowed=(occupations, site) ->
+                    site == 1 ||
+                    occupations[site - 1] + occupations[site] <= 1,
+                state_allowed=occupations ->
+                    occupations[1] + occupations[end] <= 1,
+            ),
+            states -> length(states) == 15_127 && issorted(states),
+        ),
+    )
+
+    push!(
+        cases,
+        WorkflowCase(
+            "23",
+            "PXP",
+            "constrained_full_space_filter",
+            "L=20;periodic_blockade=true;algorithm=full_space_predicate",
+            () -> Dict('x' => ComplexF64[0 1; 1 0]),
+            op_dict -> UserBasis(
+                UInt64,
+                20,
+                op_dict;
+                pre_check_state=state -> all(
+                    Int((state >> (site - 1)) & 1) +
+                    Int((state >> mod(site, 20)) & 1) <= 1
+                    for site in 1:20
+                ),
+                allowed_ops=('x',),
+            ),
+            basis -> length(basis) == 15_127,
+        ),
+    )
+
     return cases
 end
 
@@ -1166,8 +1209,8 @@ function main()
     output = parse_output(ARGS)
     mkpath(dirname(output))
     cases = make_cases()
-    length(cases) == 21 ||
-        error("expected 21 ED workflow cases, found $(length(cases))")
+    length(cases) == 23 ||
+        error("expected 23 ED workflow cases, found $(length(cases))")
 
     columns = propertynames(failed_row(first(cases), ErrorException("")))
     open(output, "w") do io
