@@ -87,10 +87,11 @@ median` but does not fail a candidate on noisy hosted-runner timing. The CSV
 artifacts are retained for 90 days. A regression threshold should only be
 introduced after enough runs establish runner variance.
 
-### Workflow-derived ED coverage
+### Literature-derived ED coverage
 
-The verification suite also contains 21 end-to-end ED scenarios derived from
-13 LKM exact-diagonalization workflow families. See
+The verification suite also contains 21 end-to-end ED scenarios spanning 13
+scientific application areas found in a literature search for
+exact-diagonalization workflows. See
 [`docs/ED_WORKFLOW_COVERAGE.md`](docs/ED_WORKFLOW_COVERAGE.md) for the model,
 observable, integration size, representative paper scale, and explicit
 direct/assisted/proxy boundary of every scenario.
@@ -115,23 +116,27 @@ The verification inputs have three distinct sources:
 2. Numerical oracle values are regenerated from the pinned upstream
    [QuSpin commit `5bf9e5b`](https://github.com/QuSpin/QuSpin/commit/5bf9e5b266e6d8b70e5cf5973c7c7d59d62e412f)
    and compared with [`oracle/reference.json`](oracle/reference.json).
-3. Scientific scenarios start from the 13 exact-diagonalization families
-   returned by the [LKM Workflow Families registry](https://lkm.test.bohrium.com/web/en/workflows)
-   on 2026-07-20. The resulting 21 deterministic integration cases and their
+3. Scientific scenarios were selected from a literature search over common
+   exact-diagonalization applications on 2026-07-20. LKM was used as a paper
+   index during that search, not as a scientific citation or runtime
+   dependency. The resulting 21 deterministic integration cases and their
    direct/assisted/proxy boundaries are listed in
    [`docs/ED_WORKFLOW_COVERAGE.md`](docs/ED_WORKFLOW_COVERAGE.md).
 
 The six timed `paper`-tier workflows are larger paired Python/Julia instances
-of that workflow catalog:
+of that catalog. The paper links below were rechecked against the LKM
+literature index on 2026-07-21. A citation means that the paper supplies the
+physical model or numerical method represented by the benchmark; it does not
+mean that this repository reproduces the paper's parameters or results.
 
-| Timed workflow | Workflow/paper source | Scientific kernel retained |
+| Timed workflow | Literature and method source | Relationship to this benchmark |
 |---|---|---|
-| MBL mid-spectrum shift-invert | LKM family `19021`; [Pal and Huse, *The many-body localization transition*](https://arxiv.org/abs/1003.2613) | random-field spin chain, fixed-magnetization sector, interior eigenpairs |
-| XXZ Lanczos quench | LKM family `3831`; [Weinberg and Bukov, *QuSpin part I*](https://arxiv.org/abs/1610.03042) | XXZ Hamiltonian and Krylov/Lanczos real-time evolution |
-| Floquet full-unitary heating | LKM family `1069`; [Weinberg and Bukov, *QuSpin part I*](https://arxiv.org/abs/1610.03042) | two-step driven spin chain and full Floquet unitary |
-| Spinful Hubbard spectrum | LKM family `3127` | finite correlated-fermion cluster and low-energy sparse spectrum |
-| Interacting SSH spectrum | LKM family `19000` | half-filled interacting SSH chain and low-energy sparse spectrum |
-| Translation-sector XXZ spectrum | LKM family `3831`; [Weinberg and Bukov, *QuSpin part I*](https://arxiv.org/abs/1610.03042) | momentum-sector construction and sparse eigenspectrum |
+| MBL mid-spectrum shift-invert | [*Shift-invert diagonalization of large many-body localizing spin chains*](https://doi.org/10.21468/SciPostPhys.5.5.045) | Direct method/model anchor: random-field Heisenberg chain, fixed magnetization, and interior eigenpairs obtained with shift-invert. |
+| XXZ Lanczos quench | [*Relaxation of Antiferromagnetic Order in Spin-1/2 Chains Following a Quantum Quench*](https://doi.org/10.1103/PhysRevLett.102.130603); [*QuSpin part I*](https://doi.org/10.21468/SciPostPhys.2.1.003) | The first paper anchors the Néel-state XXZ quench; the QuSpin paper anchors the ED/time-evolution implementation. The benchmark uses a deterministic Lanczos propagation instance. |
+| Floquet full-unitary heating | [*Long-time Behavior of Isolated Periodically Driven Interacting Lattice Systems*](https://doi.org/10.1103/PhysRevX.4.041048); [*QuSpin part I*](https://doi.org/10.21468/SciPostPhys.2.1.003) | Sudden-quench Floquet heating and the driven transverse-field Ising example motivate the two-step unitary, quasienergy, and unitarity checks. |
+| Spinful Hubbard spectrum | [*QuSpin part II: bosons, fermions and higher spins*](https://doi.org/10.21468/SciPostPhys.7.2.020) | Direct package-method anchor for spinful-fermion ED. The clean, half-filled `L=8` Hubbard spectrum is a benchmark constructed in this repository, not a reproduction of one paper. |
+| Interacting SSH spectrum | [*Topological phase transitions, Majorana modes, and quantum simulation of the Su-Schrieffer-Heeger model with nearest-neighbor interactions*](https://doi.org/10.1103/PhysRevB.101.045422); [*QuSpin part II*](https://doi.org/10.21468/SciPostPhys.7.2.020) | Direct model anchor for a half-filled SSH chain with nearest-neighbor interaction and ED; QuSpin part II supplies the fermion/SSH implementation context. |
+| Translation-sector XXZ spectrum | [*QuSpin part I*](https://doi.org/10.21468/SciPostPhys.2.1.003); [*The ALPS project release 1.3*](https://doi.org/10.1016/j.jmmm.2006.10.304) | The sources anchor symmetry-resolved XXZ ED and translation reduction into momentum sectors. The `L=18`, `k=0` instance is defined by this benchmark. |
 
 These are **paper-shaped workflow benchmarks**, not complete paper
 reproductions and not timings copied from the papers. Lattice sizes,
