@@ -268,6 +268,15 @@ def spinless_hamiltonian(length: int):
     return basis, operator
 
 
+def validate_spinless_hamiltonian(operator) -> bool:
+    matrix = operator.tocsc()
+    return (
+        matrix.shape == (12870, 12870)
+        and (matrix - matrix.getH()).nnz == 0
+        and matrix.nnz > 12870
+    )
+
+
 def make_cases() -> list[Case]:
     basis_12, hamiltonian_12_csr = xxz_hamiltonian(12, 6, "csr")
     _, hamiltonian_12_dense = xxz_hamiltonian(12, 6, "dense")
@@ -629,9 +638,7 @@ def make_cases() -> list[Case]:
             "csc",
             "L=16;Nf=8;dimension=12870;open=true",
             lambda: spinless_hamiltonian(16)[1],
-            validator=lambda operator: operator.shape == (12870, 12870)
-            and (operator - operator.getH()).nnz == 0
-            and operator.nnz > 12870,
+            validator=validate_spinless_hamiltonian,
             note=(
                 "Native CSC construction for an interacting "
                 "spinless-fermion Hamiltonian."
