@@ -105,6 +105,16 @@ residual/norm/unitarity checks, and preserve raw samples in the uploaded CSV.
 They are observational performance evidence rather than a noisy hosted-runner
 pass/fail gate.
 
+### Latest six-workflow timing chart
+
+The grouped bar chart below is updated automatically after a successful
+`paper`-tier run dispatched from `main`. It reports the latest same-runner
+median wall time for Python QuSpin and the selected Julia candidate; lower is
+better. PR and non-`main` runs still upload the SVG as an Actions artifact but
+do not rewrite this README snapshot.
+
+![Python and Julia median timings for six paper workflows](docs/paper-workflow-timings.svg)
+
 ## Extending the suite
 
 Each namespace has a directory under `test/full_api/`; add one file per public
