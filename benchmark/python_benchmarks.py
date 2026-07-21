@@ -19,6 +19,7 @@ import quspin
 from quspin.basis import (
     spin_basis_1d,
     spin_basis_general,
+    spinless_fermion_basis_1d,
     spinful_fermion_basis_1d,
 )
 from quspin.operators import exp_op, hamiltonian, quantum_LinearOperator
@@ -230,6 +231,50 @@ def spinful_hamiltonian(length: int):
         check_pcon=False,
     )
     return basis, operator
+
+
+def spinless_hamiltonian(length: int):
+    particles = length // 2
+    bonds = [(site, site + 1) for site in range(length - 1)]
+    hopping = [0.6 if site % 2 == 0 else 1.0 for site in range(length - 1)]
+    basis = spinless_fermion_basis_1d(L=length, Nf=particles)
+    static = [
+        [
+            "+-",
+            [
+                [-hopping[index], left, right]
+                for index, (left, right) in enumerate(bonds)
+            ],
+        ],
+        [
+            "-+",
+            [
+                [hopping[index], left, right]
+                for index, (left, right) in enumerate(bonds)
+            ],
+        ],
+        ["nn", [[2.0, left, right] for left, right in bonds]],
+    ]
+    operator = hamiltonian(
+        static,
+        [],
+        basis=basis,
+        dtype=np.float64,
+        static_fmt="csc",
+        check_herm=False,
+        check_symm=False,
+        check_pcon=False,
+    )
+    return basis, operator
+
+
+def validate_spinless_hamiltonian(operator) -> bool:
+    matrix = operator.tocsc()
+    return (
+        matrix.shape == (12870, 12870)
+        and (matrix - matrix.getH()).nnz == 0
+        and matrix.nnz > 12870
+    )
 
 
 def make_cases() -> list[Case]:
@@ -585,6 +630,19 @@ def make_cases() -> list[Case]:
             "csc",
             "L=6;Nf=(3,3);dimension=400",
             lambda: spinful_hamiltonian(6)[1],
+        ),
+        Case(
+            "spinless_hamiltonian_construction_sparse",
+            "integration",
+            "controlled",
+            "csc",
+            "L=16;Nf=8;dimension=12870;open=true",
+            lambda: spinless_hamiltonian(16)[1],
+            validator=validate_spinless_hamiltonian,
+            note=(
+                "Native CSC construction for an interacting "
+                "spinless-fermion Hamiltonian."
+            ),
         ),
         Case(
             "spinful_quantum_linear_operator_matvec",
