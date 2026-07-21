@@ -46,7 +46,7 @@ class PaperWorkflowChartTests(unittest.TestCase):
                 )
         return path
 
-    def test_renders_six_paired_bars_with_provenance(self) -> None:
+    def test_renders_twelve_paired_bars_with_provenance(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             directory = Path(temporary)
             pairs = load_pairs(
@@ -60,20 +60,22 @@ class PaperWorkflowChartTests(unittest.TestCase):
                 candidate_ref="0123456789abcdef",
             )
 
-        self.assertEqual(svg.count('class="python-bar"'), 6)
-        self.assertEqual(svg.count('class="julia-bar"'), 6)
+        self.assertEqual(svg.count('class="python-bar"'), 12)
+        self.assertEqual(svg.count('class="julia-bar"'), 12)
         self.assertIn("GitHub Actions run 42", svg)
         self.assertIn("0123456789ab", svg)
-        self.assertIn("Workflow 6", svg)
+        self.assertIn("Workflow 12", svg)
+        self.assertIn("240.000", svg)
         self.assertIn("120.000", svg)
-        self.assertIn("60.000", svg)
 
     def test_rejects_missing_workflow(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             directory = Path(temporary)
             python_csv = self.write_csv(directory, "python", case_ids=CASE_ORDER[:-1])
             julia_csv = self.write_csv(directory, "julia")
-            with self.assertRaisesRegex(ValueError, "missing paper_translation_xxz_l18"):
+            with self.assertRaisesRegex(
+                ValueError, "missing paper_particle_addition_6x3"
+            ):
                 load_pairs(python_csv, julia_csv)
 
 

@@ -1,4 +1,10 @@
-# Paper-shaped ED performance baseline
+# Original six-workflow performance baseline
+
+This file preserves the first six-case snapshot for historical comparison.
+The live `paper` tier now contains twelve paired workflows; the six
+literature-derived medium-size additions first appear in the CSV/SVG artifacts
+from the next successful `paper`-tier Actions run and are not backfilled with
+invented local numbers here.
 
 This is a local, paired five-sample baseline for the six paper-shaped workflows
 defined in `benchmark/python_paper_workflow_benchmarks.py` and

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Render the six paired paper-workflow medians as a standalone SVG chart."""
+"""Render the paired paper-workflow medians as a standalone SVG chart."""
 
 from __future__ import annotations
 
@@ -18,6 +18,12 @@ CASE_ORDER = (
     "paper_spinful_hubbard_l8",
     "paper_interacting_ssh_l16",
     "paper_translation_xxz_l18",
+    "paper_tfim_fidelity_l16",
+    "paper_pxp_revival_l24",
+    "paper_bose_hubbard_quench_l11",
+    "paper_hubbard_current_l10",
+    "paper_conb_dsf_l16",
+    "paper_particle_addition_6x3",
 )
 
 
@@ -111,8 +117,10 @@ def render_svg(
     candidate_repository: str,
     candidate_ref: str,
 ) -> str:
-    if len(pairs) != 6:
-        raise ValueError(f"expected six timing pairs, found {len(pairs)}")
+    if len(pairs) != len(CASE_ORDER):
+        raise ValueError(
+            f"expected {len(CASE_ORDER)} timing pairs, found {len(pairs)}"
+        )
 
     width = 1120
     left = 335
@@ -139,16 +147,16 @@ def render_svg(
             f'height="{height}" viewBox="0 0 {width} {height}" role="img" '
             'aria-labelledby="chart-title chart-desc">'
         ),
-        '<title id="chart-title">Six paper-workflow end-to-end timings</title>',
+        '<title id="chart-title">Twelve paper-workflow end-to-end timings</title>',
         (
             '<desc id="chart-desc">Grouped horizontal bars compare Python QuSpin '
-            'and Julia QuSpin median wall times for six paper-shaped workflows.</desc>'
+            'and Julia QuSpin median wall times for twelve paper-shaped workflows.</desc>'
         ),
         '<rect width="100%" height="100%" rx="12" fill="#ffffff"/>',
         (
             '<text x="28" y="42" font-family="system-ui, sans-serif" '
             'font-size="24" font-weight="700" fill="#172033">'
-            'Six paper-workflow end-to-end timings</text>'
+            'Twelve paper-workflow end-to-end timings</text>'
         ),
         (
             '<text x="28" y="70" font-family="system-ui, sans-serif" '
