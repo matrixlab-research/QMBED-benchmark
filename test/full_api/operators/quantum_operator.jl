@@ -84,3 +84,27 @@
     )
     @test tohamiltonian(sparse_operator; pars).data isa SparseMatrixCSC
 end
+
+@testset "QuantumOperator parameter defaults and arithmetic" begin
+    basis = SpinBasis1D(1; pauli=false)
+    X = operator_matrix(basis, "x", [(1.0, 1)])
+    Z = operator_matrix(basis, "z", [(1.0, 1)])
+    first_operator = QuantumOperator(basis, Dict(:x => X, :z => Z))
+    second_operator = QuantumOperator(
+        basis,
+        Dict(:z => 0.5Z, :i => Matrix{ComplexF64}(I, 2, 2)),
+    )
+    @test toarray(first_operator) ≈ X + Z atol=2e-16
+    @test toarray(first_operator; pars=Dict(:x => 0.2)) ≈
+        0.2X + Z atol=2e-16
+    parameters = Dict(:x => 0.2, :z => -0.4, :i => 0.7)
+    @test toarray(first_operator + second_operator; pars=parameters) ≈
+        0.2X - 0.6Z + 0.7I atol=3e-16
+    @test toarray(3first_operator; pars=Dict(:x => 0.2, :z => -0.4)) ≈
+        3 .* (0.2X - 0.4Z) atol=3e-16
+    @test_throws ArgumentError apply(
+        first_operator,
+        ComplexF64[1, 0];
+        pars=Dict(:bad => 1.0),
+    )
+end

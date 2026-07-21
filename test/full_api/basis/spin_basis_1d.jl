@@ -31,6 +31,26 @@
     vector = collect(1.0:6.0)
     @test get_vec(basis, vector) == projector * vector
     @test project_from(basis, vector) == projector * vector
+    @test project_from(basis, vector; sparse=true) isa SparseVector
+    @test project_from(basis, hcat(vector, vector); sparse=true) isa SparseMatrixCSC
+    @test project_from(basis, sparse(vector); sparse=false) isa Vector
+    momentum = SpinBasis1D(4; nup=2, pauli=false, kblock=0)
+    momentum_state = ComplexF64.(1:length(momentum))
+    parent_state = project_from(
+        momentum,
+        momentum_state;
+        sparse=false,
+        pcon=true,
+    )
+    @test length(parent_state) == 6
+    @test parent_state ≈
+        momentum.symmetry.projector * momentum_state atol=3e-14
+    @test project_to(
+        momentum,
+        parent_state;
+        sparse=false,
+        pcon=true,
+    ) ≈ momentum_state atol=3e-14
     static, dynamic = expanded_form(basis, [:static], [:dynamic])
     @test static == [:static]
     @test dynamic == [:dynamic]

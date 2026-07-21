@@ -36,4 +36,5 @@ include("timing.jl")
     timed_include("full_api/integration/paper_workflows_sparse.jl", "integration")
     timed_include("full_api/integration/ed_workflow_catalog.jl", "integration")
     timed_include("full_api/integration/algorithm_regressions.jl", "integration")
+    timed_include("full_api/integration/semantic_parity.jl", "integration")
 end

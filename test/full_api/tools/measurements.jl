@@ -65,3 +65,47 @@
     )
     @test real.(dynamic["scaled_identity"]) ≈ times atol=2e-15
 end
+
+@testset "batched pure-state entropy" begin
+    basis = SpinBasis1D(3; pauli=false)
+    ghz = zeros(ComplexF64, 8)
+    ghz[[1, 8]] .= inv(sqrt(2))
+    product = ComplexF64[1, zeros(7)...]
+    states = hcat(ghz, product)
+    result = ent_entropy(
+        basis,
+        states;
+        sub_sys_A=[1],
+        density=false,
+        enforce_pure=true,
+        return_rdm=:A,
+    )
+    independent = [
+        ent_entropy(
+            basis,
+            @view(states[:, index]);
+            sub_sys_A=[1],
+            density=false,
+        )["Sent_A"]
+        for index in axes(states, 2)
+    ]
+    @test result["Sent_A"] ≈ independent atol=4e-14
+    @test size(result["rdm_A"]) == (2, 2, 2)
+
+    mixed = cat(
+        ghz * ghz',
+        product * product';
+        dims=3,
+    )
+    measured = obs_vs_time(
+        mixed,
+        [0.0, 0.4],
+        Dict("I" => Matrix{ComplexF64}(I, 8, 8));
+        Sent_args=Dict(
+            :basis => basis,
+            :sub_sys_A => [1],
+            :density => false,
+        ),
+    )
+    @test measured["Sent_time"]["Sent_A"] ≈ independent atol=4e-14
+end

@@ -101,6 +101,8 @@ jobs:
           A_REPO_URL: https://github.com/${{ inputs.candidate_repository }}.git
           A_REF: ${{ inputs.candidate_ref }}
         run: julia --startup-file=no ci/installcandidate.jl
+      - name: Verify Python and Julia operator-archive interchange
+        run: python ci/check_archive_interop.py --project .
       - name: Measure the Python QuSpin baseline
         run: >-
           python benchmark/python_benchmarks.py

@@ -39,3 +39,14 @@
         @test photon_Hspace_dim(N, nothing, 0) == 2^N
     end
 end
+
+@testset "truncated harmonic oscillator basis" begin
+    basis = HOBasis(4)
+    @test isbasis(basis)
+    @test basis.Np == 4
+    @test basis.Ns == 5
+    number = operator_matrix(basis, "n", [(1.0, 1)]; sparse=false)
+    raising = operator_matrix(basis, "+", [(1.0, 1)]; sparse=false)
+    @test number ≈ Diagonal(0.0:4.0) atol=2e-16
+    @test raising * raising' ≈ Diagonal(0.0:4.0) atol=4e-15
+end

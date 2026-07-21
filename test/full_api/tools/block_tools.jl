@@ -44,6 +44,13 @@
     evolved = evolve(operator, psi, 0.0, times)
     expected_evolved = evolve(full_H, psi, 0.0, times)
     @test evolved ≈ expected_evolved atol=5e-15
+    @test evolve(
+        operator,
+        psi,
+        0.0,
+        times;
+        stack_state=true,
+    ) ≈ expected_evolved atol=5e-15
     @test collect(evolve(operator, psi, 0.0, times; iterate=true)) ≈
         collect(eachcol(expected_evolved)) atol=5e-15
 
@@ -61,4 +68,48 @@
         exp((-0.5im) .* Matrix(full_H)) * psi atol=5e-15
     @test exponential_grid[:, 3] ≈
         exp((-im) .* Matrix(full_H)) * psi atol=5e-15
+
+    incremental = BlockOps(
+        [Dict(:nup => 0)],
+        terms,
+        Any[],
+        SpinBasis1D,
+        (2,),
+        ComplexF64;
+        basis_kwargs=Dict(:pauli => false),
+    )
+    update_blocks!(
+        incremental,
+        [Dict(:nup => 1)],
+        SpinBasis1D,
+        (2,),
+    )
+    @test incremental.basis_dict[repr(Dict(:nup => 1))].pauli == false
+end
+
+@testset "time-dependent block Hamiltonian" begin
+    blocks = [Dict(:nup => sector) for sector in 0:3]
+    basis = SpinBasis1D(3; pauli=false)
+    static = [OperatorTerm("z", [(0.2, 1), (-0.1, 3)])]
+    drive(time, frequency) = sin(frequency * time)
+    dynamic_matrix = operator_matrix(
+        basis,
+        "zz",
+        [(0.4, 1, 2), (-0.3, 2, 3)],
+    )
+    dynamic = Any[Any[dynamic_matrix, drive, (1.1,)]]
+    P, blocked = block_diag_hamiltonian(
+        blocks,
+        static,
+        dynamic,
+        SpinBasis1D,
+        (3,),
+        ComplexF64;
+        basis_kwargs=Dict(:pauli => false),
+    )
+    full = Hamiltonian(static, dynamic; basis, dtype=ComplexF64)
+    for time in (0.0, 0.27, 0.8)
+        @test toarray(blocked; time) ≈
+            P' * toarray(full; time) * P atol=5e-14
+    end
 end

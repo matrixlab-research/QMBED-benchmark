@@ -161,6 +161,18 @@ function make_cases()
     ensemble_state = deterministic_state(ensemble_dimension)
     ensemble_energies = collect(1.0:ensemble_dimension)
     ensemble_vectors = Matrix{ComplexF64}(I, ensemble_dimension, ensemble_dimension)
+    symmetry_basis_14 =
+        SpinBasis1D(14; nup=7, pauli=false, kblock=0)
+    symmetry_terms_14 = [
+        OperatorTerm(
+            "+-",
+            [(0.5, site, mod1(site + 1, 14)) for site in 1:14],
+        ),
+        OperatorTerm(
+            "-+",
+            [(0.5, site, mod1(site + 1, 14)) for site in 1:14],
+        ),
+    ]
 
     return [
         BenchmarkCase(
@@ -187,6 +199,23 @@ function make_cases()
             ),
             true,
             "Constructs an orthonormal translation-sector projector.",
+        ),
+        BenchmarkCase(
+            "symmetry_hamiltonian_construction_sparse",
+            "integration",
+            "controlled",
+            "csc",
+            "L=14;nup=7;kblock=0;dimension=$(length(symmetry_basis_14))",
+            () -> Hamiltonian(
+                symmetry_basis_14,
+                symmetry_terms_14;
+                static_fmt=:csc,
+                check_herm=false,
+                check_symm=false,
+                check_pcon=false,
+            ),
+            true,
+            "Direct reduced-sector triplet assembly without a parent Hamiltonian.",
         ),
         BenchmarkCase(
             "xxz_hamiltonian_construction_dense",
