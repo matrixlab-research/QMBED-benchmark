@@ -51,3 +51,52 @@
         ),
     ) ≈ collect(eachcol(ode_states)) atol=2e-12
 end
+
+@testset "stacked-real ODE and scalar target" begin
+    function rotation(time, state, frequency)
+        n = length(state) ÷ 2
+        return vcat(
+            frequency .* @view(state[(n + 1):end]),
+            -frequency .* @view(state[1:n]),
+        )
+    end
+    initial = ComplexF64[0.3 + 0.7im, -1.0 + 0.2im]
+    frequency = 0.9
+    times = [0.0, 0.4, 1.0]
+    result = evolve(
+        initial,
+        0.0,
+        times,
+        rotation;
+        stack_state=true,
+        solver_name=:zvode,
+        f_params=(frequency,),
+        max_step=0.01,
+        rtol=1e-10,
+        atol=1e-12,
+    )
+    @test result ≈
+        initial .* transpose(exp.(-im .* frequency .* times)) atol=2e-9
+    scalar = evolve(
+        initial,
+        0.0,
+        0.6,
+        rotation;
+        stack_state=true,
+        f_params=(frequency,),
+        max_step=0.01,
+    )
+    @test scalar ≈ initial .* exp(-0.6im * frequency) atol=2e-9
+    @test scalar isa Vector
+
+    basis = SpinBasis1D(1; pauli=false)
+    H = Hamiltonian(
+        Any[Any["z", [(0.5, 1)]]],
+        Any[];
+        basis,
+        dtype=ComplexF64,
+    )
+    quantum_initial = ComplexF64[1, 1] ./ sqrt(2)
+    @test evolve(H, quantum_initial, 0.0, 0.4) ≈
+        exp(-0.4im .* toarray(H)) * quantum_initial atol=2e-12
+end

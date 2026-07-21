@@ -50,4 +50,98 @@
     @test normalization(even, 0) == 1
     @test get_amp(even, 0) == 1
     @test representative(even, 3) == 3
+
+    constrained(state) =
+        count_ones(state) == 2 &&
+        iszero(state & (state << 1))
+    serial = UserBasis(
+        UInt64,
+        9,
+        Dict("n" => operators["n"]);
+        pre_check_state=constrained,
+        parallel=false,
+    )
+    threaded = UserBasis(
+        UInt64,
+        9,
+        Dict("n" => operators["n"]);
+        pre_check_state=constrained,
+        parallel=true,
+    )
+    @test states(threaded) == states(serial)
+    @test threaded.blocks[:parallel]
+
+    deferred = UserBasis(
+        UInt64,
+        5,
+        Dict("n" => operators["n"]);
+        pre_check_state=state -> count_ones(state) == 2,
+        _make_basis=false,
+    )
+    @test length(deferred) == 1
+    @test deferred.blocks[:made_basis] == false
+    @test make_basis!(deferred) === deferred
+    @test length(deferred) == 10
+    @test deferred.blocks[:made_basis] == true
+end
+@testset "UserBasis callback symmetry reduction" begin
+    N = 5
+    reflect(state, N, args) = begin
+        output = zero(UInt64)
+        for site in 0:(N - 1)
+            output |= ((UInt64(state) >> site) & 1) << (N - site - 1)
+        end
+        output
+    end
+    basis = UserBasis(
+        UInt64,
+        N,
+        Dict(
+            "x" => ComplexF64[0 1; 1 0],
+            "z" => ComplexF64[1 0; 0 -1],
+        );
+        parity=(reflect, 2, 0, ()),
+        block_order=[:parity],
+    )
+    P = basis.base.symmetry.projector
+    @test P' * P ≈ Matrix{ComplexF64}(I, length(basis), length(basis)) atol=4e-14
+    @test basis.blocks[:parity] == 0
+    @test basis.blocks[:parity_period] == 2
+end
+
+@testset "UserBasis cross-sector callback action" begin
+    flip(state, site) =
+        (xor(state, UInt64(1) << (site - 1)), 1.0)
+    source = UserBasis(
+        UInt64,
+        3,
+        Dict("x" => flip);
+        states=UInt64[0, 2, 4, 6],
+    )
+    target = UserBasis(
+        UInt64,
+        3,
+        Dict("x" => flip);
+        states=UInt64[1, 3, 5, 7],
+    )
+    state = normalize(ComplexF64[1, 2, 3im, -0.5])
+    shifted = op_shift_sector(
+        target,
+        source,
+        [("x", [1], -0.4)],
+        state,
+    )
+    @test shifted ≈ -0.4state atol=2e-16
+
+    matrix_elements, bras, kets = op_bra_ket(
+        source,
+        "x",
+        [1],
+        -0.4,
+        ComplexF64,
+        UInt64[0, 2, 4],
+    )
+    @test matrix_elements == fill(-0.4 + 0im, 3)
+    @test bras == UInt64[1, 3, 5]
+    @test kets == UInt64[0, 2, 4]
 end

@@ -18,6 +18,8 @@
     @test projector' * projector ≈ Matrix{ComplexF64}(I, 6, 6)
     state = normalize(ComplexF64[1, 2, 3, 4, 5, 6])
     @test project_from(bosons, state) == projector * state
+    @test project_from(bosons, state; sparse=true) isa SparseVector
+    @test project_from(bosons, sparse(state); sparse=false) isa Vector
     @test get_vec(bosons, state) == projector * state
     @test tr(partial_trace(bosons, state; sub_sys_A=[1])) ≈ 1 atol=4e-16
     @test ent_entropy(bosons, state; sub_sys_A=[1])["Sent_A"] >= 0
@@ -47,4 +49,91 @@
         count(digit -> digit & 2 == 2, row) == 1
         for row in eachrow(spinful.occupations)
     )
+end
+@testset "higher-spin angular momentum basis" begin
+    basis = SpinBasis1D(3; S="3/2", Nup=3, pauli=false)
+    @test basis.sps == 4
+    @test all(sum(row) == 3 for row in eachrow(basis.occupations))
+    unrestricted = SpinBasis1D(1; S="3/2", pauli=false)
+    plus = operator_matrix(unrestricted, "+", [(1.0, 1)])
+    minus = operator_matrix(unrestricted, "-", [(1.0, 1)])
+    z = operator_matrix(unrestricted, "z", [(1.0, 1)])
+    @test plus' ≈ minus atol=3e-15
+    @test z' == z
+    @test plus * minus - minus * plus ≈ 2z atol=4e-14
+end
+
+@testset "spinful multiple sectors and Majorana algebra" begin
+    basis = SpinfulFermionBasis1D(2; Nf=[(1, 0), (0, 1)])
+    @test length(basis) == 4
+    unrestricted = SpinfulFermionBasis1D(1)
+    x_up = operator_matrix(unrestricted, "x|", [(1.0, 1)])
+    y_up = operator_matrix(unrestricted, "y|", [(1.0, 1)])
+    @test x_up' ≈ x_up
+    @test y_up' ≈ y_up
+    @test x_up^2 ≈ I
+    @test y_up^2 ≈ I
+    @test x_up * y_up + y_up * x_up ≈ zeros(size(x_up)) atol=3e-15
+end
+
+@testset "advanced fermionic particle-hole maps" begin
+    even = SpinlessFermionBasisGeneral(
+        4;
+        Nf=2,
+        phblock=([-1, -2, -3, -4], 0),
+    )
+    odd = SpinlessFermionBasisGeneral(
+        4;
+        Nf=2,
+        phblock=([-1, -2, -3, -4], 1),
+    )
+    parent = SpinlessFermionBasis1D(4; Nf=2)
+    @test length(even) + length(odd) == length(parent)
+    @test even.symmetry.projector' * even.symmetry.projector ≈
+        Matrix{ComplexF64}(I, length(even), length(even)) atol=4e-14
+    @test odd.symmetry.projector' * odd.symmetry.projector ≈
+        Matrix{ComplexF64}(I, length(odd), length(odd)) atol=4e-14
+    @test even.symmetry.projector' * odd.symmetry.projector ≈
+        zeros(ComplexF64, length(even), length(odd)) atol=4e-14
+
+    spinful = SpinfulFermionBasisGeneral(
+        1;
+        Nf=[(0, 0), (1, 1)],
+        simple_symm=false,
+        phblock=([-1, -2], 0),
+    )
+    @test length(spinful) == 1
+    @test abs.(spinful.symmetry.projector[:, 1]) ≈
+        fill(inv(sqrt(2)), 2) atol=4e-14
+end
+
+@testset "discrete cross-sector operator application" begin
+    source = SpinlessFermionBasisGeneral(4; Nf=1)
+    target = SpinlessFermionBasisGeneral(4; Nf=2)
+    state = normalize(ComplexF64[1, 2im, -0.4, 0.7])
+    shifted = op_shift_sector(
+        target,
+        source,
+        [("+", [3], -0.9)],
+        state,
+    )
+    full = SpinlessFermionBasis1D(4)
+    reference =
+        projection_matrix(target, ComplexF64; sparse=true)' *
+        operator_matrix(full, "+", [(-0.9, 3)]) *
+        projection_matrix(source, ComplexF64; sparse=true) *
+        state
+    @test shifted ≈ reference atol=3e-14
+
+    matrix_elements, bras, kets = op_bra_ket(
+        source,
+        "+",
+        [3],
+        -0.9,
+        ComplexF64,
+        UInt64[0, 1, 2],
+    )
+    @test matrix_elements == ComplexF64[-0.9, 0.9, 0.9]
+    @test bras == UInt64[4, 5, 6]
+    @test kets == UInt64[0, 1, 2]
 end

@@ -1,3 +1,86 @@
+@testset "two-dimensional general spin translations" begin
+    Lx, Ly = 3, 2
+    lattice_index(x, y) = x + Lx * y
+    Tx = [
+        lattice_index(mod(x + 1, Lx), y)
+        for y in 0:(Ly - 1) for x in 0:(Lx - 1)
+    ]
+    Ty = [
+        lattice_index(x, mod(y + 1, Ly))
+        for y in 0:(Ly - 1) for x in 0:(Lx - 1)
+    ]
+    basis = SpinBasisGeneral(
+        Lx * Ly;
+        Nup=3,
+        pauli=false,
+        kxblock=(Tx, 2),
+        kyblock=(Ty, 1),
+    )
+    P = basis.symmetry.projector
+    parent = SpinBasis1D(Lx * Ly; nup=3, pauli=false)
+    terms = [
+        OperatorTerm("zz", [(0.8, 1, 2), (-0.3, 3, 6)]),
+        OperatorTerm("+-", [(0.2, 2, 5)]),
+        OperatorTerm("-+", [(0.2, 2, 5)]),
+    ]
+    H = Hamiltonian(basis, terms; check_symm=false)
+    parent_H = Hamiltonian(parent, terms; check_symm=false)
+    @test Matrix(H) ≈ P' * Matrix(parent_H) * P atol=5e-14
+    @test size(H) == (length(basis), length(basis))
+end
+
+@testset "deferred general-basis construction" begin
+    translation = [1, 2, 3, 4, 5, 0]
+    deferred = SpinBasisGeneral(
+        6;
+        Nup=3,
+        pauli=false,
+        kblock=(translation, 2),
+        make_basis=false,
+    )
+    @test length(deferred) == 1
+    @test deferred.blocks[:made_basis] == false
+    @test_throws ArgumentError operator_matrix(
+        deferred,
+        "zz",
+        [(1.0, 1, 2)],
+    )
+    @test make_basis!(deferred) === deferred
+    eager = SpinBasisGeneral(
+        6;
+        Nup=3,
+        pauli=false,
+        kblock=(translation, 2),
+    )
+    @test states(deferred) == states(eager)
+    @test projection_matrix(deferred, ComplexF64; sparse=true) ≈
+        projection_matrix(eager, ComplexF64; sparse=true)
+end
+
+@testset "wide-integer general spin basis" begin
+    L = 66
+    basis = SpinBasisGeneral(L; Nup=1, pauli=false)
+    @test basis.dtype === UInt256
+    @test length(basis) == L
+    @test state_at(basis, L) == UInt256(BigInt(1) << (L - 1))
+
+    terms = [
+        OperatorTerm("+-", [(0.4, L, 1)]),
+        OperatorTerm("-+", [(0.4, L, 1)]),
+        OperatorTerm("z", [(-0.2, L)]),
+    ]
+    H = Hamiltonian(
+        basis,
+        terms;
+        static_fmt=:csc,
+        check_herm=false,
+    )
+    @test size(H) == (L, L)
+    @test nnz(H.data) == L + 2
+    @test Matrix(H)[L, 1] ≈ 0.4
+    @test Matrix(H)[1, L] ≈ 0.4
+end
+
 @testset "held-out general-basis Hamiltonians" begin
     single_particle = SpinlessFermionBasis1D(4; Nf=1)
     bonds = [(1, 2), (2, 3), (3, 4)]

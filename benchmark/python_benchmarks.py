@@ -193,6 +193,22 @@ def make_cases() -> list[Case]:
     ensemble_state = deterministic_state(ensemble_dimension)
     ensemble_energies = np.arange(1, ensemble_dimension + 1, dtype=np.float64)
     ensemble_vectors = np.eye(ensemble_dimension, dtype=np.complex128)
+    symmetry_basis_14 = spin_basis_1d(
+        L=14,
+        Nup=7,
+        pauli=False,
+        kblock=0,
+    )
+    symmetry_static_14 = [
+        [
+            "+-",
+            [[0.5, site, (site + 1) % 14] for site in range(14)],
+        ],
+        [
+            "-+",
+            [[0.5, site, (site + 1) % 14] for site in range(14)],
+        ],
+    ]
 
     return [
         Case(
@@ -214,6 +230,23 @@ def make_cases() -> list[Case]:
                 Nup=7,
                 pauli=False,
                 kblock=3,
+            ),
+        ),
+        Case(
+            "symmetry_hamiltonian_construction_sparse",
+            "integration",
+            "controlled",
+            "csr",
+            f"L=14;nup=7;kblock=0;dimension={symmetry_basis_14.Ns}",
+            lambda: hamiltonian(
+                symmetry_static_14,
+                [],
+                basis=symmetry_basis_14,
+                dtype=np.float64,
+                static_fmt="csr",
+                check_herm=False,
+                check_symm=False,
+                check_pcon=False,
             ),
         ),
         Case(

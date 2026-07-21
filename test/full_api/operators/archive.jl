@@ -27,3 +27,48 @@
         @test inferred.components == operator.components
     end
 end
+
+@testset "QuantumOperator Python-compatible archive round trip" begin
+    basis = SpinBasis1D(2)
+    dense_component = ComplexF64[
+        1 2im 0 0
+        -2im 3 0 0
+        0 0 4 0.5
+        0 0 0.5 5
+    ]
+    sparse_component = sparse(ComplexF64[
+        0 0.25 0 0
+        0.25 0 0 0
+        0 0 0 -0.75im
+        0 0 0.75im 0
+    ])
+    operator = QuantumOperator(
+        basis,
+        Dict(
+            "dense" => dense_component,
+            "sparse" => sparse_component,
+        );
+        matrix_formats=Dict("dense" => :dense, "sparse" => :csc),
+    )
+    mktempdir() do directory
+        archive = joinpath(directory, "python-compatible.zip")
+        save_zip(
+            archive,
+            operator;
+            save_basis=false,
+            format=:python,
+        )
+        restored = load_zip(archive)
+        @test restored.basis == basis
+        @test restored.components["dense"] == dense_component
+        @test restored.components["sparse"] isa SparseMatrixCSC
+        @test restored.components["sparse"] == sparse_component
+        @test toarray(
+            restored;
+            pars=Dict("dense" => 0.3, "sparse" => 0.7),
+        ) == toarray(
+            operator;
+            pars=Dict("dense" => 0.3, "sparse" => 0.7),
+        )
+    end
+end
