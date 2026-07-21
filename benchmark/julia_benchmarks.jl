@@ -52,6 +52,119 @@ function deterministic_state(size::Int)
     return state / norm(state)
 end
 
+function deterministic_state_batch(size::Int, count::Int)
+    states = ComplexF64[
+        sin(0.17 * row + column) + im * cos(0.11 * row - column)
+        for row in 1:size, column in 1:count
+    ]
+    return states ./ sqrt.(sum(abs2, states; dims=1))
+end
+
+function general_spin_maps(lx::Int, ly::Int)
+    site(x, y) = x + lx * y
+    translation_x = [
+        site(mod(x + 1, lx), y)
+        for y in 0:(ly - 1) for x in 0:(lx - 1)
+    ]
+    translation_y = [
+        site(x, mod(y + 1, ly))
+        for y in 0:(ly - 1) for x in 0:(lx - 1)
+    ]
+    return translation_x, translation_y
+end
+
+function general_spin_basis()
+    translation_x, translation_y = general_spin_maps(4, 3)
+    return SpinBasisGeneral(
+        12;
+        Nup=6,
+        pauli=false,
+        kxblock=(translation_x, 1),
+        kyblock=(translation_y, 1),
+        block_order=[:kxblock, :kyblock],
+    )
+end
+
+function general_spin_terms()
+    lx, ly = 4, 3
+    site(x, y) = x + lx * y
+    bonds = [
+        (site(x, y) + 1, site(mod(x + 1, lx), y) + 1)
+        for y in 0:(ly - 1) for x in 0:(lx - 1)
+    ]
+    append!(
+        bonds,
+        [
+            (site(x, y) + 1, site(x, mod(y + 1, ly)) + 1)
+            for y in 0:(ly - 1) for x in 0:(lx - 1)
+        ],
+    )
+    return [
+        OperatorTerm("+-", [(0.5, left, right) for (left, right) in bonds]),
+        OperatorTerm("-+", [(0.5, left, right) for (left, right) in bonds]),
+        OperatorTerm("zz", [(1.0, left, right) for (left, right) in bonds]),
+    ]
+end
+
+function general_spin_hamiltonian(basis, terms)
+    return Hamiltonian(
+        basis,
+        terms;
+        static_fmt=:csc,
+        check_herm=false,
+        check_symm=false,
+        check_pcon=false,
+    )
+end
+
+function spin_one_hamiltonian(length::Int)
+    basis = SpinBasis1D(
+        length;
+        S="1",
+        Nup=length,
+        pauli=false,
+    )
+    bonds = [(site, mod1(site + 1, length)) for site in 1:length]
+    terms = [
+        OperatorTerm("+-", [(0.5, left, right) for (left, right) in bonds]),
+        OperatorTerm("-+", [(0.5, left, right) for (left, right) in bonds]),
+        OperatorTerm("zz", [(1.0, left, right) for (left, right) in bonds]),
+    ]
+    return Hamiltonian(
+        basis,
+        terms;
+        static_fmt=:csc,
+        check_herm=false,
+        check_symm=false,
+        check_pcon=false,
+    )
+end
+
+function validate_hamiltonian_fingerprint(
+    operator,
+    expected_dimension::Int,
+    expected_trace::Float64,
+    expected_norm::Float64,
+)
+    matrix = Matrix(operator)
+    return size(matrix) == (expected_dimension, expected_dimension) &&
+        ishermitian(matrix) &&
+        isapprox(real(tr(matrix)), expected_trace; rtol=1e-12, atol=1e-12) &&
+        isapprox(norm(matrix), expected_norm; rtol=1e-12, atol=1e-12)
+end
+
+function validate_batch_entropy(result)
+    entropy = result["Sent_A"]
+    return size(entropy) == (8,) &&
+        all(isfinite, entropy) &&
+        isapprox(sum(entropy), 7.360709128824066; rtol=1e-12, atol=1e-12)
+end
+
+function validate_batch_evolution(states)
+    return size(states) == (70, 4, 9) &&
+        maximum(abs.(sum(abs2, states; dims=1) .- 1)) < 2e-10
+end
+
 function spinful_terms(length::Int)
     bonds = [(site, site + 1) for site in 1:(length - 1)]
     return [
@@ -89,7 +202,29 @@ struct BenchmarkCase
     function_value::Any
     supported::Bool
     note::String
+    validator::Any
 end
+
+BenchmarkCase(
+    name::String,
+    category::String,
+    comparison::String,
+    storage::String,
+    parameters::String,
+    function_value,
+    supported::Bool,
+    note::String,
+) = BenchmarkCase(
+    name,
+    category,
+    comparison,
+    storage,
+    parameters,
+    function_value,
+    supported,
+    note,
+    nothing,
+)
 
 function make_cases()
     basis_12, hamiltonian_12_dense = xxz_hamiltonian(12, 6; static_fmt=:dense)
@@ -116,8 +251,13 @@ function make_cases()
     eigsh_seed_10 = normalize(real.(vector_10))
     basis_8, hamiltonian_8 = xxz_hamiltonian(8, 4; static_fmt=:csc)
     vector_8 = deterministic_state(length(basis_8))
+    batch_vector_8 = deterministic_state_batch(length(basis_8), 4)
+    general_basis_12 = general_spin_basis()
+    general_terms_12 = general_spin_terms()
     full_basis_12 = SpinBasis1D(12; pauli=false)
     full_state_12 = deterministic_state(length(full_basis_12))
+    full_basis_10 = SpinBasis1D(10; pauli=false)
+    batch_state_10 = deterministic_state_batch(length(full_basis_10), 8)
     times = collect(range(0.0, 1.0; length=9))
     spinful_basis_6, spinful_hamiltonian_6 = spinful_hamiltonian(6)
     spinful_state_6 = deterministic_state(length(spinful_basis_6))
@@ -216,6 +356,49 @@ function make_cases()
             ),
             true,
             "Direct reduced-sector triplet assembly without a parent Hamiltonian.",
+        ),
+        BenchmarkCase(
+            "general_2d_basis_construction",
+            "integration",
+            "storage_independent",
+            "projector",
+            "Lx=4;Ly=3;Nup=6;kx=1;ky=1;dimension=75",
+            general_spin_basis,
+            true,
+            "Two commuting translation maps through SpinBasisGeneral.",
+            basis -> length(basis) == 75,
+        ),
+        BenchmarkCase(
+            "general_2d_hamiltonian_construction_sparse",
+            "integration",
+            "controlled",
+            "csc",
+            "Lx=4;Ly=3;Nup=6;kx=1;ky=1;dimension=75",
+            () -> general_spin_hamiltonian(general_basis_12, general_terms_12),
+            true,
+            "Periodic 2D XXZ assembly in a two-map symmetry sector.",
+            operator -> validate_hamiltonian_fingerprint(
+                operator,
+                75,
+                -41.0,
+                18.30300521772313,
+            ),
+        ),
+        BenchmarkCase(
+            "higher_spin_hamiltonian_construction_sparse",
+            "integration",
+            "controlled",
+            "csc",
+            "L=8;S=1;Nup=8;dimension=1107;periodic=true",
+            () -> spin_one_hamiltonian(8),
+            true,
+            "Spin-one XXZ construction with exact angular-momentum factors.",
+            operator -> validate_hamiltonian_fingerprint(
+                operator,
+                1107,
+                -816.0,
+                112.7829774389737,
+            ),
         ),
         BenchmarkCase(
             "xxz_hamiltonian_construction_dense",
@@ -371,6 +554,17 @@ function make_cases()
             "Native CSC Arnoldi exponential action; no full eigendecomposition.",
         ),
         BenchmarkCase(
+            "static_batch_time_evolution_current_storage",
+            "integration",
+            "current_backend",
+            "csc_krylov",
+            "L=8;nup=4;dimension=70;states=4;times=9;tmax=1",
+            () -> evolve(hamiltonian_8, batch_vector_8, 0.0, times),
+            true,
+            "Batched column-state evolution across one shared time grid.",
+            validate_batch_evolution,
+        ),
+        BenchmarkCase(
             "entanglement_entropy",
             "integration",
             "storage_independent",
@@ -383,6 +577,23 @@ function make_cases()
             ),
             true,
             "",
+        ),
+        BenchmarkCase(
+            "batched_entanglement_entropy",
+            "integration",
+            "storage_independent",
+            "state_matrix",
+            "L=10;dimension=1024;states=8;subsystem=5",
+            () -> ent_entropy(
+                full_basis_10,
+                batch_state_10;
+                sub_sys_A=collect(1:5),
+                density=false,
+                enforce_pure=true,
+            ),
+            true,
+            "Eight pure states evaluated through the batched entropy API.",
+            validate_batch_entropy,
         ),
         BenchmarkCase(
             "spinful_hamiltonian_construction_sparse",
@@ -474,6 +685,7 @@ function time_case(case::BenchmarkCase)
             supported="false",
             note=case.note,
             parameters=case.parameters,
+            validation="unsupported",
             samples="",
             iterations_per_sample="",
             median_seconds="",
@@ -490,7 +702,15 @@ function time_case(case::BenchmarkCase)
         )
     end
 
-    for _ in 1:3
+    SINK[] = case.function_value()
+    validation = if case.validator === nothing
+        "smoke"
+    else
+        case.validator(SINK[]) ||
+            error("validation failed for benchmark $(case.name)")
+        "passed"
+    end
+    for _ in 1:2
         SINK[] = case.function_value()
     end
 
@@ -531,6 +751,7 @@ function time_case(case::BenchmarkCase)
         supported="true",
         note=case.note,
         parameters=case.parameters,
+        validation,
         samples=length(timings),
         iterations_per_sample=iterations,
         median_seconds=median_value(timings),

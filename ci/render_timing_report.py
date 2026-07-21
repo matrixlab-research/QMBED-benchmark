@@ -68,7 +68,7 @@ def render_benchmarks(paths: list[Path]) -> str:
         "",
         (
             "Warm-operation timings exclude JIT warm-up. Both implementations run "
-            "on the same GitHub Actions runner with one Julia and BLAS thread. "
+            "on the same runner with one Julia and BLAS thread. "
             "Speedup is `Python median / Julia median`; values above 1 mean Julia is faster."
         ),
         "",
@@ -76,6 +76,12 @@ def render_benchmarks(paths: list[Path]) -> str:
             "`controlled` rows compare the same dense or named sparse representation. "
             "`current_backend` rows intentionally retain each package's present "
             "public-API storage choice."
+        ),
+        "",
+        (
+            "Validation is outside the timed region: `passed` means an explicit "
+            "dimension/shape, matrix-fingerprint, or physical-invariant check passed; "
+            "`smoke` means the warm preflight completed without an exception."
         ),
         "",
         "| Suite | Workload | Mode | Validation | Python storage | Julia storage | Python median (ms) | Julia median (ms) | Julia IQR (ms) | Speedup | Julia allocation |",

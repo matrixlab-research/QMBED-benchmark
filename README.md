@@ -53,10 +53,12 @@ Every candidate run produces two private timing artifacts:
    Lanczos, CSC ARPACK partial eigenspectra, dense full diagonalization,
    CSR/DIA kernels, physical momentum-sector construction, matrix-free
    operator construction and action, CSC Krylov time evolution, entanglement
-   entropy, spinful sparse construction and matrix-free action, sparse ExpOp
-   vector/grid action, diagonal-ensemble fluctuations, and fresh-process
-   package load. Dense/CSC/CSR/DIA controlled comparisons are reported
-   separately from current-backend comparisons.
+   entropy, two-map 2D general-basis construction, higher-spin sparse
+   construction, batched time evolution and entropy, spinful sparse
+   construction and matrix-free action, sparse ExpOp vector/grid action,
+   diagonal-ensemble fluctuations, and fresh-process package load.
+   Dense/CSC/CSR/DIA controlled comparisons are reported separately from
+   current-backend comparisons.
 
 Operation benchmarks run three warm-ups followed by 15 samples. Each sample is
 adaptively batched to target at least 80 ms, and the raw CSV reports minimum,
@@ -64,8 +66,11 @@ p05, p25, median, mean, p75, p95, maximum, standard deviation, and iterations
 per sample. Fresh-process package loading uses one warm-up and nine new
 processes. Julia allocation medians are recorded separately. BLAS, OpenMP, and
 Julia are fixed to one thread. The report explicitly lists Python and Julia
-storage formats for every row. Native Julia CSC construction is measured
-directly against Python CSC construction. The suite separately asserts the
+storage formats for every row. A preflight runs outside the timed region;
+new-API rows assert dimensions, return shapes, matrix fingerprints, or physical
+invariants, while legacy rows retain an exception-free smoke check. Native
+Julia CSC construction is measured directly against Python CSC construction.
+The suite separately asserts the
 stored matrix types, sparse ARPACK residuals, and reduced workflows from
 published MBL, quantum-quench, and Floquet spin-chain studies.
 

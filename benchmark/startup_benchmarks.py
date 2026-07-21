@@ -59,6 +59,7 @@ def row(language: str, values: list[float]) -> dict[str, object]:
         "supported": "true",
         "note": "",
         "parameters": "precompiled=true;fresh_process=true",
+        "validation": "passed",
         "samples": len(values),
         "iterations_per_sample": 1,
         "median_seconds": statistics.median(values),

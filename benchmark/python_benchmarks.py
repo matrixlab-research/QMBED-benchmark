@@ -16,7 +16,11 @@ from typing import Callable, Optional
 
 import numpy as np
 import quspin
-from quspin.basis import spin_basis_1d, spinful_fermion_basis_1d
+from quspin.basis import (
+    spin_basis_1d,
+    spin_basis_general,
+    spinful_fermion_basis_1d,
+)
 from quspin.operators import exp_op, hamiltonian, quantum_LinearOperator
 from quspin.tools.lanczos import lanczos_full
 from quspin.tools.measurements import diag_ensemble
@@ -38,6 +42,8 @@ class Case:
     storage: str
     parameters: str
     function: Callable[[], object]
+    validator: Optional[Callable[[object], bool]] = None
+    note: str = ""
 
 
 def xxz_static(length: int):
@@ -72,6 +78,128 @@ def deterministic_state(size: int) -> np.ndarray:
     indices = np.arange(1, size + 1, dtype=np.float64)
     state = np.sin(0.17 * indices) + 1j * np.cos(0.11 * indices)
     return state / np.linalg.norm(state)
+
+
+def deterministic_state_batch(size: int, count: int) -> np.ndarray:
+    indices = np.arange(1, size + 1, dtype=np.float64)[:, None]
+    columns = np.arange(1, count + 1, dtype=np.float64)[None, :]
+    states = (
+        np.sin(0.17 * indices + columns)
+        + 1j * np.cos(0.11 * indices - columns)
+    )
+    return states / np.linalg.norm(states, axis=0, keepdims=True)
+
+
+def general_spin_maps(lx: int, ly: int) -> tuple[np.ndarray, np.ndarray]:
+    site = lambda x, y: x + lx * y
+    translation_x = np.asarray(
+        [site((x + 1) % lx, y) for y in range(ly) for x in range(lx)]
+    )
+    translation_y = np.asarray(
+        [site(x, (y + 1) % ly) for y in range(ly) for x in range(lx)]
+    )
+    return translation_x, translation_y
+
+
+def general_spin_basis():
+    translation_x, translation_y = general_spin_maps(4, 3)
+    return spin_basis_general(
+        N=12,
+        Nup=6,
+        pauli=False,
+        kxblock=(translation_x, 1),
+        kyblock=(translation_y, 1),
+        block_order=["kxblock", "kyblock"],
+    )
+
+
+def general_spin_static():
+    lx, ly = 4, 3
+    site = lambda x, y: x + lx * y
+    bonds = [
+        [site(x, y), site((x + 1) % lx, y)]
+        for y in range(ly)
+        for x in range(lx)
+    ]
+    bonds += [
+        [site(x, y), site(x, (y + 1) % ly)]
+        for y in range(ly)
+        for x in range(lx)
+    ]
+    return [
+        ["+-", [[0.5, left, right] for left, right in bonds]],
+        ["-+", [[0.5, left, right] for left, right in bonds]],
+        ["zz", [[1.0, left, right] for left, right in bonds]],
+    ]
+
+
+def general_spin_hamiltonian(basis, static):
+    return hamiltonian(
+        static,
+        [],
+        basis=basis,
+        dtype=np.complex128,
+        static_fmt="csc",
+        check_herm=False,
+        check_symm=False,
+        check_pcon=False,
+    )
+
+
+def spin_one_hamiltonian(length: int):
+    basis = spin_basis_1d(
+        L=length,
+        S="1",
+        Nup=length,
+        pauli=False,
+    )
+    bonds = [[site, (site + 1) % length] for site in range(length)]
+    static = [
+        ["+-", [[0.5, left, right] for left, right in bonds]],
+        ["-+", [[0.5, left, right] for left, right in bonds]],
+        ["zz", [[1.0, left, right] for left, right in bonds]],
+    ]
+    return hamiltonian(
+        static,
+        [],
+        basis=basis,
+        dtype=np.float64,
+        static_fmt="csc",
+        check_herm=False,
+        check_symm=False,
+        check_pcon=False,
+    )
+
+
+def validate_hamiltonian_fingerprint(
+    operator, expected_dimension: int, expected_trace: float, expected_norm: float
+) -> bool:
+    matrix = operator.toarray()
+    return (
+        matrix.shape == (expected_dimension, expected_dimension)
+        and np.allclose(matrix, matrix.T.conj(), rtol=0.0, atol=2e-12)
+        and np.isclose(np.trace(matrix).real, expected_trace, rtol=1e-12, atol=1e-12)
+        and np.isclose(np.linalg.norm(matrix), expected_norm, rtol=1e-12, atol=1e-12)
+    )
+
+
+def validate_batch_entropy(result: object) -> bool:
+    entropy = np.asarray(result["Sent_A"])
+    return (
+        entropy.shape == (8,)
+        and np.all(np.isfinite(entropy))
+        and np.isclose(entropy.sum(), 7.360709128824066, rtol=1e-12, atol=1e-12)
+    )
+
+
+def validate_batch_evolution(result: object) -> bool:
+    states = np.asarray(result)
+    return states.shape == (70, 4, 9) and np.allclose(
+        np.sum(np.abs(states) ** 2, axis=0),
+        1.0,
+        rtol=0.0,
+        atol=2e-10,
+    )
 
 
 def spinful_static(length: int):
@@ -129,8 +257,13 @@ def make_cases() -> list[Case]:
     eigsh_seed_10 /= np.linalg.norm(eigsh_seed_10)
     basis_8, hamiltonian_8_csr = xxz_hamiltonian(8, 4, "csr")
     vector_8 = deterministic_state(basis_8.Ns)
+    batch_vector_8 = deterministic_state_batch(basis_8.Ns, 4)
+    general_basis_12 = general_spin_basis()
+    general_static_12 = general_spin_static()
     full_basis_12 = spin_basis_1d(L=12, pauli=False)
     full_state_12 = deterministic_state(full_basis_12.Ns)
+    full_basis_10 = spin_basis_1d(L=10, pauli=False)
+    batch_state_10 = deterministic_state_batch(full_basis_10.Ns, 8)
     times = np.linspace(0.0, 1.0, 9)
     spinful_basis_6, spinful_hamiltonian_6 = spinful_hamiltonian(6)
     spinful_state_6 = deterministic_state(spinful_basis_6.Ns)
@@ -236,18 +369,54 @@ def make_cases() -> list[Case]:
             "symmetry_hamiltonian_construction_sparse",
             "integration",
             "controlled",
-            "csr",
+            "csc",
             f"L=14;nup=7;kblock=0;dimension={symmetry_basis_14.Ns}",
             lambda: hamiltonian(
                 symmetry_static_14,
                 [],
                 basis=symmetry_basis_14,
                 dtype=np.float64,
-                static_fmt="csr",
+                static_fmt="csc",
                 check_herm=False,
                 check_symm=False,
                 check_pcon=False,
             ),
+        ),
+        Case(
+            "general_2d_basis_construction",
+            "integration",
+            "storage_independent",
+            "projector",
+            "Lx=4;Ly=3;Nup=6;kx=1;ky=1;dimension=75",
+            general_spin_basis,
+            validator=lambda basis: basis.Ns == 75,
+            note="Two commuting translation maps through spin_basis_general.",
+        ),
+        Case(
+            "general_2d_hamiltonian_construction_sparse",
+            "integration",
+            "controlled",
+            "csc",
+            "Lx=4;Ly=3;Nup=6;kx=1;ky=1;dimension=75",
+            lambda: general_spin_hamiltonian(
+                general_basis_12, general_static_12
+            ),
+            validator=lambda operator: validate_hamiltonian_fingerprint(
+                operator, 75, -41.0, 18.30300521772313
+            ),
+            note="Periodic 2D XXZ assembly in a two-map symmetry sector.",
+        ),
+        Case(
+            "higher_spin_hamiltonian_construction_sparse",
+            "integration",
+            "controlled",
+            "csc",
+            "L=8;S=1;Nup=8;dimension=1107;periodic=true",
+            lambda: spin_one_hamiltonian(8),
+            validator=lambda operator: validate_hamiltonian_fingerprint(
+                operator, 1107, -816.0, 112.7829774389737
+            ),
+            note="Spin-one XXZ construction with exact angular-momentum factors.",
         ),
         Case(
             "xxz_hamiltonian_construction_dense",
@@ -375,6 +544,16 @@ def make_cases() -> list[Case]:
             lambda: hamiltonian_8_csr.evolve(vector_8, 0.0, times),
         ),
         Case(
+            "static_batch_time_evolution_current_storage",
+            "integration",
+            "current_backend",
+            "csr_krylov",
+            "L=8;nup=4;dimension=70;states=4;times=9;tmax=1",
+            lambda: hamiltonian_8_csr.evolve(batch_vector_8, 0.0, times),
+            validator=validate_batch_evolution,
+            note="Batched column-state evolution across one shared time grid.",
+        ),
+        Case(
             "entanglement_entropy",
             "integration",
             "storage_independent",
@@ -383,6 +562,21 @@ def make_cases() -> list[Case]:
             lambda: full_basis_12.ent_entropy(
                 full_state_12, sub_sys_A=range(6)
             ),
+        ),
+        Case(
+            "batched_entanglement_entropy",
+            "integration",
+            "storage_independent",
+            "state_matrix",
+            "L=10;dimension=1024;states=8;subsystem=5",
+            lambda: full_basis_10.ent_entropy(
+                batch_state_10,
+                sub_sys_A=range(5),
+                density=False,
+                enforce_pure=True,
+            ),
+            validator=validate_batch_entropy,
+            note="Eight pure states evaluated through the batched entropy API.",
         ),
         Case(
             "spinful_hamiltonian_construction_sparse",
@@ -451,7 +645,14 @@ def percentile(sorted_values: list[float], probability: float) -> float:
 
 def time_case(case: Case) -> dict[str, object]:
     global SINK
-    for _ in range(3):
+    SINK = case.function()
+    if case.validator is None:
+        validation = "smoke"
+    else:
+        if not case.validator(SINK):
+            raise AssertionError(f"validation failed for benchmark {case.name}")
+        validation = "passed"
+    for _ in range(2):
         SINK = case.function()
 
     started = time.perf_counter_ns()
@@ -481,8 +682,9 @@ def time_case(case: Case) -> dict[str, object]:
         "comparison": case.comparison,
         "storage": case.storage,
         "supported": "true",
-        "note": "",
+        "note": case.note,
         "parameters": case.parameters,
+        "validation": validation,
         "samples": len(timings),
         "iterations_per_sample": iterations,
         "median_seconds": statistics.median(timings),
