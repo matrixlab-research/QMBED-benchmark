@@ -1,8 +1,8 @@
 # QuSpinVerify — private verification package
 
-Native Julia package that verifies `kunyuan/QuSpin.jl`. Scaffolded by
-[minos](https://github.com/kunyuan/minos) `build`; kept **private on the
-maintainer's account** so its tests and CI logs are never visible to the
+Native Julia package that verifies `matrixlab-research/QuSpin.jl`. Scaffolded
+by [minos](https://github.com/kunyuan/minos) `build`; kept **private in the
+Matrix Lab organization** so its tests and CI logs are never visible to the
 implementing agent.
 
 For the Python-to-Julia QuSpin campaign, the `private-verification` GitHub

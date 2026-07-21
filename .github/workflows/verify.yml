@@ -6,7 +6,7 @@ on:
       candidate_repository:
         description: GitHub repository containing the Julia candidate
         required: true
-        default: kunyuan/QuSpin.jl
+        default: matrixlab-research/QuSpin.jl
       candidate_ref:
         description: Candidate branch, tag, or commit SHA
         required: true
