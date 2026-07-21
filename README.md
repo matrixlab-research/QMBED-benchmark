@@ -105,6 +105,42 @@ residual/norm/unitarity checks, and preserve raw samples in the uploaded CSV.
 They are observational performance evidence rather than a noisy hosted-runner
 pass/fail gate.
 
+### Test provenance
+
+The verification inputs have three distinct sources:
+
+1. The API denominator is the frozen
+   [64-object migration plan](test/full_api_migration_plan.json) extracted from
+   the Python QuSpin surface used for this campaign.
+2. Numerical oracle values are regenerated from the pinned upstream
+   [QuSpin commit `5bf9e5b`](https://github.com/QuSpin/QuSpin/commit/5bf9e5b266e6d8b70e5cf5973c7c7d59d62e412f)
+   and compared with [`oracle/reference.json`](oracle/reference.json).
+3. Scientific scenarios start from the 13 exact-diagonalization families
+   returned by the [LKM Workflow Families registry](https://lkm.test.bohrium.com/web/en/workflows)
+   on 2026-07-20. The resulting 21 deterministic integration cases and their
+   direct/assisted/proxy boundaries are listed in
+   [`docs/ED_WORKFLOW_COVERAGE.md`](docs/ED_WORKFLOW_COVERAGE.md).
+
+The six timed `paper`-tier workflows are larger paired Python/Julia instances
+of that workflow catalog:
+
+| Timed workflow | Workflow/paper source | Scientific kernel retained |
+|---|---|---|
+| MBL mid-spectrum shift-invert | LKM family `19021`; [Pal and Huse, *The many-body localization transition*](https://arxiv.org/abs/1003.2613) | random-field spin chain, fixed-magnetization sector, interior eigenpairs |
+| XXZ Lanczos quench | LKM family `3831`; [Weinberg and Bukov, *QuSpin part I*](https://arxiv.org/abs/1610.03042) | XXZ Hamiltonian and Krylov/Lanczos real-time evolution |
+| Floquet full-unitary heating | LKM family `1069`; [Weinberg and Bukov, *QuSpin part I*](https://arxiv.org/abs/1610.03042) | two-step driven spin chain and full Floquet unitary |
+| Spinful Hubbard spectrum | LKM family `3127` | finite correlated-fermion cluster and low-energy sparse spectrum |
+| Interacting SSH spectrum | LKM family `19000` | half-filled interacting SSH chain and low-energy sparse spectrum |
+| Translation-sector XXZ spectrum | LKM family `3831`; [Weinberg and Bukov, *QuSpin part I*](https://arxiv.org/abs/1610.03042) | momentum-sector construction and sparse eigenspectrum |
+
+These are **paper-shaped workflow benchmarks**, not complete paper
+reproductions and not timings copied from the papers. Lattice sizes,
+coefficients, solver tolerances, and correctness preflights are deterministic
+benchmark choices defined in
+[`python_paper_workflow_benchmarks.py`](benchmark/python_paper_workflow_benchmarks.py)
+and
+[`julia_paper_workflow_benchmarks.jl`](benchmark/julia_paper_workflow_benchmarks.jl).
+
 ### Latest six-workflow timing chart
 
 The grouped bar chart below is updated automatically after a successful
