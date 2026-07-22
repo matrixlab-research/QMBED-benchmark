@@ -1,0 +1,55 @@
+{
+  "schema_version": 1,
+  "source_plan": "test/full_api_migration_plan.json",
+  "counts": {
+    "objects": 64,
+    "methods_excluding_init": 282,
+    "attributes": 180
+  },
+  "namespaces": {
+    "basis": {
+      "objects": 28,
+      "rust_modules": ["quspin::basis"],
+      "verification_contracts": [
+        "rust/src/api.rs",
+        "rust/tests/api_contract.rs",
+        "rust/tests/workflow_catalog.rs"
+      ],
+      "status": "contract_ready"
+    },
+    "operators": {
+      "objects": 12,
+      "rust_modules": ["quspin::operator"],
+      "verification_contracts": [
+        "rust/src/api.rs",
+        "rust/tests/api_contract.rs",
+        "rust/tests/benchmark_protocol.rs"
+      ],
+      "status": "contract_ready"
+    },
+    "tools": {
+      "objects": 24,
+      "rust_modules": [
+        "quspin::solve",
+        "quspin::dynamics",
+        "quspin::measure",
+        "quspin::workflow"
+      ],
+      "verification_contracts": [
+        "rust/src/api.rs",
+        "rust/src/catalog.rs",
+        "rust/tests/workflow_catalog.rs",
+        "rust/tests/benchmark_protocol.rs"
+      ],
+      "status": "contract_ready"
+    }
+  },
+  "activation_states": [
+    "contract_ready",
+    "adapter_compiles",
+    "oracle_passes",
+    "workflow_passes",
+    "paper_benchmark_recorded"
+  ],
+  "current_boundary": "The verification contract and denominator are ready; no Rust candidate implementation or numerical parity is claimed."
+}

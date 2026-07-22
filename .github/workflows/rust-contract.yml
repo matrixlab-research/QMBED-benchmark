@@ -23,6 +23,8 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
         with:
           components: rustfmt, clippy
+      - name: Check the frozen Rust API denominator
+        run: python ci/check_rust_api_plan.py
       - name: Check formatting
         run: cargo fmt --manifest-path rust/Cargo.toml --check
       - name: Lint the verification harness

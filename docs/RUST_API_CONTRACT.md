@@ -183,6 +183,15 @@ The adapter remains private. This prevents the public package from depending on
 the answer-key repository and avoids forcing public types to implement a
 foreign verification trait.
 
+The original Python-to-Julia denominator remains the source of truth. The
+Rust-side [`full_api_contract.json`](../rust/full_api_contract.json) maps all
+64 objects, 282 non-constructor methods, and 180 attributes into `basis`,
+`operator`, `solve`, `dynamics`, `measure`, and `workflow`. CI rejects changes
+that shrink the source denominator, leave a namespace unmapped, or reference a
+missing Rust contract test. Numerical activation advances separately through
+`adapter_compiles`, `oracle_passes`, `workflow_passes`, and
+`paper_benchmark_recorded`.
+
 ## Migrated benchmark denominator
 
 The Rust catalog preserves the exact case IDs and parameters already used for

@@ -22,6 +22,13 @@ enforcement, and CSV compatibility. Once the candidate repository exists, a
 private adapter will implement `QuSpinApi` and `WorkflowBackend`; those same
 generic tests will then exercise the real crate.
 
+[`full_api_contract.json`](full_api_contract.json) also maps the frozen
+64-object / 282-method / 180-attribute migration denominator into the proposed
+Rust module boundaries. `ci/check_rust_api_plan.py` prevents either denominator
+or namespace coverage from drifting silently. `contract_ready` means only that
+the adapter/test boundary exists; it does not mean the Rust implementation or
+Python-oracle parity exists.
+
 Run locally with:
 
 ```bash
