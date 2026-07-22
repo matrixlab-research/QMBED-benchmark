@@ -160,6 +160,22 @@ last six are the literature-derived medium-size extension and exercise the new
 workflow-analysis APIs. Basis construction, Hamiltonian assembly, solver, and
 observable are timed end to end.
 
+### Rust candidate preparation
+
+The private repository now also carries a Rust-first verification contract in
+[`rust/`](rust/). It does not mechanically translate Julia syntax. The proposed
+public API is built around typed bases, reusable operator terms, universal
+Hamiltonian assembly, and a shared stored/matrix-free `LinearOperator` boundary.
+The exact twelve paper workflows, their parameters, physical invariants, and
+the benchmark CSV protocol are mirrored in a small compilable Rust crate.
+
+Until a public Rust candidate exists, CI checks the contract, workflow
+denominator, invariant enforcement, and timing-schema compatibility. The
+candidate will connect through a private adapter rather than depend on this
+answer-key repository. See
+[`docs/RUST_API_CONTRACT.md`](docs/RUST_API_CONTRACT.md) for the API proposal and
+Julia-to-Rust migration map.
+
 ### Latest twelve-workflow timing chart
 
 The overlaid bar chart below is updated automatically after a successful

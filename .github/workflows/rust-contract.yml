@@ -1,0 +1,31 @@
+name: rust-verification-contract
+
+on:
+  pull_request:
+    paths:
+      - "rust/**"
+      - "docs/RUST_API_CONTRACT.md"
+      - ".github/workflows/rust-contract.yml"
+  push:
+    branches:
+      - main
+    paths:
+      - "rust/**"
+      - "docs/RUST_API_CONTRACT.md"
+      - ".github/workflows/rust-contract.yml"
+  workflow_dispatch:
+
+jobs:
+  contract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+      - name: Check formatting
+        run: cargo fmt --manifest-path rust/Cargo.toml --check
+      - name: Lint the verification harness
+        run: cargo clippy --manifest-path rust/Cargo.toml --all-targets -- -D warnings
+      - name: Test API, workflow, invariant, and CSV contracts
+        run: cargo test --manifest-path rust/Cargo.toml

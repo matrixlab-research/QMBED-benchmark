@@ -63,38 +63,49 @@ def read_benchmarks(
 
 def render_benchmarks(paths: list[Path]) -> str:
     cases = read_benchmarks(paths)
-    lines = [
-        "## Python QuSpin baseline vs Julia candidate",
-        "",
-        (
-            "Warm-operation timings exclude JIT warm-up. Both implementations run "
-            "on the same runner with one Julia and BLAS thread. "
-            "Speedup is `Python median / Julia median`; values above 1 mean Julia is faster."
-        ),
-        "",
-        (
-            "`controlled` rows compare the same dense or named sparse representation. "
-            "`current_backend` rows intentionally retain each package's present "
-            "public-API storage choice."
-        ),
-        "",
-        (
-            "Validation is outside the timed region: `passed` means an explicit "
-            "dimension/shape, matrix-fingerprint, or physical-invariant check passed; "
-            "`smoke` means the warm preflight completed without an exception."
-        ),
-        "",
-        "| Suite | Workload | Mode | Validation | Python storage | Julia storage | Python median (ms) | Julia median (ms) | Julia IQR (ms) | Speedup | Julia allocation |",
-        "|---|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|",
-    ]
+    lines = []
+    if any("julia" in languages for languages in cases.values()):
+        lines.extend(
+            [
+                "## Python QuSpin baseline vs Julia candidate",
+                "",
+                (
+                    "Warm-operation timings exclude JIT warm-up. Both implementations run "
+                    "on the same runner with one Julia and BLAS thread. "
+                    "Speedup is `Python median / Julia median`; values above 1 mean Julia is faster."
+                ),
+                "",
+                (
+                    "`controlled` rows compare the same dense or named sparse representation. "
+                    "`current_backend` rows intentionally retain each package's present "
+                    "public-API storage choice."
+                ),
+                "",
+                (
+                    "Validation is outside the timed region: `passed` means an explicit "
+                    "dimension/shape, matrix-fingerprint, or physical-invariant check passed; "
+                    "`smoke` means the warm preflight completed without an exception."
+                ),
+                "",
+                "| Suite | Workload | Mode | Validation | Python storage | Julia storage | Python median (ms) | Julia median (ms) | Julia IQR (ms) | Speedup | Julia allocation |",
+                "|---|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|",
+            ]
+        )
     notes = []
     julia_only = []
+    rust_pairs = []
     missing_pairs = []
     for (suite, case_id), languages in cases.items():
-        if set(languages) != {"python", "julia"}:
-            if set(languages) == {"julia"}:
-                julia_only.append((suite, case_id, languages["julia"]))
-            elif suite == "paper":
+        has_julia_pair = "python" in languages and "julia" in languages
+        has_rust_pair = "python" in languages and "rust" in languages
+        if has_rust_pair:
+            rust_pairs.append(
+                (suite, case_id, languages["python"], languages["rust"])
+            )
+        if set(languages) == {"julia"}:
+            julia_only.append((suite, case_id, languages["julia"]))
+        if not has_julia_pair:
+            if suite == "paper" and not has_rust_pair:
                 missing_pairs.append((suite, case_id, sorted(languages)))
             continue
         python = languages["python"]
@@ -179,6 +190,69 @@ def render_benchmarks(paths: list[Path]) -> str:
                     median=milliseconds(julia["median_seconds"]),
                     p25=milliseconds(julia["p25_seconds"]),
                     p75=milliseconds(julia["p75_seconds"]),
+                    allocation=allocation_text,
+                )
+            )
+    if rust_pairs:
+        lines.extend(
+            [
+                "",
+                "## Python QuSpin baseline vs Rust candidate",
+                "",
+                (
+                    "The Rust adapter uses the same paper case IDs, physical "
+                    "preflights, warm-up count, sample count, and one-thread policy. "
+                    "Speedup is `Python median / Rust median`."
+                ),
+                "",
+                "| Suite | Workload | Mode | Validation | Python storage | Rust storage | Python median (ms) | Rust median (ms) | Rust IQR (ms) | Speedup | Rust allocation |",
+                "|---|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|",
+            ]
+        )
+        for suite, case_id, python, rust in rust_pairs:
+            name = rust.get("benchmark") or python.get("benchmark") or case_id
+            rust_supported = rust.get("supported", "true").lower() == "true"
+            if rust_supported:
+                speedup = (
+                    float(python["median_seconds"])
+                    / float(rust["median_seconds"])
+                )
+                rust_ms = milliseconds(rust["median_seconds"])
+                rust_iqr = (
+                    f"{milliseconds(rust['p25_seconds'])}–"
+                    f"{milliseconds(rust['p75_seconds'])}"
+                )
+                speedup_text = f"{speedup:.2f}×"
+                allocation = rust.get("median_allocated_bytes")
+                allocation_text = (
+                    f"{int(allocation) / 1024:.1f} KiB"
+                    if allocation
+                    else "n/a"
+                )
+            else:
+                rust_ms = "unsupported"
+                rust_iqr = "n/a"
+                speedup_text = "n/a"
+                allocation_text = "n/a"
+            validation = (
+                rust.get("validation")
+                or python.get("validation")
+                or "not_recorded"
+            )
+            lines.append(
+                "| {suite} | `{name}` | {comparison} | {validation} | "
+                "{python_storage} | {rust_storage} | "
+                "{python_ms} | {rust_ms} | {rust_iqr} | {speedup} | {allocation} |".format(
+                    suite=suite,
+                    name=name,
+                    comparison=rust.get("comparison", "unspecified"),
+                    validation=validation,
+                    python_storage=python.get("storage", "unspecified"),
+                    rust_storage=rust.get("storage", "unspecified"),
+                    python_ms=milliseconds(python["median_seconds"]),
+                    rust_ms=rust_ms,
+                    rust_iqr=rust_iqr,
+                    speedup=speedup_text,
                     allocation=allocation_text,
                 )
             )
