@@ -10,7 +10,12 @@ from pathlib import Path
 CI_DIR = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(CI_DIR))
 
-from render_paper_workflow_chart import CASE_ORDER, load_pairs, render_svg
+from render_paper_workflow_chart import (
+    CASE_ORDER,
+    _speedup_annotation,
+    load_pairs,
+    render_svg,
+)
 
 
 class PaperWorkflowChartTests(unittest.TestCase):
@@ -46,7 +51,7 @@ class PaperWorkflowChartTests(unittest.TestCase):
                 )
         return path
 
-    def test_renders_twelve_paired_bars_with_provenance(self) -> None:
+    def test_renders_twelve_overlaid_pairs_with_speedups_and_provenance(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             directory = Path(temporary)
             pairs = load_pairs(
@@ -62,11 +67,30 @@ class PaperWorkflowChartTests(unittest.TestCase):
 
         self.assertEqual(svg.count('class="python-bar"'), 12)
         self.assertEqual(svg.count('class="julia-bar"'), 12)
+        self.assertEqual(svg.count('class="speedup-label faster"'), 12)
+        self.assertEqual(svg.count('class="timing-label"'), 12)
+        self.assertEqual(svg.count('data-center-y="179.00"'), 2)
         self.assertIn("GitHub Actions run 42", svg)
         self.assertIn("0123456789ab", svg)
         self.assertIn("Workflow 12", svg)
         self.assertIn("240.000", svg)
         self.assertIn("120.000", svg)
+        self.assertIn("Julia 2.00× faster", svg)
+        self.assertIn("P 240.0 · J 120.0 ms", svg)
+
+    def test_speedup_annotations_use_human_readable_direction(self) -> None:
+        self.assertEqual(
+            _speedup_annotation(2.0, 1.0),
+            ("Julia 2.00× faster", "faster"),
+        )
+        self.assertEqual(
+            _speedup_annotation(1.0, 2.0),
+            ("Julia 2.00× slower", "slower"),
+        )
+        self.assertEqual(
+            _speedup_annotation(1.0, 1.005),
+            ("Julia ≈ parity (1.00×)", "parity"),
+        )
 
     def test_rejects_missing_workflow(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
