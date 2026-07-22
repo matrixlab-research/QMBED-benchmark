@@ -132,13 +132,13 @@ def render_svg(
         )
 
     width = 1180
-    left = 335
-    right = 225
-    top = 150
-    bottom = 70
-    row_height = 58
-    python_bar_height = 22
-    julia_bar_height = 10
+    left = 350
+    right = 245
+    top = 164
+    bottom = 80
+    row_height = 66
+    python_bar_height = 30
+    julia_bar_height = 16
     plot_width = width - left - right
     annotation_x = left + plot_width + 18
     height = top + row_height * len(pairs) + bottom
@@ -166,23 +166,27 @@ def render_svg(
         ),
         '<rect width="100%" height="100%" rx="12" fill="#ffffff"/>',
         (
-            '<text x="28" y="42" font-family="system-ui, sans-serif" '
-            'font-size="24" font-weight="700" fill="#172033">'
+            '<text class="chart-heading" x="28" y="46" '
+            'font-family="system-ui, sans-serif" '
+            'font-size="28" font-weight="700" fill="#172033">'
             'Twelve paper-workflow end-to-end timings</text>'
         ),
         (
-            '<text x="28" y="70" font-family="system-ui, sans-serif" '
-            f'font-size="13" fill="#596579">{_text(subtitle)}</text>'
+            '<text class="chart-subtitle" x="28" y="78" '
+            'font-family="system-ui, sans-serif" '
+            f'font-size="15" fill="#596579">{_text(subtitle)}</text>'
         ),
-        '<rect x="28" y="92" width="18" height="12" rx="2" fill="#377eb8"/>',
+        '<rect x="28" y="98" width="24" height="16" rx="3" fill="#377eb8"/>',
         (
-            '<text x="54" y="103" font-family="system-ui, sans-serif" '
-            'font-size="13" fill="#344054">Python QuSpin</text>'
+            '<text class="legend-label" x="62" y="112" '
+            'font-family="system-ui, sans-serif" '
+            'font-size="15" fill="#344054">Python QuSpin</text>'
         ),
-        '<rect x="174" y="92" width="18" height="12" rx="2" fill="#e76f51"/>',
+        '<rect x="202" y="98" width="24" height="16" rx="3" fill="#e76f51"/>',
         (
-            '<text x="200" y="103" font-family="system-ui, sans-serif" '
-            'font-size="13" fill="#344054">Julia QuSpin</text>'
+            '<text class="legend-label" x="236" y="112" '
+            'font-family="system-ui, sans-serif" '
+            'font-size="15" fill="#344054">Julia QuSpin</text>'
         ),
     ]
 
@@ -196,18 +200,20 @@ def render_svg(
                     f'y2="{height - bottom + 4}" stroke="#e6e9ef" stroke-width="1"/>'
                 ),
                 (
-                    f'<text x="{x:.2f}" y="{height - bottom + 28}" '
+                    f'<text class="tick-label" x="{x:.2f}" '
+                    f'y="{height - bottom + 30}" '
                     'text-anchor="middle" font-family="system-ui, sans-serif" '
-                    f'font-size="12" fill="#667085">{tick:g}</text>'
+                    f'font-size="14" fill="#667085">{tick:g}</text>'
                 ),
             ]
         )
         tick += tick_step
     lines.append(
         (
-            f'<text x="{left + plot_width / 2:.2f}" y="{height - 16}" '
+            f'<text class="axis-label" x="{left + plot_width / 2:.2f}" '
+            f'y="{height - 18}" '
             'text-anchor="middle" font-family="system-ui, sans-serif" '
-            'font-size="13" fill="#475467">median wall time (ms)</text>'
+            'font-size="15" fill="#475467">median wall time (ms)</text>'
         )
     )
 
@@ -218,8 +224,9 @@ def render_svg(
         julia_y = center - julia_bar_height / 2
         lines.append(
             (
-                f'<text x="{left - 16}" y="{center + 5:.2f}" text-anchor="end" '
-                'font-family="system-ui, sans-serif" font-size="13" '
+                f'<text class="workflow-label" x="{left - 16}" '
+                f'y="{center + 5:.2f}" text-anchor="end" '
+                'font-family="system-ui, sans-serif" font-size="15" '
                 f'font-weight="600" fill="#283548">{_text(pair.label)}</text>'
             )
         )
@@ -247,7 +254,7 @@ def render_svg(
                     f'<rect class="{css_class}" data-case-id="{_text(pair.case_id)}" '
                     f'data-center-y="{center:.2f}" '
                     f'x="{left}" y="{y:.2f}" width="{bar_width:.2f}" '
-                    f'height="{bar_height}" rx="3" fill="{color}">'
+                    f'height="{bar_height}" rx="4" fill="{color}">'
                     f'<title>{language}: {value:.3f} ms</title></rect>'
                 )
             )
@@ -260,16 +267,16 @@ def render_svg(
                 (
                     f'<text class="speedup-label {speed_class}" '
                     f'data-case-id="{_text(pair.case_id)}" '
-                    f'x="{annotation_x:.2f}" y="{center - 2:.2f}" '
-                    'font-family="system-ui, sans-serif" font-size="13" '
+                    f'x="{annotation_x:.2f}" y="{center - 3:.2f}" '
+                    'font-family="system-ui, sans-serif" font-size="15" '
                     f'font-weight="600" fill="#344054">{_text(annotation)}</text>'
                 ),
                 (
                     f'<text class="timing-label" '
                     f'data-case-id="{_text(pair.case_id)}" '
-                    f'x="{annotation_x:.2f}" y="{center + 14:.2f}" '
+                    f'x="{annotation_x:.2f}" y="{center + 17:.2f}" '
                     'font-family="ui-monospace, SFMono-Regular, monospace" '
-                    'font-size="11" fill="#667085">'
+                    'font-size="13" fill="#667085">'
                     f'P {pair.python_ms:.1f} · J {pair.julia_ms:.1f} ms</text>'
                 ),
             ]
