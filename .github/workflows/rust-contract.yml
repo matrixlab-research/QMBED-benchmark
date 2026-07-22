@@ -35,3 +35,5 @@ jobs:
         run: cargo clippy --manifest-path rust/Cargo.toml --all-targets -- -D warnings
       - name: Test API, workflow, invariant, and CSV contracts
         run: cargo test --manifest-path rust/Cargo.toml
+      - name: Execute all twelve paper workflows
+        run: cargo test --release --manifest-path rust/Cargo.toml --test candidate_workflows -- --ignored --nocapture

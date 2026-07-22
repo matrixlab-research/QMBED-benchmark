@@ -169,10 +169,11 @@ Hamiltonian assembly, and a shared stored/matrix-free `LinearOperator` boundary.
 The exact twelve paper workflows, their parameters, physical invariants, and
 the benchmark CSV protocol are mirrored in a small compilable Rust crate.
 
-Until a public Rust candidate exists, CI checks the contract, workflow
-denominator, invariant enforcement, and timing-schema compatibility. The
-candidate will connect through a private adapter rather than depend on this
-answer-key repository. See
+The public Rust candidate now connects through a private adapter pinned to an
+immutable commit. Release CI executes all twelve paper workflows and validates
+their physical invariants; a five-sample local baseline is recorded under
+[`rust/benchmarks`](rust/benchmarks/). Same-runner Python/Rust comparisons and
+the cross-language numerical oracle remain separate follow-up gates. See
 [`docs/RUST_API_CONTRACT.md`](docs/RUST_API_CONTRACT.md) for the API proposal and
 Julia-to-Rust migration map.
 
