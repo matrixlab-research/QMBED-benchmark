@@ -8,6 +8,9 @@ publish = false
 [lib]
 path = "src/lib.rs"
 
+[dependencies]
+quspin = { git = "https://github.com/matrixlab-research/QuSpin.rs.git", rev = "8d5cd5f7d84348f571ebfbeca5c709fc05cab770" }
+
 [lints.rust]
 unsafe_code = "forbid"
 

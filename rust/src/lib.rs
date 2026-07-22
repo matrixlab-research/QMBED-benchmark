@@ -7,12 +7,14 @@
 
 pub mod api;
 pub mod benchmark;
+pub mod candidate;
 pub mod catalog;
 pub mod observation;
 
 pub use api::{
-    AssemblyChecks, BasisHandle, BasisSpec, Coupling, EigshOptions, EvolutionOptions,
-    HamiltonianOptions, LinearOperator, MatrixFormat, OperatorTerm, QuSpinApi, SpectrumOptions,
+    AssemblyChecks, BasisHandle, BasisSpec, ComplexCoefficient, Coupling, EigshOptions,
+    EvolutionOptions, HamiltonianOptions, LinearOperator, MatrixFormat, OperatorTerm, QuSpinApi,
+    SpectrumOptions, SpectrumTarget,
 };
 pub use benchmark::{benchmark_suite, BenchmarkOptions, BenchmarkRow, WorkflowBackend};
 pub use catalog::{paper_workflows, Capability, WorkflowCase, WorkflowOrigin};

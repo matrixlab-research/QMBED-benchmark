@@ -1,7 +1,7 @@
 # Rust verification preparation
 
-This directory is the test-side foundation for a future Rust QuSpin package.
-It is deliberately split into three concerns:
+This directory is the private test-side foundation for QuSpin.rs. It is
+deliberately split into four concerns:
 
 1. `src/api.rs` defines the narrow adapter contract expected from a candidate:
    bases, operator terms, Hamiltonian assembly, a shared `LinearOperator`,
@@ -12,22 +12,25 @@ It is deliberately split into three concerns:
    invariants.
 3. `src/benchmark.rs` ports the warm-up/sample protocol and emits the same CSV
    fields used by the current timing renderer, with `language=rust`.
+4. `src/candidate.rs` pins and adapts one public QuSpin.rs commit. The adapter
+   smoke test exercises real basis construction, universal assembly, and
+   `eigsh`; it is no longer a contract-only mock.
 
 `ci/render_timing_report.py` accepts the resulting Rust CSV either alongside
 the existing Python/Julia files or as a Python/Rust pair.
 
 The crate does **not** contain a hidden Rust ED implementation. Its current
 tests validate the API/harness design, the twelve-case denominator, invariant
-enforcement, and CSV compatibility. Once the candidate repository exists, a
-private adapter will implement `QuSpinApi` and `WorkflowBackend`; those same
-generic tests will then exercise the real crate.
+enforcement, CSV compatibility, and the low-level adapter against the public
+crate. `WorkflowBackend` is intentionally still inactive until each paper case
+has a real implementation and passes its physical invariants.
 
 [`full_api_contract.json`](full_api_contract.json) also maps the frozen
 64-object / 282-method / 180-attribute migration denominator into the proposed
 Rust module boundaries. `ci/check_rust_api_plan.py` prevents either denominator
-or namespace coverage from drifting silently. `contract_ready` means only that
-the adapter/test boundary exists; it does not mean the Rust implementation or
-Python-oracle parity exists.
+or namespace coverage from drifting silently. `adapter_compiles` means only
+that the pinned public crate crosses the private low-level boundary; it does
+not mean Python-oracle parity or paper-workflow completion.
 
 The rewrite task itself is frozen from [`spec_source.json`](spec_source.json)
 into the content-addressed bundle under [`specs/quspin`](specs/quspin). Minos

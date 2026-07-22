@@ -12,20 +12,24 @@
       "rust_modules": ["quspin::basis"],
       "verification_contracts": [
         "rust/src/api.rs",
+        "rust/src/candidate.rs",
         "rust/tests/api_contract.rs",
+        "rust/tests/candidate_adapter.rs",
         "rust/tests/workflow_catalog.rs"
       ],
-      "status": "contract_ready"
+      "status": "adapter_compiles"
     },
     "operators": {
       "objects": 12,
       "rust_modules": ["quspin::operator"],
       "verification_contracts": [
         "rust/src/api.rs",
+        "rust/src/candidate.rs",
         "rust/tests/api_contract.rs",
+        "rust/tests/candidate_adapter.rs",
         "rust/tests/benchmark_protocol.rs"
       ],
-      "status": "contract_ready"
+      "status": "adapter_compiles"
     },
     "tools": {
       "objects": 24,
@@ -37,11 +41,13 @@
       ],
       "verification_contracts": [
         "rust/src/api.rs",
+        "rust/src/candidate.rs",
         "rust/src/catalog.rs",
+        "rust/tests/candidate_adapter.rs",
         "rust/tests/workflow_catalog.rs",
         "rust/tests/benchmark_protocol.rs"
       ],
-      "status": "contract_ready"
+      "status": "adapter_compiles"
     }
   },
   "activation_states": [
@@ -51,5 +57,5 @@
     "workflow_passes",
     "paper_benchmark_recorded"
   ],
-  "current_boundary": "The verification contract and denominator are ready; no Rust candidate implementation or numerical parity is claimed."
+  "current_boundary": "The private adapter compiles against a pinned QuSpin.rs commit and passes a low-level basis/operator/eigsh smoke test; twelve-workflow numerical parity and paper benchmarks are not yet claimed."
 }
