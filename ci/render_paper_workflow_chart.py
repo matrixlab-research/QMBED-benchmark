@@ -110,6 +110,15 @@ def _text(value: object) -> str:
     return html.escape(str(value), quote=True)
 
 
+def _speedup_annotation(python_ms: float, julia_ms: float) -> tuple[str, str]:
+    ratio = python_ms / julia_ms
+    if ratio > 1.01:
+        return f"Julia {ratio:.2f}× faster", "faster"
+    if ratio < 0.99:
+        return f"Julia {1 / ratio:.2f}× slower", "slower"
+    return f"Julia ≈ parity ({ratio:.2f}×)", "parity"
+
+
 def render_svg(
     pairs: list[TimingPair],
     *,
@@ -122,14 +131,16 @@ def render_svg(
             f"expected {len(CASE_ORDER)} timing pairs, found {len(pairs)}"
         )
 
-    width = 1120
+    width = 1180
     left = 335
-    right = 80
+    right = 225
     top = 150
     bottom = 70
-    row_height = 66
-    bar_height = 19
+    row_height = 58
+    python_bar_height = 22
+    julia_bar_height = 10
     plot_width = width - left - right
+    annotation_x = left + plot_width + 18
     height = top + row_height * len(pairs) + bottom
     axis_max, tick_step = _nice_axis_max(
         max(max(pair.python_ms, pair.julia_ms) for pair in pairs)
@@ -149,8 +160,9 @@ def render_svg(
         ),
         '<title id="chart-title">Twelve paper-workflow end-to-end timings</title>',
         (
-            '<desc id="chart-desc">Grouped horizontal bars compare Python QuSpin '
-            'and Julia QuSpin median wall times for twelve paper-shaped workflows.</desc>'
+            '<desc id="chart-desc">Overlaid horizontal bars compare Python QuSpin '
+            'and Julia QuSpin median wall times for twelve paper-shaped workflows. '
+            'Each row directly labels whether Julia is faster, slower, or at parity.</desc>'
         ),
         '<rect width="100%" height="100%" rx="12" fill="#ffffff"/>',
         (
@@ -202,8 +214,8 @@ def render_svg(
     for index, pair in enumerate(pairs):
         row_top = top + index * row_height
         center = row_top + row_height / 2
-        python_y = center - bar_height - 3
-        julia_y = center + 3
+        python_y = center - python_bar_height / 2
+        julia_y = center - julia_bar_height / 2
         lines.append(
             (
                 f'<text x="{left - 16}" y="{center + 5:.2f}" text-anchor="end" '
@@ -211,27 +223,57 @@ def render_svg(
                 f'font-weight="600" fill="#283548">{_text(pair.label)}</text>'
             )
         )
-        for language, value, y, color, css_class in (
-            ("Python", pair.python_ms, python_y, "#377eb8", "python-bar"),
-            ("Julia", pair.julia_ms, julia_y, "#e76f51", "julia-bar"),
+        for language, value, y, bar_height, color, css_class in (
+            (
+                "Python",
+                pair.python_ms,
+                python_y,
+                python_bar_height,
+                "#377eb8",
+                "python-bar",
+            ),
+            (
+                "Julia",
+                pair.julia_ms,
+                julia_y,
+                julia_bar_height,
+                "#e76f51",
+                "julia-bar",
+            ),
         ):
             bar_width = (value / axis_max) * plot_width
             lines.append(
                 (
                     f'<rect class="{css_class}" data-case-id="{_text(pair.case_id)}" '
+                    f'data-center-y="{center:.2f}" '
                     f'x="{left}" y="{y:.2f}" width="{bar_width:.2f}" '
                     f'height="{bar_height}" rx="3" fill="{color}">'
                     f'<title>{language}: {value:.3f} ms</title></rect>'
                 )
             )
-            label_x = left + bar_width + 7
-            lines.append(
+        annotation, speed_class = _speedup_annotation(
+            pair.python_ms,
+            pair.julia_ms,
+        )
+        lines.extend(
+            [
                 (
-                    f'<text x="{label_x:.2f}" y="{y + 14:.2f}" '
+                    f'<text class="speedup-label {speed_class}" '
+                    f'data-case-id="{_text(pair.case_id)}" '
+                    f'x="{annotation_x:.2f}" y="{center - 2:.2f}" '
+                    'font-family="system-ui, sans-serif" font-size="13" '
+                    f'font-weight="600" fill="#344054">{_text(annotation)}</text>'
+                ),
+                (
+                    f'<text class="timing-label" '
+                    f'data-case-id="{_text(pair.case_id)}" '
+                    f'x="{annotation_x:.2f}" y="{center + 14:.2f}" '
                     'font-family="ui-monospace, SFMono-Regular, monospace" '
-                    f'font-size="12" fill="#344054">{value:.3f}</text>'
-                )
-            )
+                    'font-size="11" fill="#667085">'
+                    f'P {pair.python_ms:.1f} · J {pair.julia_ms:.1f} ms</text>'
+                ),
+            ]
+        )
 
     lines.append('</svg>')
     return "\n".join(lines) + "\n"

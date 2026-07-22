@@ -162,14 +162,15 @@ observable are timed end to end.
 
 ### Latest twelve-workflow timing chart
 
-The grouped bar chart below is updated automatically after a successful
-`paper`-tier run dispatched from `main`. It reports the latest same-runner
-median wall time for Python QuSpin and the selected Julia candidate; lower is
+The overlaid bar chart below is updated automatically after a successful
+`paper`-tier run dispatched from `main`. Each workflow shares one baseline: the
+wider blue bar is Python QuSpin and the narrower orange bar is the selected
+Julia candidate. The right-hand annotation reports whether Julia is faster,
+slower, or at parity, together with both same-runner median wall times; lower is
 better. PR and non-`main` runs still upload the SVG as an Actions artifact but
-do not rewrite this README snapshot. Until the first successful twelve-case
-run reaches `main`, the committed SVG remains the historical six-case snapshot.
+do not rewrite this README snapshot.
 
-![Python and Julia median timings for twelve paper workflows](docs/paper-workflow-timings.svg)
+![Overlaid Python and Julia median timings with speedup labels for twelve paper workflows](docs/paper-workflow-timings.svg)
 
 ## Extending the suite
 
