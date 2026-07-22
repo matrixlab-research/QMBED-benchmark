@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import csv
+import re
 import sys
 import tempfile
 import unittest
@@ -69,7 +70,27 @@ class PaperWorkflowChartTests(unittest.TestCase):
         self.assertEqual(svg.count('class="julia-bar"'), 12)
         self.assertEqual(svg.count('class="speedup-label faster"'), 12)
         self.assertEqual(svg.count('class="timing-label"'), 12)
-        self.assertEqual(svg.count('data-center-y="179.00"'), 2)
+        self.assertEqual(svg.count('data-center-y="197.00"'), 2)
+        self.assertEqual(
+            len(re.findall(r'class="python-bar"[^>]*height="30"', svg)),
+            12,
+        )
+        self.assertEqual(
+            len(re.findall(r'class="julia-bar"[^>]*height="16"', svg)),
+            12,
+        )
+        self.assertRegex(
+            svg,
+            r'class="workflow-label"[^>]*font-size="15"',
+        )
+        self.assertRegex(
+            svg,
+            r'class="speedup-label faster"[^>]*font-size="15"',
+        )
+        self.assertRegex(
+            svg,
+            r'class="timing-label"[^>]*font-size="13"',
+        )
         self.assertIn("GitHub Actions run 42", svg)
         self.assertIn("0123456789ab", svg)
         self.assertIn("Workflow 12", svg)
