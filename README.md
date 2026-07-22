@@ -177,6 +177,12 @@ the cross-language numerical oracle remain separate follow-up gates. See
 [`docs/RUST_API_CONTRACT.md`](docs/RUST_API_CONTRACT.md) for the API proposal and
 Julia-to-Rust migration map.
 
+The accepted first-stage task documents stay frozen. Preparation for the
+complete package is maintained separately under [`rust/full-taskdoc/`](rust/full-taskdoc/):
+the scientific motivation, a Rust-native contract mapping all 64 frozen Python
+objects, and the public/private/workflow/scale gates required before full
+parity can be claimed.
+
 ### Latest twelve-workflow timing chart
 
 The overlaid bar chart below is updated automatically after a successful

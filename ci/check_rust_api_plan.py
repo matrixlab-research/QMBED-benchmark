@@ -12,9 +12,15 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 SOURCE_PLAN = ROOT / "test" / "full_api_migration_plan.json"
 RUST_CONTRACT = ROOT / "rust" / "full_api_contract.json"
+FULL_TASK_CONTRACT = ROOT / "rust" / "full-taskdoc" / "CONTRACT.md"
 
 
-def validate(source_path: Path, contract_path: Path, root: Path) -> str:
+def validate(
+    source_path: Path,
+    contract_path: Path,
+    root: Path,
+    full_task_contract_path: Path = FULL_TASK_CONTRACT,
+) -> str:
     source = json.loads(source_path.read_text())
     contract = json.loads(contract_path.read_text())
 
@@ -71,11 +77,24 @@ def validate(source_path: Path, contract_path: Path, root: Path) -> str:
                 f"{sorted(unknown_tiers)}"
             )
 
+    full_task_contract = full_task_contract_path.read_text()
+    missing_objects = [
+        item["source"]
+        for item in source["objects"]
+        if f"`{item['source'].rsplit('.', 1)[-1]}`" not in full_task_contract
+    ]
+    if missing_objects:
+        raise ValueError(
+            "full Rust task contract omits frozen objects: "
+            + ", ".join(missing_objects)
+        )
+
     return (
         "Rust API contract: "
         f"{expected_counts['objects']} objects, "
         f"{expected_counts['methods_excluding_init']} methods, "
         f"{expected_counts['attributes']} attributes; "
+        "full task mapping present; "
         + ", ".join(
             f"{namespace}={count}"
             for namespace, count in sorted(source_namespaces.items())
@@ -87,8 +106,18 @@ def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--source", type=Path, default=SOURCE_PLAN)
     parser.add_argument("--contract", type=Path, default=RUST_CONTRACT)
+    parser.add_argument(
+        "--full-task-contract", type=Path, default=FULL_TASK_CONTRACT
+    )
     args = parser.parse_args()
-    print(validate(args.source, args.contract, ROOT))
+    print(
+        validate(
+            args.source,
+            args.contract,
+            ROOT,
+            args.full_task_contract,
+        )
+    )
 
 
 if __name__ == "__main__":

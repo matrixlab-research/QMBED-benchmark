@@ -63,5 +63,6 @@
     "workflow_passes",
     "paper_benchmark_recorded"
   ],
-  "current_boundary": "The private adapter and all twelve medium-size paper workflows pass their physical invariants against the pinned QuSpin.rs commit; a one-warm-up, five-sample local paper benchmark is recorded, while cross-language oracle comparison and same-runner hosted timings are not yet claimed."
+  "current_boundary": "The private adapter and all twelve medium-size paper workflows pass their physical invariants against the pinned QuSpin.rs commit; a one-warm-up, five-sample local paper benchmark is recorded, while cross-language oracle comparison and same-runner hosted timings are not yet claimed.",
+  "namespace_status_scope": "Namespace status records activation of the current workflow adapter and benchmark. It does not mean that every frozen object or member in that namespace is implemented; full-package status is tracked per object or semantic family under rust/full-taskdoc/."
 }

@@ -11,7 +11,12 @@ CI_DIR = Path(__file__).resolve().parents[1]
 ROOT = CI_DIR.parent
 sys.path.insert(0, str(CI_DIR))
 
-from check_rust_api_plan import RUST_CONTRACT, SOURCE_PLAN, validate
+from check_rust_api_plan import (
+    FULL_TASK_CONTRACT,
+    RUST_CONTRACT,
+    SOURCE_PLAN,
+    validate,
+)
 
 
 class RustApiPlanTests(unittest.TestCase):
@@ -20,6 +25,7 @@ class RustApiPlanTests(unittest.TestCase):
         self.assertIn("64 objects", summary)
         self.assertIn("282 methods", summary)
         self.assertIn("180 attributes", summary)
+        self.assertIn("full task mapping present", summary)
 
     def test_denominator_drift_is_rejected(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
@@ -29,6 +35,17 @@ class RustApiPlanTests(unittest.TestCase):
             changed.write_text(json.dumps(contract))
             with self.assertRaisesRegex(ValueError, "denominator drift"):
                 validate(SOURCE_PLAN, changed, ROOT)
+
+    def test_full_task_mapping_cannot_drop_an_object(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            changed = Path(temporary) / "CONTRACT.md"
+            changed.write_text(
+                FULL_TASK_CONTRACT.read_text().replace(
+                    "`spin_basis_general`", "spin basis general"
+                )
+            )
+            with self.assertRaisesRegex(ValueError, "omits frozen objects"):
+                validate(SOURCE_PLAN, RUST_CONTRACT, ROOT, changed)
 
 
 if __name__ == "__main__":

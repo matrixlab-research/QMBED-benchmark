@@ -26,8 +26,9 @@ invariant before a benchmark row can be emitted.
 
 [`full_api_contract.json`](full_api_contract.json) also maps the frozen
 64-object / 282-method / 180-attribute migration denominator into the proposed
-Rust module boundaries. `ci/check_rust_api_plan.py` prevents either denominator
-or namespace coverage from drifting silently. The low-level adapter and all
+Rust module boundaries. `ci/check_rust_api_plan.py` prevents the denominator,
+namespace coverage, or complete-version object mapping from drifting silently.
+The low-level adapter and all
 twelve workflows run against the pinned candidate, and the first one-warm-up,
 five-sample local record is stored under `rust/benchmarks/`. Cross-language
 oracle comparison and same-runner hosted timings remain separate gates.
@@ -39,6 +40,15 @@ renders the public [`MOTIVATION.md`](taskdoc/MOTIVATION.md),
 that one bundle. The source and bundle remain private because they contain
 held-out anchors; the three generated task documents contain only derivations,
 the required Rust surface, and small visible examples.
+
+Those frozen documents specify the accepted 23-symbol paper-workflow core.
+They are intentionally not edited as the package grows. The design inputs for
+the complete Python-1.0.1 capability denominator are maintained separately in
+[`full-taskdoc/MOTIVATION.md`](full-taskdoc/MOTIVATION.md),
+[`full-taskdoc/CONTRACT.md`](full-taskdoc/CONTRACT.md), and
+[`full-taskdoc/TESTS.md`](full-taskdoc/TESTS.md). The full documents distinguish
+surface, semantic, workflow, and scale completion and map every one of the 64
+frozen Python objects to a Rust-native boundary.
 
 Run locally with:
 
