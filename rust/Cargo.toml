@@ -1,0 +1,19 @@
+[package]
+name = "quspin-rust-verify"
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+publish = false
+
+[lib]
+path = "src/lib.rs"
+
+[dependencies]
+quspin = { git = "https://github.com/matrixlab-research/QuSpin.rs.git", rev = "8d5cd5f7d84348f571ebfbeca5c709fc05cab770" }
+
+[lints.rust]
+unsafe_code = "forbid"
+
+[lints.clippy]
+all = "warn"
+pedantic = "warn"

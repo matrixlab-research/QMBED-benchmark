@@ -1,0 +1,2346 @@
+{
+  "package": "quspin",
+  "version": "0.1.0",
+  "target_language": "rust",
+  "source": "workflow-derived Rust rewrite contract",
+  "snapshot": "quspin-julia-verify:b43f6c8",
+  "frozen_at": "2026-07-22T00:00:00Z",
+  "dependency_edges": [],
+  "specs": [
+    {
+      "symbol": "error::QuSpinError",
+      "package": "quspin",
+      "module": "error",
+      "signatures": [
+        "pub enum QuSpinError { InvalidOperator, InvalidCoupling, InvalidSite, StateNotInBasis, InvalidSector, IncompatibleSymmetry, NonHermitian, InvalidOptions, DimensionMismatch, RankDeficient, UnsupportedBackend, NonConvergence { iterations: usize, residual: f64 } }",
+        "pub type Result<T> = std::result::Result<T, QuSpinError>"
+      ],
+      "exported": true,
+      "contract": {
+        "atol": null,
+        "rtol": null,
+        "tol_source": "workflow-contract",
+        "comparison": "custom:error-category",
+        "domain": "all invalid user inputs and recoverable solver or backend failures",
+        "type_constraints": []
+      },
+      "motivation": {
+        "question": "Give callers stable, actionable failure categories without parsing strings or catching panics.",
+        "definition": "Every recoverable public failure maps to one stable category; variants may carry additional context while preserving the category.",
+        "identities": [
+          "Valid inputs do not return an error",
+          "Invalid user input never requires a panic",
+          "Non-convergence carries the final iteration count and residual"
+        ]
+      },
+      "properties": [
+        {
+          "id": "error-stable-category",
+          "kind": "compatibility",
+          "statement": "The listed categories remain distinguishable by pattern matching.",
+          "predicate": "",
+          "ref": "workflow-contract",
+          "verification_status": "stated"
+        },
+        {
+          "id": "error-no-panic",
+          "kind": "safety",
+          "statement": "Invalid public input returns QuSpinError rather than panicking.",
+          "predicate": "",
+          "ref": "workflow-contract",
+          "verification_status": "stated"
+        },
+        {
+          "id": "error-context",
+          "kind": "diagnostic",
+          "statement": "Non-convergence exposes iteration count and final residual as structured data.",
+          "predicate": "",
+          "ref": "workflow-contract",
+          "verification_status": "stated"
+        },
+        {
+          "id": "error-source",
+          "kind": "ergonomics",
+          "statement": "Errors implement the standard Error and Display traits and preserve nested dependency causes when available.",
+          "predicate": "",
+          "ref": "workflow-contract",
+          "verification_status": "stated"
+        }
+      ],
+      "anchors": [
+        {
+          "input": "operation=Basis.state;index_out_of_range=true",
+          "expected": "category=StateNotInBasis;panic=false",
+          "precision": "exact",
+          "region": "visible-error",
+          "held_out": false
+        },
+        {
+          "input": "operation=OperatorTerm.new;arity_mismatch=true",
+          "expected": "category=InvalidCoupling;panic=false",
+          "precision": "exact",
+          "region": "held-out-error",
+          "held_out": true
+        },
+        {
+          "input": "operation=eigsh;rectangular=true",
+          "expected": "category=DimensionMismatch;panic=false",
+          "precision": "exact",
+          "region": "held-out-error-shape",
+          "held_out": true
+        },
+        {
+          "input": "operation=eigsh;forced_nonconvergence=true",
+          "expected": "category=NonConvergence;iterations_present=true;residual_present=true",
+          "precision": "exact",
+          "region": "held-out-error-solver",
+          "held_out": true
+        }
+      ],
+      "workloads": [],
+      "benchmarks": {
+        "micro_ns": {},
+        "macro_ns": {}
+      },
+      "source": "workflow-contract",
+      "compat": false,
+      "spec_version": 1,
+      "spec_hash": "sha256:fbc7ccfa39d7e511fc8105b6e421a5b8dea3bd1c3e3d75f8191108b4a38be04c"
+    },
+    {
+      "symbol": "basis::Basis",
+      "package": "quspin",
+      "module": "basis",
+      "signatures": [
+        "pub trait Basis: Send + Sync { type State: Copy + Eq + Send + Sync; fn len(&self) -> usize; fn state(&self, index: usize) -> Result<Self::State>; fn index(&self, state: Self::State) -> Result<usize>; fn apply_local(&self, state: Self::State, operator: &str, sites: &[usize]) -> Result<Option<(Self::State, Complex64)>>; }"
+      ],
+      "exported": true,
+      "contract": {
+        "atol": null,
+        "rtol": null,
+        "tol_source": "workflow-contract",
+        "comparison": "custom:basis-observation",
+        "domain": "finite discrete Hilbert spaces whose states have a stable equality relation; state ordering is implementation-defined",
+        "type_constraints": [
+          "State: Copy + Eq + Send + Sync"
+        ]
+      },
+      "motivation": {
+        "question": "Provide the one abstraction shared by basis enumeration, sparse assembly, and matrix-free action.",
+        "definition": "A basis is a finite bijection between indices 0 through len-1 and physical states, plus the action of a parsed local operator on one state.",
+        "identities": [
+          "index(state(i)) = i for every valid index i",
+          "state(index(s)) = s for every represented state s",
+          "apply_local returns None exactly when the local action annihilates the state or leaves the target sector"
+        ]
+      },
+      "properties": [
+        {
+          "id": "basis-round-trip",
+          "kind": "bijection",
+          "statement": "State and index are mutual inverses on the represented sector.",
+          "predicate": "",
+          "ref": "workflow-contract",
+          "verification_status": "stated"
+        },
+        {
+          "id": "basis-bounds",
+          "kind": "error",
+          "statement": "Out-of-range indices and unrepresented states return structured errors and never panic.",
+          "predicate": "",
+          "ref": "workflow-contract",
+          "verification_status": "stated"
+        },
+        {
+          "id": "basis-order-free",
+          "kind": "invariance",
+          "statement": "Physical results are invariant under basis enumeration order.",
+          "predicate": "",
+          "ref": "workflow-contract",
+          "verification_status": "stated"
+        },
+        {
+          "id": "local-linearity",
+          "kind": "linearity",
+          "statement": "The amplitude returned by local action is the exact coefficient of the destination state before the coupling coefficient is applied.",
+          "predicate": "",
+          "ref": "workflow-contract",
+          "verification_status": "stated"
+        }
+      ],
+      "anchors": [
+        {
+          "input": "SpinBasis1D(sites=4, up=2); state=0b0101",
+          "expected": "dimension=6;round_trip=true",
+          "precision": "exact",
+          "region": "visible-small",
+          "held_out": false
+        },
+        {
+          "input": "SpinBasis1D(sites=7, up=3); state=0b0101010",
+          "expected": "dimension=35;round_trip=true",
+          "precision": "exact",
+          "region": "held-out-small",
+          "held_out": true
+        },
+        {
+          "input": "SpinlessFermionBasis1D(sites=8, particles=3); state=0b00101001",
+          "expected": "dimension=56;round_trip=true",
+          "precision": "exact",
+          "region": "held-out-cross-family",
+          "held_out": true
+        },
+        {
+          "input": "UserBasis(periodic_blockade, sites=7); state=0b0101010",
+          "expected": "dimension=29;round_trip=true",
+          "precision": "exact",
+          "region": "held-out-constrained",
+          "held_out": true
+        }
+      ],
+      "workloads": [],
+      "benchmarks": {
+        "micro_ns": {},
+        "macro_ns": {}
+      },
+      "source": "workflow-contract",
+      "compat": false,
+      "spec_version": 1,
+      "spec_hash": "sha256:c5253e43054434fca03739cad055f0d76524b87b07fa9db9fd506bd9085ef10f"
+    },
+    {
+      "symbol": "basis::SpinBasis1D",
+      "package": "quspin",
+      "module": "basis",
+      "signatures": [
+        "pub fn builder(sites: usize) -> SpinBasisBuilder"
+      ],
+      "exported": true,
+      "contract": {
+        "atol": null,
+        "rtol": null,
+        "tol_source": "workflow-contract",
+        "comparison": "custom:basis-observation",
+        "domain": "sites fit the selected state representation; spin_twice is positive; magnetization and symmetry labels describe a nonempty compatible sector",
+        "type_constraints": []
+      },
+      "motivation": {
+        "question": "Represent spin chains in the full space or fixed magnetization and lattice-symmetry sectors.",
+        "definition": "For spin one-half with up-spin count n, the unsymmetrized sector contains all site bitstrings of length L and Hamming weight n; optional momentum and parity select symmetry-adapted representatives.",
+        "identities": [
+          "Without symmetry reduction, len = binomial(L,n)",
+          "The full spin-one-half space has len = 2^L",
+          "pauli=false uses spin operators with Sz eigenvalues plus or minus one half"
+        ]
+      },
+      "properties": [
+        {
+          "id": "spin-sector-size",
+          "kind": "combinatorial",
+          "statement": "The fixed-up-spin unsymmetrized dimension is binomial(L,n).",
+          "predicate": "",
+          "ref": "workflow-contract",
+          "verification_status": "stated"
+        },
+        {
+          "id": "spin-symmetry-subset",
+          "kind": "symmetry",
+          "statement": "A symmetry-resolved basis spans only states compatible with every requested commuting symmetry.",
+          "predicate": "",
+          "ref": "workflow-contract",
+          "verification_status": "stated"
+        },
+        {
+          "id": "spin-convention",
+          "kind": "normalization",
+          "statement": "The Pauli and spin-operator conventions differ by the documented factor of two on single-site generators.",
+          "predicate": "",
+          "ref": "workflow-contract",
+          "verification_status": "stated"
+        },
+        {
+          "id": "spin-invalid-sector",
+          "kind": "error",
+          "statement": "Impossible magnetization or incompatible symmetry labels return an error rather than an empty successful basis.",
+          "predicate": "",
+          "ref": "workflow-contract",
+          "verification_status": "stated"
+        }
+      ],
+      "anchors": [
+        {
+          "input": "sites=4;spin_twice=1;up=2;no_symmetry;pauli=false",
+          "expected": "dimension=6;states_have_weight=2",
+          "precision": "exact",
+          "region": "visible-small",
+          "held_out": false
+        },
+        {
+          "input": "sites=12;spin_twice=1;up=6;no_symmetry;pauli=false",
+          "expected": "dimension=924;states_have_weight=6",
+          "precision": "exact",
+          "region": "held-out-medium",
+          "held_out": true
+        },
+        {
+          "input": "sites=8;spin_twice=1;full_space;pauli=true",
+          "expected": "dimension=256;single_site_z_values=[-1,1]",
+          "precision": "exact",
+          "region": "held-out-full",
+          "held_out": true
+        },
+        {
+          "input": "sites=5;spin_twice=1;up=6",
+          "expected": "category=InvalidSector",
+          "precision": "exact",
+          "region": "held-out-error",
+          "held_out": true
+        }
+      ],
+      "workloads": [],
+      "benchmarks": {
+        "micro_ns": {},
+        "macro_ns": {}
+      },
+      "source": "workflow-contract",
+      "compat": false,
+      "spec_version": 1,
+      "spec_hash": "sha256:401468c73862dcaf5cdf27d9a028df444ee61cdfec07ae1e98211bb8f4c6ad14"
+    },
+    {
+      "symbol": "basis::BosonBasis1D",
+      "package": "quspin",
+      "module": "basis",
+      "signatures": [
+        "pub fn builder(sites: usize, states_per_site: usize) -> BosonBasisBuilder"
+      ],
+      "exported": true,
+      "contract": {
+        "atol": null,
+        "rtol": null,
+        "tol_source": "workflow-contract",
+        "comparison": "custom:basis-observation",
+        "domain": "sites and states_per_site are positive; optional total particle count is representable under the local cutoff",
+        "type_constraints": []
+      },
+      "motivation": {
+        "question": "Represent lattice bosons with a finite local occupation cutoff and optional total-number sector.",
+        "definition": "States are occupation vectors of length L with entries from zero through states_per_site minus one; a fixed-particle sector restricts their sum.",
+        "identities": [
+          "Creation on occupation n has amplitude sqrt(n+1) unless the cutoff is reached",
+          "Annihilation on occupation n has amplitude sqrt(n) and annihilates n=0"
+        ]
+      },
+      "properties": [
+        {
+          "id": "boson-cutoff",
+          "kind": "domain",
+          "statement": "Every enumerated local occupation is below states_per_site.",
+          "predicate": "",
+          "ref": "workflow-contract",
+          "verification_status": "stated"
+        },
+        {
+          "id": "boson-number",
+          "kind": "conservation",
+          "statement": "Every state in a fixed-particle sector has the requested total occupation.",
+          "predicate": "",
+          "ref": "workflow-contract",
+          "verification_status": "stated"
+        },
+        {
+          "id": "boson-ladder",
+          "kind": "algebra",
+          "statement": "Creation and annihilation use square-root occupation amplitudes and respect the cutoff.",
+          "predicate": "",
+          "ref": "workflow-contract",
+          "verification_status": "stated"
+        },
+        {
+          "id": "boson-round-trip",
+          "kind": "bijection",
+          "statement": "Occupation states round-trip through index and state.",
+          "predicate": "",
+          "ref": "workflow-contract",
+          "verification_status": "stated"
+        }
+      ],
+      "anchors": [
+        {
+          "input": "sites=3;particles=2;states_per_site=3",
+          "expected": "dimension=6;occupations_sum_to=2",
+          "precision": "exact",
+          "region": "visible-small",
+          "held_out": false
+        },
+        {
+          "input": "sites=4;particles=3;states_per_site=3",
+          "expected": "dimension=16;occupations_sum_to=3",
+          "precision": "exact",
+          "region": "held-out-cutoff",
+          "held_out": true
+        },
+        {
+          "input": "sites=5;particles=0;states_per_site=4",
+          "expected": "dimension=1;vacuum=true",
+          "precision": "exact",
+          "region": "held-out-vacuum",
+          "held_out": true
+        },
+        {
+          "input": "sites=2;particles=5;states_per_site=3",
+          "expected": "category=InvalidSector",
+          "precision": "exact",
+          "region": "held-out-error",
+          "held_out": true
+        }
+      ],
+      "workloads": [],
+      "benchmarks": {
+        "micro_ns": {},
+        "macro_ns": {}
+      },
+      "source": "workflow-contract",
+      "compat": false,
+      "spec_version": 1,
+      "spec_hash": "sha256:ceeab1ad3723cbda470a4c827c23792d947b3bbfbf1e70cff84d4aa9626362d3"
+    },
+    {
+      "symbol": "basis::SpinlessFermionBasis1D",
+      "package": "quspin",
+      "module": "basis",
+      "signatures": [
+        "pub fn builder(sites: usize) -> SpinlessFermionBasisBuilder"
+      ],
+      "exported": true,
+      "contract": {
+        "atol": null,
+        "rtol": null,
+        "tol_source": "workflow-contract",
+        "comparison": "custom:basis-observation",
+        "domain": "finite one-dimensional lattices with optional fixed particle number and compatible lattice symmetry",
+        "type_constraints": []
+      },
+      "motivation": {
+        "question": "Represent single-flavor lattice fermions while making antisymmetric signs part of local operator action.",
+        "definition": "States are occupation bitstrings; applying a creation or annihilation operator multiplies by minus one to the number of occupied sites preceding that site in the declared ordering.",
+        "identities": [
+          "Without symmetry reduction, len = binomial(L,N)",
+          "Two fermionic creation operators anticommute",
+          "Number operators are diagonal with eigenvalues zero or one"
+        ]
+      },
+      "properties": [
+        {
+          "id": "spinless-sector-size",
+          "kind": "combinatorial",
+          "statement": "The fixed-particle unsymmetrized dimension is binomial(L,N).",
+          "predicate": "",
+          "ref": "workflow-contract",
+          "verification_status": "stated"
+        },
+        {
+          "id": "spinless-sign",
+          "kind": "algebra",
+          "statement": "Local creation and annihilation obey canonical fermionic anticommutation signs.",
+          "predicate": "",
+          "ref": "workflow-contract",
+          "verification_status": "stated"
+        },
+        {
+          "id": "spinless-pauli",
+          "kind": "exclusion",
+          "statement": "Creating on an occupied site or annihilating an empty site returns no destination.",
+          "predicate": "",
+          "ref": "workflow-contract",
+          "verification_status": "stated"
+        },
+        {
+          "id": "spinless-symmetry",
+          "kind": "symmetry",
+          "statement": "Symmetry projection preserves physical matrix elements including orbit phases and fermionic signs.",
+          "predicate": "",
+          "ref": "workflow-contract",
+          "verification_status": "stated"
+        }
+      ],
+      "anchors": [
+        {
+          "input": "sites=4;particles=2;no_symmetry",
+          "expected": "dimension=6;states_have_weight=2",
+          "precision": "exact",
+          "region": "visible-small",
+          "held_out": false
+        },
+        {
+          "input": "sites=8;particles=3;no_symmetry",
+          "expected": "dimension=56;states_have_weight=3",
+          "precision": "exact",
+          "region": "held-out-medium",
+          "held_out": true
+        },
+        {
+          "input": "sites=6;particles=0;no_symmetry",
+          "expected": "dimension=1;vacuum=true",
+          "precision": "exact",
+          "region": "held-out-vacuum",
+          "held_out": true
+        },
+        {
+          "input": "sites=5;particles=6;no_symmetry",
+          "expected": "category=InvalidSector",
+          "precision": "exact",
+          "region": "held-out-error",
+          "held_out": true
+        }
+      ],
+      "workloads": [],
+      "benchmarks": {
+        "micro_ns": {},
+        "macro_ns": {}
+      },
+      "source": "workflow-contract",
+      "compat": false,
+      "spec_version": 1,
+      "spec_hash": "sha256:c6be5593c4af0bec25427658ee4defcef5bd0c9b7db4ba9a419c7ee000127a08"
+    },
+    {
+      "symbol": "basis::SpinfulFermionBasis1D",
+      "package": "quspin",
+      "module": "basis",
+      "signatures": [
+        "pub fn builder(sites: usize) -> SpinfulFermionBasisBuilder"
+      ],
+      "exported": true,
+      "contract": {
+        "atol": null,
+        "rtol": null,
+        "tol_source": "workflow-contract",
+        "comparison": "custom:basis-observation",
+        "domain": "finite lattices with independently optional up and down particle counts",
+        "type_constraints": []
+      },
+      "motivation": {
+        "question": "Represent two fermion flavors for Hubbard-type models with an explicit, stable orbital ordering.",
+        "definition": "A state is a pair of up and down occupation bitstrings. The sign of every ladder operation follows the documented global ordering of the two flavor orbitals.",
+        "identities": [
+          "Without symmetry reduction, len = binomial(L,N_up) times binomial(L,N_down)",
+          "Each flavor separately obeys canonical anticommutation",
+          "Double occupation is allowed and counted by n_up n_down"
+        ]
+      },
+      "properties": [
+        {
+          "id": "spinful-sector-size",
+          "kind": "combinatorial",
+          "statement": "The fixed-sector dimension factorizes into the two binomial dimensions.",
+          "predicate": "",
+          "ref": "workflow-contract",
+          "verification_status": "stated"
+        },
+        {
+          "id": "spinful-order",
+          "kind": "algebra",
+          "statement": "The public orbital-order convention determines all inter-flavor fermionic signs.",
+          "predicate": "",
+          "ref": "workflow-contract",
+          "verification_status": "stated"
+        },
+        {
+          "id": "spinful-number",
+          "kind": "conservation",
+          "statement": "Each enumerated state has the requested particle count for each flavor.",
+          "predicate": "",
+          "ref": "workflow-contract",
+          "verification_status": "stated"
+        },
+        {
+          "id": "spinful-round-trip",
+          "kind": "bijection",
+          "statement": "Paired occupation states round-trip through index and state.",
+          "predicate": "",
+          "ref": "workflow-contract",
+          "verification_status": "stated"
+        }
+      ],
+      "anchors": [
+        {
+          "input": "sites=3;particles_up=1;particles_down=1",
+          "expected": "dimension=9;sector_counts=[1,1]",
+          "precision": "exact",
+          "region": "visible-small",
+          "held_out": false
+        },
+        {
+          "input": "sites=6;particles_up=3;particles_down=2",
+          "expected": "dimension=300;sector_counts=[3,2]",
+          "precision": "exact",
+          "region": "held-out-medium",
+          "held_out": true
+        },
+        {
+          "input": "sites=4;particles_up=0;particles_down=0",
+          "expected": "dimension=1;vacuum=true",
+          "precision": "exact",
+          "region": "held-out-vacuum",
+          "held_out": true
+        },
+        {
+          "input": "sites=4;particles_up=5;particles_down=1",
+          "expected": "category=InvalidSector",
+          "precision": "exact",
+          "region": "held-out-error",
+          "held_out": true
+        }
+      ],
+      "workloads": [],
+      "benchmarks": {
+        "micro_ns": {},
+        "macro_ns": {}
+      },
+      "source": "workflow-contract",
+      "compat": false,
+      "spec_version": 1,
+      "spec_hash": "sha256:4690f54b1eb164567c1e0577cc91329e9339466622dd79b081034c1155e41eb9"
+    },
+    {
+      "symbol": "basis::UserBasis",
+      "package": "quspin",
+      "module": "basis",
+      "signatures": [
+        "pub fn builder<State>(sites: usize) -> UserBasisBuilder<State> where State: Copy + Eq + std::hash::Hash + Send + Sync"
+      ],
+      "exported": true,
+      "contract": {
+        "atol": null,
+        "rtol": null,
+        "tol_source": "workflow-contract",
+        "comparison": "custom:basis-observation",
+        "domain": "finite user-defined state spaces with deterministic filtering and registered local operator callbacks",
+        "type_constraints": [
+          "State: Copy + Eq + Hash + Send + Sync"
+        ]
+      },
+      "motivation": {
+        "question": "Support constrained Hilbert spaces without adding a model-specific assembler for every new physical problem.",
+        "definition": "A user basis combines a state enumerator or filter with named local-action callbacks; after construction it obeys the same Basis contract as built-in families.",
+        "identities": [
+          "The universal OperatorBuilder consumes UserBasis through Basis only",
+          "Filtering changes the represented state set, not the semantics of registered local actions"
+        ]
+      },
+      "properties": [
+        {
+          "id": "user-no-special-path",
+          "kind": "architecture",
+          "statement": "UserBasis uses the same operator assembly and matrix-free algorithms as built-in bases.",
+          "predicate": "",
+          "ref": "workflow-contract",
+          "verification_status": "stated"
+        },
+        {
+          "id": "user-deterministic",
+          "kind": "determinism",
+          "statement": "Repeated construction from the same filter and callbacks yields the same physical state set.",
+          "predicate": "",
+          "ref": "workflow-contract",
+          "verification_status": "stated"
+        },
+        {
+          "id": "user-callback-error",
+          "kind": "error",
+          "statement": "An unregistered operator name or invalid callback result returns a structured error.",
+          "predicate": "",
+          "ref": "workflow-contract",
+          "verification_status": "stated"
+        },
+        {
+          "id": "user-round-trip",
+          "kind": "bijection",
+          "statement": "Accepted states round-trip and rejected states are absent.",
+          "predicate": "",
+          "ref": "workflow-contract",
+          "verification_status": "stated"
+        }
+      ],
+      "anchors": [
+        {
+          "input": "sites=4;filter=periodic_no_adjacent_ones;operators=[x,z]",
+          "expected": "dimension=7;round_trip=true;universal_builder=true",
+          "precision": "exact",
+          "region": "visible-constrained",
+          "held_out": false
+        },
+        {
+          "input": "sites=7;filter=periodic_no_adjacent_ones;operators=[x,z]",
+          "expected": "dimension=29;round_trip=true;universal_builder=true",
+          "precision": "exact",
+          "region": "held-out-constrained",
+          "held_out": true
+        },
+        {
+          "input": "sites=8;filter=open_no_adjacent_ones;operators=[x,z]",
+          "expected": "dimension=55;round_trip=true;universal_builder=true",
+          "precision": "exact",
+          "region": "held-out-open",
+          "held_out": true
+        },
+        {
+          "input": "sites=5;filter=periodic_no_adjacent_ones;operator=unregistered_y",
+          "expected": "category=InvalidOperator",
+          "precision": "exact",
+          "region": "held-out-error",
+          "held_out": true
+        }
+      ],
+      "workloads": [],
+      "benchmarks": {
+        "micro_ns": {},
+        "macro_ns": {}
+      },
+      "source": "workflow-contract",
+      "compat": false,
+      "spec_version": 1,
+      "spec_hash": "sha256:1d71bc0a6ebcf0355151d9439a14f5ba3db5a77872e8ce6f8d3fe9a387f3f4bc"
+    },
+    {
+      "symbol": "operator::OperatorTerm",
+      "package": "quspin",
+      "module": "operator",
+      "signatures": [
+        "pub fn new(operator: impl AsRef<str>, couplings: impl IntoIterator<Item = Coupling>) -> Result<Self>"
+      ],
+      "exported": true,
+      "contract": {
+        "atol": null,
+        "rtol": null,
+        "tol_source": "workflow-contract",
+        "comparison": "custom:parsed-term",
+        "domain": "operator strings registered by the chosen basis and couplings whose site arity equals the operator-string arity",
+        "type_constraints": []
+      },
+      "motivation": {
+        "question": "Parse and validate a reusable local-operator pattern once before it is applied to many basis states.",
+        "definition": "An operator term is an ordered local operator string plus a list of complex coefficients and zero-based site tuples of matching arity.",
+        "identities": [
+          "The total operator is linear in all coupling coefficients",
+          "Operator-string order fixes fermionic operator order",
+          "Parsing cost is independent of basis dimension and is not repeated per state"
+        ]
+      },
+      "properties": [
+        {
+          "id": "term-arity",
+          "kind": "validation",
+          "statement": "Every coupling site tuple has exactly the operator-string arity.",
+          "predicate": "",
+          "ref": "workflow-contract",
+          "verification_status": "stated"
+        },
+        {
+          "id": "term-zero-based",
+          "kind": "indexing",
+          "statement": "All public site indices are zero-based and checked against the basis length at build time.",
+          "predicate": "",
+          "ref": "workflow-contract",
+          "verification_status": "stated"
+        },
+        {
+          "id": "term-linearity",
+          "kind": "linearity",
+          "statement": "Scaling all couplings by a complex scalar scales the represented linear map by that scalar.",
+          "predicate": "",
+          "ref": "workflow-contract",
+          "verification_status": "stated"
+        },
+        {
+          "id": "term-no-reparse",
+          "kind": "complexity",
+          "statement": "A successfully constructed term stores parsed operator actions and does not reparse its string inside state enumeration.",
+          "predicate": "",
+          "ref": "workflow-contract",
+          "verification_status": "stated"
+        }
+      ],
+      "anchors": [
+        {
+          "input": "operator=zz;couplings=[(1.0,[0,1]),(-0.5,[1,2])]",
+          "expected": "arity=2;coupling_count=2;parsed_once=true",
+          "precision": "exact",
+          "region": "visible-parse",
+          "held_out": false
+        },
+        {
+          "input": "operator=+-;couplings=[(0.25+0.5i,[2,4])]",
+          "expected": "arity=2;coupling_count=1;complex=true",
+          "precision": "exact",
+          "region": "held-out-complex",
+          "held_out": true
+        },
+        {
+          "input": "operator=zz;couplings=[(1.0,[0])]",
+          "expected": "category=InvalidCoupling",
+          "precision": "exact",
+          "region": "held-out-error",
+          "held_out": true
+        },
+        {
+          "input": "operator=unknown;couplings=[(1.0,[0])]",
+          "expected": "category=InvalidOperator",
+          "precision": "exact",
+          "region": "held-out-error-name",
+          "held_out": true
+        }
+      ],
+      "workloads": [],
+      "benchmarks": {
+        "micro_ns": {},
+        "macro_ns": {}
+      },
+      "source": "workflow-contract",
+      "compat": false,
+      "spec_version": 1,
+      "spec_hash": "sha256:74e28807f465ab472fdbd71f6ccc7af16f7785b99a17db6b3b00a2b6bc361ba4"
+    },
+    {
+      "symbol": "operator::Coupling",
+      "package": "quspin",
+      "module": "operator",
+      "signatures": [
+        "pub struct Coupling { pub coefficient: Complex64, pub sites: Vec<usize> }"
+      ],
+      "exported": true,
+      "contract": {
+        "atol": null,
+        "rtol": null,
+        "tol_source": "workflow-contract",
+        "comparison": "isequal",
+        "domain": "finite complex coefficients and zero-based site lists whose arity is validated by OperatorTerm",
+        "type_constraints": []
+      },
+      "motivation": {
+        "question": "Carry one local-term coefficient and its ordered sites without coupling the API to a sparse-matrix crate.",
+        "definition": "A coupling is a complex scalar and an ordered zero-based site tuple; the tuple order matches the operator-string order.",
+        "identities": [
+          "Changing the coefficient scales only this contribution",
+          "Permuting sites changes the operator unless the local actions commute"
+        ]
+      },
+      "properties": [
+        {
+          "id": "coupling-complex",
+          "kind": "domain",
+          "statement": "Real and complex coefficients are represented without precision loss beyond Complex64.",
+          "predicate": "",
+          "ref": "workflow-contract",
+          "verification_status": "stated"
+        },
+        {
+          "id": "coupling-order",
+          "kind": "indexing",
+          "statement": "Site order is preserved exactly as supplied.",
+          "predicate": "",
+          "ref": "workflow-contract",
+          "verification_status": "stated"
+        },
+        {
+          "id": "coupling-zero-based",
+          "kind": "indexing",
+          "statement": "Public sites are zero-based.",
+          "predicate": "",
+          "ref": "workflow-contract",
+          "verification_status": "stated"
+        },
+        {
+          "id": "coupling-arity-owner",
+          "kind": "validation",
+          "statement": "OperatorTerm validates the site count against the operator string.",
+          "predicate": "",
+          "ref": "workflow-contract",
+          "verification_status": "stated"
+        }
+      ],
+      "anchors": [
+        {
+          "input": "coefficient=1-0.5i;sites=[2,0]",
+          "expected": "coefficient=1-0.5i;sites=[2,0]",
+          "precision": "exact",
+          "region": "visible-complex",
+          "held_out": false
+        },
+        {
+          "input": "coefficient=-3.25+2i;sites=[4]",
+          "expected": "coefficient=-3.25+2i;sites=[4]",
+          "precision": "exact",
+          "region": "held-out-complex",
+          "held_out": true
+        },
+        {
+          "input": "coefficient=0;sites=[]",
+          "expected": "coefficient=0;sites=[]",
+          "precision": "exact",
+          "region": "held-out-empty",
+          "held_out": true
+        },
+        {
+          "input": "coefficient=NaN;sites=[0]",
+          "expected": "category=InvalidCoupling",
+          "precision": "exact",
+          "region": "held-out-error",
+          "held_out": true
+        }
+      ],
+      "workloads": [],
+      "benchmarks": {
+        "micro_ns": {},
+        "macro_ns": {}
+      },
+      "source": "workflow-contract",
+      "compat": false,
+      "spec_version": 1,
+      "spec_hash": "sha256:4bfca444f0e3d10c8632a6d87d863ade65c353c4e572f263ff2e970f70e8756a"
+    },
+    {
+      "symbol": "operator::MatrixFormat",
+      "package": "quspin",
+      "module": "operator",
+      "signatures": [
+        "pub enum MatrixFormat { Dense, Csc, Csr, Dia, MatrixFree }"
+      ],
+      "exported": true,
+      "contract": {
+        "atol": null,
+        "rtol": null,
+        "tol_source": "workflow-contract",
+        "comparison": "isequal",
+        "domain": "explicit backend requests supported by the selected operator and algorithm",
+        "type_constraints": []
+      },
+      "motivation": {
+        "question": "Make storage and matrix-free execution an explicit backend choice rather than the definition of a Hamiltonian.",
+        "definition": "MatrixFormat selects materialization only; all formats represent the same linear map within numeric tolerance.",
+        "identities": [
+          "Format conversion preserves shape and action",
+          "Sparse formats are assembled without first allocating a dense matrix"
+        ]
+      },
+      "properties": [
+        {
+          "id": "format-equivalence",
+          "kind": "equivalence",
+          "statement": "Every supported format produces the same action on the same vector within tolerance.",
+          "predicate": "",
+          "ref": "workflow-contract",
+          "verification_status": "stated"
+        },
+        {
+          "id": "format-no-dense",
+          "kind": "complexity",
+          "statement": "CSC, CSR, DIA, and MatrixFree construction do not allocate a dense rows-by-columns intermediary.",
+          "predicate": "",
+          "ref": "workflow-contract",
+          "verification_status": "stated"
+        },
+        {
+          "id": "format-explicit-error",
+          "kind": "error",
+          "statement": "An unsupported format and operator combination returns a structured error.",
+          "predicate": "",
+          "ref": "workflow-contract",
+          "verification_status": "stated"
+        },
+        {
+          "id": "format-metadata",
+          "kind": "identity",
+          "statement": "A built operator reports the format actually used.",
+          "predicate": "",
+          "ref": "workflow-contract",
+          "verification_status": "stated"
+        }
+      ],
+      "anchors": [
+        {
+          "input": "requested=[Dense,Csc,Csr,Dia,MatrixFree]",
+          "expected": "variants=[Dense,Csc,Csr,Dia,MatrixFree]",
+          "precision": "exact",
+          "region": "visible-enum",
+          "held_out": false
+        },
+        {
+          "input": "operator=generic_off_diagonal;requested=Dia",
+          "expected": "category=UnsupportedBackend",
+          "precision": "exact",
+          "region": "held-out-error",
+          "held_out": true
+        },
+        {
+          "input": "operator=diagonal;requested=Dia",
+          "expected": "format=Dia;shape_preserved=true",
+          "precision": "exact",
+          "region": "held-out-dia",
+          "held_out": true
+        },
+        {
+          "input": "operator=rectangular;requested=MatrixFree",
+          "expected": "format=MatrixFree;shape_preserved=true",
+          "precision": "exact",
+          "region": "held-out-rectangular",
+          "held_out": true
+        }
+      ],
+      "workloads": [],
+      "benchmarks": {
+        "micro_ns": {},
+        "macro_ns": {}
+      },
+      "source": "workflow-contract",
+      "compat": false,
+      "spec_version": 1,
+      "spec_hash": "sha256:229cbcdc77503d3012160ad293fef66d255b3396030059c0a8c74b684f1f0dba"
+    },
+    {
+      "symbol": "operator::LinearOperator",
+      "package": "quspin",
+      "module": "operator",
+      "signatures": [
+        "pub trait LinearOperator: Send + Sync { fn shape(&self) -> (usize, usize); fn format(&self) -> MatrixFormat; fn apply(&self, input: &[Complex64], output: &mut [Complex64]) -> Result<()>; }"
+      ],
+      "exported": true,
+      "contract": {
+        "atol": 1e-12,
+        "rtol": 1e-10,
+        "tol_source": "cross-language-oracle",
+        "comparison": "",
+        "domain": "finite complex linear maps, including rectangular maps between distinct basis sectors",
+        "type_constraints": []
+      },
+      "motivation": {
+        "question": "Give stored and matrix-free algorithms one rectangular-capable narrow waist.",
+        "definition": "A linear operator maps a vector of length shape.1 to one of length shape.0; apply overwrites an output buffer with that action.",
+        "identities": [
+          "apply(a x + b y) = a apply(x) + b apply(y)",
+          "For a square Hamiltonian, shape.0 = shape.1",
+          "A sector-changing probe may have different row and column dimensions"
+        ]
+      },
+      "properties": [
+        {
+          "id": "linear-map-linearity",
+          "kind": "linearity",
+          "statement": "Apply is complex-linear in the input vector.",
+          "predicate": "",
+          "ref": "workflow-contract",
+          "verification_status": "stated"
+        },
+        {
+          "id": "linear-map-shape",
+          "kind": "shape",
+          "statement": "Input length equals column count and output length equals row count; mismatches return an error.",
+          "predicate": "",
+          "ref": "workflow-contract",
+          "verification_status": "stated"
+        },
+        {
+          "id": "linear-map-overwrite",
+          "kind": "mutation",
+          "statement": "Apply overwrites every output entry and does not depend on its previous contents.",
+          "predicate": "",
+          "ref": "workflow-contract",
+          "verification_status": "stated"
+        },
+        {
+          "id": "linear-map-backend",
+          "kind": "equivalence",
+          "statement": "Stored and matrix-free implementations with the same terms agree on action.",
+          "predicate": "",
+          "ref": "workflow-contract",
+          "verification_status": "stated"
+        }
+      ],
+      "anchors": [
+        {
+          "input": "shape=[2,3];matrix=[[1,0,2],[0,-1,1]];input=[1,2,3]",
+          "expected": "output=[7,1];shape=[2,3]",
+          "precision": "float64",
+          "region": "visible-rectangular",
+          "held_out": false
+        },
+        {
+          "input": "shape=[3,2];matrix=[[1,i],[2,0],[0,-i]];input=[1-i,2]",
+          "expected": "output=[1+i,2-2i,-2i];shape=[3,2]",
+          "precision": "float64",
+          "region": "held-out-complex",
+          "held_out": true
+        },
+        {
+          "input": "shape=[2,2];matrix=diag[2,-3];input=[0.25,-2]",
+          "expected": "output=[0.5,6];shape=[2,2]",
+          "precision": "float64",
+          "region": "held-out-square",
+          "held_out": true
+        },
+        {
+          "input": "shape=[2,3];input_length=2;output_length=2",
+          "expected": "category=DimensionMismatch",
+          "precision": "exact",
+          "region": "held-out-error",
+          "held_out": true
+        }
+      ],
+      "workloads": [],
+      "benchmarks": {
+        "micro_ns": {},
+        "macro_ns": {}
+      },
+      "source": "workflow-contract",
+      "compat": false,
+      "spec_version": 1,
+      "spec_hash": "sha256:19c32f6b2245b8d91427d5d21a7e3149b758617439bda54f68785f0d3e27b37c"
+    },
+    {
+      "symbol": "operator::OperatorBuilder",
+      "package": "quspin",
+      "module": "operator",
+      "signatures": [
+        "pub fn on<B: Basis>(basis: &B) -> OperatorBuilder<'_, B, B>",
+        "pub fn between<S, T>(source: &S, target: &T) -> OperatorBuilder<'_, S, T> where S: Basis, T: Basis<State = S::State>",
+        "pub fn build(self, format: MatrixFormat) -> Result<Operator>"
+      ],
+      "exported": true,
+      "contract": {
+        "atol": 1e-12,
+        "rtol": 1e-10,
+        "tol_source": "cross-language-oracle",
+        "comparison": "",
+        "domain": "valid parsed terms whose sites lie in the physical lattice and whose local actions map from the source basis to the target basis",
+        "type_constraints": []
+      },
+      "motivation": {
+        "question": "Assemble square Hamiltonians and rectangular sector-changing probes through one universal path.",
+        "definition": "For each source basis state and term coupling, apply the local operator, map any destination into the target basis, and accumulate its coefficient into a format-specific sink.",
+        "identities": [
+          "The assembled map is the sum of all term contributions",
+          "Duplicate row-column contributions are summed",
+          "on(basis) is equivalent to between(basis,basis)"
+        ]
+      },
+      "properties": [
+        {
+          "id": "builder-universal",
+          "kind": "architecture",
+          "statement": "The same traversal handles spin, boson, fermion, and user bases through the Basis contract.",
+          "predicate": "",
+          "ref": "workflow-contract",
+          "verification_status": "stated"
+        },
+        {
+          "id": "builder-rectangular",
+          "kind": "shape",
+          "statement": "Between source and target bases produces shape target.len by source.len.",
+          "predicate": "",
+          "ref": "workflow-contract",
+          "verification_status": "stated"
+        },
+        {
+          "id": "builder-duplicates",
+          "kind": "algebra",
+          "statement": "Contributions to the same matrix entry are summed exactly once in the final map.",
+          "predicate": "",
+          "ref": "workflow-contract",
+          "verification_status": "stated"
+        },
+        {
+          "id": "builder-checks",
+          "kind": "validation",
+          "statement": "Hermiticity, particle conservation, and symmetry compatibility checks are individually configurable and return structured errors.",
+          "predicate": "",
+          "ref": "workflow-contract",
+          "verification_status": "stated"
+        },
+        {
+          "id": "builder-streaming",
+          "kind": "complexity",
+          "statement": "Sparse construction streams nonzero contributions and never materializes a dense intermediate.",
+          "predicate": "",
+          "ref": "workflow-contract",
+          "verification_status": "stated"
+        }
+      ],
+      "anchors": [
+        {
+          "input": "spin_half_dimer;terms=[zz:1,+-:0.5,-+:0.5];pauli=false;format=Csc",
+          "expected": "shape=[4,4];eigenvalues=[-0.75,0.25,0.25,0.25];hermitian=true",
+          "precision": "float64",
+          "region": "visible-dimer",
+          "held_out": false
+        },
+        {
+          "input": "spinless;source=(sites=4,N=1);target=(sites=4,N=2);terms=[+:1 at site 2];format=Csc",
+          "expected": "shape=[6,4];stored_equals_matrix_free=true;fermionic_signs=true",
+          "precision": "float64",
+          "region": "held-out-cross-sector",
+          "held_out": true
+        },
+        {
+          "input": "user_basis_periodic_blockade_sites=7;terms=[x with neighbor projectors];format=Csc",
+          "expected": "shape=[29,29];stored_equals_matrix_free=true;no_dense_intermediate=true",
+          "precision": "float64",
+          "region": "held-out-user",
+          "held_out": true
+        },
+        {
+          "input": "spin_half_sites=4;terms=[+:1 at site 8];format=Csc",
+          "expected": "category=InvalidSite",
+          "precision": "exact",
+          "region": "held-out-error",
+          "held_out": true
+        }
+      ],
+      "workloads": [],
+      "benchmarks": {
+        "micro_ns": {},
+        "macro_ns": {}
+      },
+      "source": "workflow-contract",
+      "compat": false,
+      "spec_version": 1,
+      "spec_hash": "sha256:6d1c30750925be46e3503da01ed6caec1461753f57d581b68818c0bc1cd8605f"
+    },
+    {
+      "symbol": "solve::EigshOptions",
+      "package": "quspin",
+      "module": "solve",
+      "signatures": [
+        "pub struct EigshOptions { pub eigenpairs: usize, pub target: SpectrumTarget, pub krylov_dimension: Option<usize>, pub tolerance: f64, pub max_iterations: usize, pub seed: u64 }",
+        "pub enum SpectrumTarget { SmallestAlgebraic, LargestAlgebraic, LargestMagnitude, Shift(f64) }"
+      ],
+      "exported": true,
+      "contract": {
+        "atol": null,
+        "rtol": null,
+        "tol_source": "workflow-contract",
+        "comparison": "isequal",
+        "domain": "positive eigenpair count, tolerance, and maximum iterations; optional Krylov dimension exceeds eigenpair count; shift is finite",
+        "type_constraints": []
+      },
+      "motivation": {
+        "question": "Make solver accuracy, targeting, resource limits, and reproducibility explicit at each call.",
+        "definition": "Options select the number and spectral region of eigenpairs, the convergence tolerance and iteration cap, an optional Krylov dimension, and a deterministic seed.",
+        "identities": [
+          "The same options and operator define the same target subspace within tolerance",
+          "A shift target is ordered by distance to the shift"
+        ]
+      },
+      "properties": [
+        {
+          "id": "eigopts-positive",
+          "kind": "validation",
+          "statement": "Eigenpair count, tolerance, and maximum iterations are positive.",
+          "predicate": "",
+          "ref": "workflow-contract",
+          "verification_status": "stated"
+        },
+        {
+          "id": "eigopts-krylov",
+          "kind": "validation",
+          "statement": "When supplied, Krylov dimension is greater than the requested eigenpair count.",
+          "predicate": "",
+          "ref": "workflow-contract",
+          "verification_status": "stated"
+        },
+        {
+          "id": "eigopts-shift",
+          "kind": "validation",
+          "statement": "Shift targets are finite real values.",
+          "predicate": "",
+          "ref": "workflow-contract",
+          "verification_status": "stated"
+        },
+        {
+          "id": "eigopts-seed",
+          "kind": "determinism",
+          "statement": "Seed controls all randomized initialization used by the solver.",
+          "predicate": "",
+          "ref": "workflow-contract",
+          "verification_status": "stated"
+        }
+      ],
+      "anchors": [
+        {
+          "input": "eigenpairs=2;target=SmallestAlgebraic;krylov_dimension=8;tolerance=1e-10;max_iterations=500;seed=7",
+          "expected": "valid=true",
+          "precision": "exact",
+          "region": "visible-valid",
+          "held_out": false
+        },
+        {
+          "input": "eigenpairs=3;target=Shift(0.2);krylov_dimension=12;tolerance=1e-9;max_iterations=800;seed=11",
+          "expected": "valid=true;shift=0.2",
+          "precision": "exact",
+          "region": "held-out-shift",
+          "held_out": true
+        },
+        {
+          "input": "eigenpairs=0;target=LargestMagnitude;tolerance=1e-8;max_iterations=10;seed=1",
+          "expected": "category=InvalidOptions",
+          "precision": "exact",
+          "region": "held-out-error",
+          "held_out": true
+        },
+        {
+          "input": "eigenpairs=4;target=SmallestAlgebraic;krylov_dimension=4;tolerance=1e-8;max_iterations=10;seed=1",
+          "expected": "category=InvalidOptions",
+          "precision": "exact",
+          "region": "held-out-error-krylov",
+          "held_out": true
+        }
+      ],
+      "workloads": [],
+      "benchmarks": {
+        "micro_ns": {},
+        "macro_ns": {}
+      },
+      "source": "workflow-contract",
+      "compat": false,
+      "spec_version": 1,
+      "spec_hash": "sha256:8cc34fd0502443bee7757f8913499cf5a242596ff1dfcf31541cee5a8ba2d0ae"
+    },
+    {
+      "symbol": "solve::eigsh",
+      "package": "quspin",
+      "module": "solve",
+      "signatures": [
+        "pub fn eigsh(op: &impl LinearOperator, options: EigshOptions) -> Result<Eigensystem>"
+      ],
+      "exported": true,
+      "contract": {
+        "atol": 1e-09,
+        "rtol": 1e-08,
+        "tol_source": "paper-workflow-residuals",
+        "comparison": "",
+        "domain": "square Hermitian complex operators; requested eigenpair count is positive and smaller than the dimension; target is extremal, magnitude, or real shift",
+        "type_constraints": []
+      },
+      "motivation": {
+        "question": "Compute selected eigenpairs without dense diagonalization of the full Hilbert space.",
+        "definition": "Return Ritz values and normalized Ritz vectors for the requested spectral target, together with residual norms and convergence metadata.",
+        "identities": [
+          "For every returned pair, residual = norm(A v - lambda v)",
+          "Returned eigenvectors are orthonormal within tolerance",
+          "Shift targeting orders results by distance to the shift"
+        ]
+      },
+      "properties": [
+        {
+          "id": "eigsh-residual",
+          "kind": "residual",
+          "statement": "Every converged eigenpair satisfies its requested residual tolerance up to documented numerical slack.",
+          "predicate": "",
+          "ref": "workflow-contract",
+          "verification_status": "stated"
+        },
+        {
+          "id": "eigsh-normalized",
+          "kind": "normalization",
+          "statement": "Returned eigenvectors have unit norm and are mutually orthogonal within tolerance.",
+          "predicate": "",
+          "ref": "workflow-contract",
+          "verification_status": "stated"
+        },
+        {
+          "id": "eigsh-deterministic",
+          "kind": "determinism",
+          "statement": "With the same operator, options, and seed, eigenvalues and invariant subspaces are reproducible within tolerance.",
+          "predicate": "",
+          "ref": "workflow-contract",
+          "verification_status": "stated"
+        },
+        {
+          "id": "eigsh-square",
+          "kind": "error",
+          "statement": "Rectangular or declared non-Hermitian operators are rejected by the Hermitian solver.",
+          "predicate": "",
+          "ref": "workflow-contract",
+          "verification_status": "stated"
+        },
+        {
+          "id": "eigsh-nonconvergence",
+          "kind": "error",
+          "statement": "Non-convergence returns iteration count and final residual rather than a panic or silent partial success.",
+          "predicate": "",
+          "ref": "workflow-contract",
+          "verification_status": "stated"
+        }
+      ],
+      "anchors": [
+        {
+          "input": "spin_half_dimer_heisenberg;k=2;target=SmallestAlgebraic;tolerance=1e-12",
+          "expected": "eigenvalues=[-0.75,0.25];residuals_below=1e-12",
+          "precision": "float64",
+          "region": "visible-dimer",
+          "held_out": false
+        },
+        {
+          "input": "matrix=diag[-3,-1,2,8];k=2;target=LargestMagnitude;tolerance=1e-13",
+          "expected": "eigenvalues=[8,-3];residuals_below=1e-13",
+          "precision": "float64",
+          "region": "held-out-extremal",
+          "held_out": true
+        },
+        {
+          "input": "matrix=diag[-2,-0.2,0.3,4];k=2;target=Shift(0);tolerance=1e-13",
+          "expected": "eigenvalues=[-0.2,0.3];residuals_below=1e-13",
+          "precision": "float64",
+          "region": "held-out-shift",
+          "held_out": true
+        },
+        {
+          "input": "shape=[2,3];k=1;target=SmallestAlgebraic",
+          "expected": "category=DimensionMismatch",
+          "precision": "exact",
+          "region": "held-out-error",
+          "held_out": true
+        }
+      ],
+      "workloads": [],
+      "benchmarks": {
+        "micro_ns": {},
+        "macro_ns": {}
+      },
+      "source": "workflow-contract",
+      "compat": false,
+      "spec_version": 1,
+      "spec_hash": "sha256:41da34dd7d730987353fef9c5c0915c07ef42f11b4827bc98be7ac962d23a91e"
+    },
+    {
+      "symbol": "solve::EvolutionOptions",
+      "package": "quspin",
+      "module": "solve",
+      "signatures": [
+        "pub struct EvolutionOptions { pub times: Vec<f64>, pub krylov_dimension: usize, pub tolerance: f64, pub max_substeps: usize, pub hamiltonian: bool }"
+      ],
+      "exported": true,
+      "contract": {
+        "atol": null,
+        "rtol": null,
+        "tol_source": "workflow-contract",
+        "comparison": "isequal",
+        "domain": "nonempty finite nondecreasing time grid, positive Krylov dimension, tolerance, and substep cap",
+        "type_constraints": []
+      },
+      "motivation": {
+        "question": "Define the requested time samples and Krylov error controls without changing the operator abstraction.",
+        "definition": "Options contain an absolute time grid and numerical controls; hamiltonian=true interprets the supplied operator as H and evolves with minus i H.",
+        "identities": [
+          "Output states correspond one-to-one and in order with times",
+          "Time zero is allowed",
+          "Hamiltonian mode is norm preserving for Hermitian input"
+        ]
+      },
+      "properties": [
+        {
+          "id": "evoopts-time-order",
+          "kind": "validation",
+          "statement": "Times are finite and nondecreasing.",
+          "predicate": "",
+          "ref": "workflow-contract",
+          "verification_status": "stated"
+        },
+        {
+          "id": "evoopts-positive",
+          "kind": "validation",
+          "statement": "Krylov dimension, tolerance, and maximum substeps are positive.",
+          "predicate": "",
+          "ref": "workflow-contract",
+          "verification_status": "stated"
+        },
+        {
+          "id": "evoopts-cardinality",
+          "kind": "shape",
+          "statement": "The trajectory contains exactly one state for each requested time.",
+          "predicate": "",
+          "ref": "workflow-contract",
+          "verification_status": "stated"
+        },
+        {
+          "id": "evoopts-mode",
+          "kind": "semantics",
+          "statement": "Hamiltonian mode applies the factor minus i exactly once.",
+          "predicate": "",
+          "ref": "workflow-contract",
+          "verification_status": "stated"
+        }
+      ],
+      "anchors": [
+        {
+          "input": "times=[0,0.5,1];krylov_dimension=12;tolerance=1e-9;max_substeps=100;hamiltonian=true",
+          "expected": "valid=true;state_count=3",
+          "precision": "exact",
+          "region": "visible-valid",
+          "held_out": false
+        },
+        {
+          "input": "times=[0.2];krylov_dimension=6;tolerance=1e-8;max_substeps=20;hamiltonian=false",
+          "expected": "valid=true;state_count=1",
+          "precision": "exact",
+          "region": "held-out-generator",
+          "held_out": true
+        },
+        {
+          "input": "times=[1,0];krylov_dimension=6;tolerance=1e-8;max_substeps=20;hamiltonian=true",
+          "expected": "category=InvalidOptions",
+          "precision": "exact",
+          "region": "held-out-error-time",
+          "held_out": true
+        },
+        {
+          "input": "times=[];krylov_dimension=6;tolerance=1e-8;max_substeps=20;hamiltonian=true",
+          "expected": "category=InvalidOptions",
+          "precision": "exact",
+          "region": "held-out-error-empty",
+          "held_out": true
+        }
+      ],
+      "workloads": [],
+      "benchmarks": {
+        "micro_ns": {},
+        "macro_ns": {}
+      },
+      "source": "workflow-contract",
+      "compat": false,
+      "spec_version": 1,
+      "spec_hash": "sha256:225dbfc303a3e1ae13322012f0ac0a97d7df5188d7bff18c2a3e73542e0808f3"
+    },
+    {
+      "symbol": "solve::evolve",
+      "package": "quspin",
+      "module": "solve",
+      "signatures": [
+        "pub fn evolve(op: &impl LinearOperator, initial: &[Complex64], options: EvolutionOptions) -> Result<StateTrajectory>"
+      ],
+      "exported": true,
+      "contract": {
+        "atol": 1e-09,
+        "rtol": 1e-08,
+        "tol_source": "paper-workflow-norms",
+        "comparison": "",
+        "domain": "square operators, an initial state of matching dimension, and a finite scalar time or finite ordered time grid",
+        "type_constraints": []
+      },
+      "motivation": {
+        "question": "Apply matrix-exponential time evolution without densifying a sparse or matrix-free generator.",
+        "definition": "For a time-independent generator A, the state at time t is exp(t A) applied to the initial state; Hermitian Hamiltonian evolution uses A = -i H.",
+        "identities": [
+          "The state at time zero equals the initial state",
+          "For Hermitian H, norm is conserved",
+          "Evolution over t1 followed by t2 equals evolution over t1+t2 within solver tolerance"
+        ]
+      },
+      "properties": [
+        {
+          "id": "evolve-zero",
+          "kind": "special_value",
+          "statement": "Time zero returns the initial vector exactly up to representation-preserving copy semantics.",
+          "predicate": "",
+          "ref": "workflow-contract",
+          "verification_status": "stated"
+        },
+        {
+          "id": "evolve-unitary",
+          "kind": "conservation",
+          "statement": "Hermitian Hamiltonian evolution preserves vector norm within requested tolerance.",
+          "predicate": "",
+          "ref": "workflow-contract",
+          "verification_status": "stated"
+        },
+        {
+          "id": "evolve-semigroup",
+          "kind": "composition",
+          "statement": "For a time-independent generator, consecutive intervals compose to their summed interval within tolerance.",
+          "predicate": "",
+          "ref": "workflow-contract",
+          "verification_status": "stated"
+        },
+        {
+          "id": "evolve-no-dense",
+          "kind": "complexity",
+          "statement": "Evolution consumes LinearOperator action and does not require a dense materialization.",
+          "predicate": "",
+          "ref": "workflow-contract",
+          "verification_status": "stated"
+        },
+        {
+          "id": "evolve-shape",
+          "kind": "error",
+          "statement": "A rectangular operator or mismatched initial vector returns a structured dimension error.",
+          "predicate": "",
+          "ref": "workflow-contract",
+          "verification_status": "stated"
+        }
+      ],
+      "anchors": [
+        {
+          "input": "H=diag[0,2];initial=[1,1]/sqrt(2);times=[0,pi/2];hamiltonian=true",
+          "expected": "states=[[1,1]/sqrt(2),[1,-1]/sqrt(2)];norms=[1,1]",
+          "precision": "float64",
+          "region": "visible-diagonal",
+          "held_out": false
+        },
+        {
+          "input": "H=diag[0,2];initial=[1,1]/sqrt(2);times=[pi/4];hamiltonian=true",
+          "expected": "states=[[1,-i]/sqrt(2)];norms=[1]",
+          "precision": "float64",
+          "region": "held-out-phase",
+          "held_out": true
+        },
+        {
+          "input": "H=[[0,1],[1,0]];initial=[1,0];times=[pi/2];hamiltonian=true",
+          "expected": "states=[[0,-i]];norms=[1]",
+          "precision": "float64",
+          "region": "held-out-rotation",
+          "held_out": true
+        },
+        {
+          "input": "shape=[2,3];initial_length=3;times=[1]",
+          "expected": "category=DimensionMismatch",
+          "precision": "exact",
+          "region": "held-out-error",
+          "held_out": true
+        }
+      ],
+      "workloads": [],
+      "benchmarks": {
+        "micro_ns": {},
+        "macro_ns": {}
+      },
+      "source": "workflow-contract",
+      "compat": false,
+      "spec_version": 1,
+      "spec_hash": "sha256:b20efeff838a48c5aefc72da49d5b29e8ce9c6346db69a8f23d7a272c08a9868"
+    },
+    {
+      "symbol": "dynamics::DriveStep",
+      "package": "quspin",
+      "module": "dynamics",
+      "signatures": [
+        "pub struct DriveStep { pub hamiltonian: std::sync::Arc<dyn LinearOperator>, pub duration: f64 }"
+      ],
+      "exported": true,
+      "contract": {
+        "atol": null,
+        "rtol": null,
+        "tol_source": "workflow-contract",
+        "comparison": "custom:drive-step",
+        "domain": "square Hermitian operators and finite nonnegative durations",
+        "type_constraints": []
+      },
+      "motivation": {
+        "question": "Pair one piecewise-constant Hamiltonian with the duration for which it acts.",
+        "definition": "A drive step denotes evolution by exp(-i H duration) and carries shared ownership of H so a Floquet sequence can be reused.",
+        "identities": [
+          "Zero duration is the identity",
+          "Equal Hamiltonian and duration define equal physical action"
+        ]
+      },
+      "properties": [
+        {
+          "id": "drive-duration",
+          "kind": "validation",
+          "statement": "Duration is finite and nonnegative.",
+          "predicate": "",
+          "ref": "workflow-contract",
+          "verification_status": "stated"
+        },
+        {
+          "id": "drive-square",
+          "kind": "validation",
+          "statement": "The Hamiltonian is square.",
+          "predicate": "",
+          "ref": "workflow-contract",
+          "verification_status": "stated"
+        },
+        {
+          "id": "drive-hermitian",
+          "kind": "validation",
+          "statement": "The Hamiltonian satisfies the Hermitian contract required for unitary step evolution.",
+          "predicate": "",
+          "ref": "workflow-contract",
+          "verification_status": "stated"
+        },
+        {
+          "id": "drive-reuse",
+          "kind": "ownership",
+          "statement": "A step can share one immutable operator across reusable Floquet sequences.",
+          "predicate": "",
+          "ref": "workflow-contract",
+          "verification_status": "stated"
+        }
+      ],
+      "anchors": [
+        {
+          "input": "hamiltonian=diag[0,2];duration=0.5",
+          "expected": "valid=true;shape=[2,2];duration=0.5",
+          "precision": "exact",
+          "region": "visible-valid",
+          "held_out": false
+        },
+        {
+          "input": "hamiltonian=sigma_x;duration=0",
+          "expected": "valid=true;identity_action=true",
+          "precision": "exact",
+          "region": "held-out-zero",
+          "held_out": true
+        },
+        {
+          "input": "hamiltonian_shape=[2,3];duration=1",
+          "expected": "category=DimensionMismatch",
+          "precision": "exact",
+          "region": "held-out-error-shape",
+          "held_out": true
+        },
+        {
+          "input": "hamiltonian=diag[0,1];duration=-0.1",
+          "expected": "category=InvalidOptions",
+          "precision": "exact",
+          "region": "held-out-error-duration",
+          "held_out": true
+        }
+      ],
+      "workloads": [],
+      "benchmarks": {
+        "micro_ns": {},
+        "macro_ns": {}
+      },
+      "source": "workflow-contract",
+      "compat": false,
+      "spec_version": 1,
+      "spec_hash": "sha256:7e47764b04e530b8babaef58f162fc99e9f1b8f4e9aec9a1804165a17f7c0922"
+    },
+    {
+      "symbol": "dynamics::Floquet",
+      "package": "quspin",
+      "module": "dynamics",
+      "signatures": [
+        "pub fn new(steps: impl IntoIterator<Item = DriveStep>) -> Result<Self>",
+        "pub fn apply_period(&self, input: &[Complex64], output: &mut [Complex64]) -> Result<()>"
+      ],
+      "exported": true,
+      "contract": {
+        "atol": 1e-09,
+        "rtol": 1e-08,
+        "tol_source": "paper-workflow-unitarity",
+        "comparison": "",
+        "domain": "nonempty ordered drive steps with square Hermitian Hamiltonians of equal dimension and finite nonnegative durations",
+        "type_constraints": []
+      },
+      "motivation": {
+        "question": "Represent one period of a piecewise-constant drive without requiring a precomputed dense unitary.",
+        "definition": "For ordered steps from first to last, the one-period map is the product exp(-i H_last dt_last) through exp(-i H_first dt_first), acting on states from right to left.",
+        "identities": [
+          "Every Hermitian-step Floquet map is unitary",
+          "Zero-duration steps are identities",
+          "Repeated periods compose by repeated application of the same map"
+        ]
+      },
+      "properties": [
+        {
+          "id": "floquet-order",
+          "kind": "composition",
+          "statement": "Drive steps are applied in the declared physical time order.",
+          "predicate": "",
+          "ref": "workflow-contract",
+          "verification_status": "stated"
+        },
+        {
+          "id": "floquet-unitary",
+          "kind": "unitarity",
+          "statement": "A sequence of Hermitian drive steps preserves norm and has unit-modulus eigenphases within tolerance.",
+          "predicate": "",
+          "ref": "workflow-contract",
+          "verification_status": "stated"
+        },
+        {
+          "id": "floquet-zero-step",
+          "kind": "special_value",
+          "statement": "A zero-duration step has no effect.",
+          "predicate": "",
+          "ref": "workflow-contract",
+          "verification_status": "stated"
+        },
+        {
+          "id": "floquet-shape",
+          "kind": "error",
+          "statement": "Mismatched step dimensions or rectangular generators return structured errors.",
+          "predicate": "",
+          "ref": "workflow-contract",
+          "verification_status": "stated"
+        },
+        {
+          "id": "floquet-matrix-free",
+          "kind": "complexity",
+          "statement": "Period action can remain matrix-free even when optional full-unitary materialization is requested only for small systems.",
+          "predicate": "",
+          "ref": "workflow-contract",
+          "verification_status": "stated"
+        }
+      ],
+      "anchors": [
+        {
+          "input": "steps=[(H=diag[0,2],duration=pi/2),(H=zero2,duration=3)];input=[1,1]/sqrt(2)",
+          "expected": "output=[1,-1]/sqrt(2);norm=1",
+          "precision": "float64",
+          "region": "visible-diagonal",
+          "held_out": false
+        },
+        {
+          "input": "steps=[(H=sigma_x,duration=pi/4),(H=sigma_z,duration=pi/3)];input=[1,0]",
+          "expected": "norm=1;ordered_product=true;reverse_order_differs=true",
+          "precision": "float64",
+          "region": "held-out-order",
+          "held_out": true
+        },
+        {
+          "input": "steps=[(H=diag[-2,3],duration=0)];input=[0.6,0.8]",
+          "expected": "output=[0.6,0.8];norm=1",
+          "precision": "float64",
+          "region": "held-out-zero",
+          "held_out": true
+        },
+        {
+          "input": "steps=[(shape=[2,2],duration=1),(shape=[3,3],duration=1)]",
+          "expected": "category=DimensionMismatch",
+          "precision": "exact",
+          "region": "held-out-error",
+          "held_out": true
+        }
+      ],
+      "workloads": [],
+      "benchmarks": {
+        "micro_ns": {},
+        "macro_ns": {}
+      },
+      "source": "workflow-contract",
+      "compat": false,
+      "spec_version": 1,
+      "spec_hash": "sha256:568da7c56295dae67d4274be4326195262b50a07a987d32932aa8e5687fa8a70"
+    },
+    {
+      "symbol": "dynamics::SpectrumOptions",
+      "package": "quspin",
+      "module": "dynamics",
+      "signatures": [
+        "pub struct SpectrumOptions { pub frequencies: Vec<f64>, pub reference_energy: f64, pub broadening: f64, pub krylov_dimension: usize, pub tolerance: f64 }"
+      ],
+      "exported": true,
+      "contract": {
+        "atol": null,
+        "rtol": null,
+        "tol_source": "workflow-contract",
+        "comparison": "isequal",
+        "domain": "nonempty finite frequency grid, finite reference energy, positive finite broadening, Krylov dimension, and tolerance",
+        "type_constraints": []
+      },
+      "motivation": {
+        "question": "Define a response-frequency grid and the resolvent broadening and numerical controls.",
+        "definition": "Options specify omega values, the source reference energy E0, positive Lorentzian broadening eta, and Krylov resolution controls.",
+        "identities": [
+          "Output order matches frequency order",
+          "Positive broadening keeps every resolvent point off the real-axis poles"
+        ]
+      },
+      "properties": [
+        {
+          "id": "specopts-frequency",
+          "kind": "validation",
+          "statement": "Frequencies are finite and the grid is nonempty.",
+          "predicate": "",
+          "ref": "workflow-contract",
+          "verification_status": "stated"
+        },
+        {
+          "id": "specopts-broadening",
+          "kind": "validation",
+          "statement": "Broadening is finite and strictly positive.",
+          "predicate": "",
+          "ref": "workflow-contract",
+          "verification_status": "stated"
+        },
+        {
+          "id": "specopts-controls",
+          "kind": "validation",
+          "statement": "Krylov dimension and tolerance are positive.",
+          "predicate": "",
+          "ref": "workflow-contract",
+          "verification_status": "stated"
+        },
+        {
+          "id": "specopts-cardinality",
+          "kind": "shape",
+          "statement": "The returned spectrum has one value for each frequency in input order.",
+          "predicate": "",
+          "ref": "workflow-contract",
+          "verification_status": "stated"
+        }
+      ],
+      "anchors": [
+        {
+          "input": "frequencies=[-1,0,1];reference_energy=0.2;broadening=0.1;krylov_dimension=16;tolerance=1e-8",
+          "expected": "valid=true;output_length=3",
+          "precision": "exact",
+          "region": "visible-valid",
+          "held_out": false
+        },
+        {
+          "input": "frequencies=[2];reference_energy=-0.3;broadening=0.25;krylov_dimension=8;tolerance=1e-9",
+          "expected": "valid=true;output_length=1",
+          "precision": "exact",
+          "region": "held-out-valid",
+          "held_out": true
+        },
+        {
+          "input": "frequencies=[0];reference_energy=0;broadening=0;krylov_dimension=8;tolerance=1e-8",
+          "expected": "category=InvalidOptions",
+          "precision": "exact",
+          "region": "held-out-error-broadening",
+          "held_out": true
+        },
+        {
+          "input": "frequencies=[];reference_energy=0;broadening=0.1;krylov_dimension=8;tolerance=1e-8",
+          "expected": "category=InvalidOptions",
+          "precision": "exact",
+          "region": "held-out-error-grid",
+          "held_out": true
+        }
+      ],
+      "workloads": [],
+      "benchmarks": {
+        "micro_ns": {},
+        "macro_ns": {}
+      },
+      "source": "workflow-contract",
+      "compat": false,
+      "spec_version": 1,
+      "spec_hash": "sha256:b9a5f4a7f6a71d9ebffcf6dfa283e1bd7bd15c732de53e1b273745d2b2339526"
+    },
+    {
+      "symbol": "dynamics::spectral_function",
+      "package": "quspin",
+      "module": "dynamics",
+      "signatures": [
+        "pub fn spectral_function(h_target: &impl LinearOperator, source: &[Complex64], probe: &impl LinearOperator, options: SpectrumOptions) -> Result<Vec<f64>>"
+      ],
+      "exported": true,
+      "contract": {
+        "atol": 1e-08,
+        "rtol": 1e-07,
+        "tol_source": "paper-workflow-spectrum",
+        "comparison": "",
+        "domain": "a square target-sector Hamiltonian, a source-sector state, a probe whose columns match the source and rows match the target, positive broadening, and finite frequencies",
+        "type_constraints": []
+      },
+      "motivation": {
+        "question": "Compute response spectra in the same sector or after a sector-changing probe without full diagonalization.",
+        "definition": "For probe-created vector phi and reference energy E0, the broadened spectrum is minus one over pi times the imaginary part of the resolvent expectation of phi at omega plus E0 plus i eta.",
+        "identities": [
+          "The spectrum is nonnegative for positive broadening and a Hermitian target Hamiltonian",
+          "A zero probe gives the zero spectrum",
+          "The probe shape is target dimension by source dimension"
+        ]
+      },
+      "properties": [
+        {
+          "id": "spectrum-shape",
+          "kind": "shape",
+          "statement": "Probe columns match the source-state length and probe rows match the target Hamiltonian dimension.",
+          "predicate": "",
+          "ref": "workflow-contract",
+          "verification_status": "stated"
+        },
+        {
+          "id": "spectrum-positive",
+          "kind": "positivity",
+          "statement": "For Hermitian input and positive broadening, the spectral density is nonnegative up to numerical tolerance.",
+          "predicate": "",
+          "ref": "workflow-contract",
+          "verification_status": "stated"
+        },
+        {
+          "id": "spectrum-zero",
+          "kind": "special_value",
+          "statement": "A probe that annihilates the source produces zero at every frequency.",
+          "predicate": "",
+          "ref": "workflow-contract",
+          "verification_status": "stated"
+        },
+        {
+          "id": "spectrum-finite",
+          "kind": "numerics",
+          "statement": "Finite valid inputs produce finite outputs across the requested grid.",
+          "predicate": "",
+          "ref": "workflow-contract",
+          "verification_status": "stated"
+        },
+        {
+          "id": "spectrum-matrix-free",
+          "kind": "complexity",
+          "statement": "The resolvent or Krylov evaluation uses operator action and does not require full eigenvectors.",
+          "predicate": "",
+          "ref": "workflow-contract",
+          "verification_status": "stated"
+        }
+      ],
+      "anchors": [
+        {
+          "input": "H_target=diag[1];source=[1];probe=[[1]];E0=0;omega=[1];eta=0.5",
+          "expected": "spectrum=[0.6366197723675814]",
+          "precision": "float64",
+          "region": "visible-one-pole",
+          "held_out": false
+        },
+        {
+          "input": "H_target=diag[2];source=[1];probe=[[1]];E0=0;omega=[2];eta=0.25",
+          "expected": "spectrum=[1.2732395447351628]",
+          "precision": "float64",
+          "region": "held-out-one-pole",
+          "held_out": true
+        },
+        {
+          "input": "H_target=diag[1,3];source=[1];probe=[[0],[0]];E0=0;omega=[0,1,2];eta=0.2",
+          "expected": "spectrum=[0,0,0]",
+          "precision": "float64",
+          "region": "held-out-zero",
+          "held_out": true
+        },
+        {
+          "input": "H_target_shape=[3,3];source_length=2;probe_shape=[3,4];eta=0.1",
+          "expected": "category=DimensionMismatch",
+          "precision": "exact",
+          "region": "held-out-error",
+          "held_out": true
+        }
+      ],
+      "workloads": [],
+      "benchmarks": {
+        "micro_ns": {},
+        "macro_ns": {}
+      },
+      "source": "workflow-contract",
+      "compat": false,
+      "spec_version": 1,
+      "spec_hash": "sha256:8a0de509d25ba3f15470dd6260844005e496fb836554d7b8cc9e6066467f6b55"
+    },
+    {
+      "symbol": "measure::Subspace",
+      "package": "quspin",
+      "module": "measure",
+      "signatures": [
+        "pub fn from_columns(ambient_dimension: usize, rank: usize, column_major_vectors: Vec<Complex64>) -> Result<Self>"
+      ],
+      "exported": true,
+      "contract": {
+        "atol": 1e-12,
+        "rtol": 1e-10,
+        "tol_source": "analytic-linear-algebra",
+        "comparison": "",
+        "domain": "nonempty finite column sets with ambient_dimension times rank entries and full numerical column rank",
+        "type_constraints": []
+      },
+      "motivation": {
+        "question": "Represent an eigenspace independently of a particular eigenvector gauge.",
+        "definition": "Subspace stores or derives an orthonormal column basis for the span of the supplied vectors and exposes ambient dimension and numerical rank.",
+        "identities": [
+          "Right multiplication by an invertible matrix preserves the subspace",
+          "Orthonormalization preserves the projector onto the span"
+        ]
+      },
+      "properties": [
+        {
+          "id": "subspace-projector",
+          "kind": "invariance",
+          "statement": "Equivalent full-rank spanning sets produce the same orthogonal projector within tolerance.",
+          "predicate": "",
+          "ref": "workflow-contract",
+          "verification_status": "stated"
+        },
+        {
+          "id": "subspace-orthonormal",
+          "kind": "normalization",
+          "statement": "The internal or returned basis columns are orthonormal within tolerance.",
+          "predicate": "",
+          "ref": "workflow-contract",
+          "verification_status": "stated"
+        },
+        {
+          "id": "subspace-shape",
+          "kind": "validation",
+          "statement": "Input storage length equals ambient dimension times declared rank.",
+          "predicate": "",
+          "ref": "workflow-contract",
+          "verification_status": "stated"
+        },
+        {
+          "id": "subspace-rank",
+          "kind": "validation",
+          "statement": "Numerically rank-deficient or empty spanning sets return a structured error.",
+          "predicate": "",
+          "ref": "workflow-contract",
+          "verification_status": "stated"
+        }
+      ],
+      "anchors": [
+        {
+          "input": "ambient=3;rank=2;columns=[e1,e2]",
+          "expected": "rank=2;projector=diag[1,1,0]",
+          "precision": "float64",
+          "region": "visible-axes",
+          "held_out": false
+        },
+        {
+          "input": "ambient=3;rank=2;columns=[e1+e2,e1-e2]",
+          "expected": "rank=2;projector=diag[1,1,0]",
+          "precision": "float64",
+          "region": "held-out-rotation",
+          "held_out": true
+        },
+        {
+          "input": "ambient=2;rank=2;columns=[e1,2e1]",
+          "expected": "category=RankDeficient",
+          "precision": "exact",
+          "region": "held-out-error-rank",
+          "held_out": true
+        },
+        {
+          "input": "ambient=3;rank=2;entry_count=5",
+          "expected": "category=DimensionMismatch",
+          "precision": "exact",
+          "region": "held-out-error-shape",
+          "held_out": true
+        }
+      ],
+      "workloads": [],
+      "benchmarks": {
+        "micro_ns": {},
+        "macro_ns": {}
+      },
+      "source": "workflow-contract",
+      "compat": false,
+      "spec_version": 1,
+      "spec_hash": "sha256:4e163d024cf66213052165bd8310ccb99a589cd9dbcfbe24f240d11c0251afde"
+    },
+    {
+      "symbol": "measure::subspace_fidelity",
+      "package": "quspin",
+      "module": "measure",
+      "signatures": [
+        "pub fn subspace_fidelity(left: &Subspace, right: &Subspace) -> Result<f64>"
+      ],
+      "exported": true,
+      "contract": {
+        "atol": 1e-12,
+        "rtol": 1e-10,
+        "tol_source": "analytic-identity",
+        "comparison": "",
+        "domain": "two nonempty finite-dimensional subspaces represented by equal-ambient-dimension column sets; columns need not already be orthonormal",
+        "type_constraints": []
+      },
+      "motivation": {
+        "question": "Compare possibly degenerate eigenspaces without depending on arbitrary eigenvector gauges or rotations.",
+        "definition": "After orthonormalizing bases Q_left and Q_right, fidelity is the mean squared singular value of Q_left adjoint times Q_right, equivalently the normalized trace of the product of their projectors.",
+        "identities": [
+          "Fidelity lies from zero through one",
+          "It is invariant under unitary rotations within either subspace",
+          "It equals one for identical subspaces and zero for orthogonal equal-rank subspaces"
+        ]
+      },
+      "properties": [
+        {
+          "id": "fidelity-bounds",
+          "kind": "bounds",
+          "statement": "The result lies in the closed interval from zero to one up to tolerance.",
+          "predicate": "",
+          "ref": "workflow-contract",
+          "verification_status": "stated"
+        },
+        {
+          "id": "fidelity-gauge",
+          "kind": "invariance",
+          "statement": "Independent unitary rotations of either spanning set leave the result unchanged.",
+          "predicate": "",
+          "ref": "workflow-contract",
+          "verification_status": "stated"
+        },
+        {
+          "id": "fidelity-symmetric",
+          "kind": "symmetry",
+          "statement": "Swapping left and right leaves the result unchanged.",
+          "predicate": "",
+          "ref": "workflow-contract",
+          "verification_status": "stated"
+        },
+        {
+          "id": "fidelity-identical",
+          "kind": "special_value",
+          "statement": "Two spanning sets for the same subspace have fidelity one.",
+          "predicate": "",
+          "ref": "workflow-contract",
+          "verification_status": "stated"
+        },
+        {
+          "id": "fidelity-dimension",
+          "kind": "error",
+          "statement": "Ambient-dimension mismatch or an empty subspace returns a structured error.",
+          "predicate": "",
+          "ref": "workflow-contract",
+          "verification_status": "stated"
+        }
+      ],
+      "anchors": [
+        {
+          "input": "left=span(e1,e2);right=span((e1+e2)/sqrt(2),(e1-e2)/sqrt(2))",
+          "expected": "1.0",
+          "precision": "float64",
+          "region": "visible-rotation",
+          "held_out": false
+        },
+        {
+          "input": "left=span(e1,e2);right=span(e3,e4)",
+          "expected": "0.0",
+          "precision": "float64",
+          "region": "held-out-orthogonal",
+          "held_out": true
+        },
+        {
+          "input": "left=span(e1);right=span((e1+e2)/sqrt(2))",
+          "expected": "0.5",
+          "precision": "float64",
+          "region": "held-out-angle",
+          "held_out": true
+        },
+        {
+          "input": "left_ambient=3;right_ambient=4",
+          "expected": "category=DimensionMismatch",
+          "precision": "exact",
+          "region": "held-out-error",
+          "held_out": true
+        }
+      ],
+      "workloads": [],
+      "benchmarks": {
+        "micro_ns": {},
+        "macro_ns": {}
+      },
+      "source": "workflow-contract",
+      "compat": false,
+      "spec_version": 1,
+      "spec_hash": "sha256:e6dbe260a00875d2ac88bb3b1655acf72c4f6007322f6895839572449dbe54f5"
+    },
+    {
+      "symbol": "workflow::LindbladGenerator",
+      "package": "quspin",
+      "module": "workflow",
+      "signatures": [
+        "pub fn new(hamiltonian: std::sync::Arc<dyn LinearOperator>, jumps: Vec<std::sync::Arc<dyn LinearOperator>>) -> Result<Self>"
+      ],
+      "exported": true,
+      "contract": {
+        "atol": 1e-09,
+        "rtol": 1e-08,
+        "tol_source": "analytic-open-system",
+        "comparison": "",
+        "domain": "square Hamiltonian and jump operators of a common Hilbert dimension; density matrices use documented column-major vectorization",
+        "type_constraints": []
+      },
+      "motivation": {
+        "question": "Express Markovian open-system evolution through the same matrix-free linear-operator algorithms as closed-system dynamics.",
+        "definition": "The generator acts as -i times the commutator of H and rho plus the sum over jumps of L rho L adjoint minus one half of the anticommutator of L adjoint L with rho.",
+        "identities": [
+          "The generator preserves trace",
+          "Hermiticity is preserved",
+          "With no jumps it reduces to unitary commutator evolution"
+        ]
+      },
+      "properties": [
+        {
+          "id": "lindblad-shape",
+          "kind": "shape",
+          "statement": "A Hilbert dimension d produces a square linear operator of dimension d squared.",
+          "predicate": "",
+          "ref": "workflow-contract",
+          "verification_status": "stated"
+        },
+        {
+          "id": "lindblad-trace",
+          "kind": "conservation",
+          "statement": "The derivative of density-matrix trace is zero within tolerance.",
+          "predicate": "",
+          "ref": "workflow-contract",
+          "verification_status": "stated"
+        },
+        {
+          "id": "lindblad-hermiticity",
+          "kind": "symmetry",
+          "statement": "Hermitian density matrices have Hermitian derivatives.",
+          "predicate": "",
+          "ref": "workflow-contract",
+          "verification_status": "stated"
+        },
+        {
+          "id": "lindblad-unitary-limit",
+          "kind": "special_value",
+          "statement": "With no jumps, action equals the vectorized Hamiltonian commutator generator.",
+          "predicate": "",
+          "ref": "workflow-contract",
+          "verification_status": "stated"
+        },
+        {
+          "id": "lindblad-matrix-free",
+          "kind": "complexity",
+          "statement": "The generator can apply H and jumps without explicitly materializing the d squared by d squared superoperator.",
+          "predicate": "",
+          "ref": "workflow-contract",
+          "verification_status": "stated"
+        }
+      ],
+      "anchors": [
+        {
+          "input": "H=zero2;jump=sqrt(1)*lowering;rho0=excited_state;t=ln(2)",
+          "expected": "excited_population=0.5;trace=1;hermitian=true",
+          "precision": "float64",
+          "region": "visible-amplitude-damping",
+          "held_out": false
+        },
+        {
+          "input": "H=zero2;jump=sqrt(0.7)*lowering;rho0=excited_state;t=1.3",
+          "expected": "excited_population=0.40252422403363597;trace=1;hermitian=true",
+          "precision": "float64",
+          "region": "held-out-amplitude-damping",
+          "held_out": true
+        },
+        {
+          "input": "H=diag[-1,2];jumps=[];rho0=[[0.5,0.5],[0.5,0.5]];t=0.4",
+          "expected": "trace=1;purity=1;unitary_limit=true",
+          "precision": "float64",
+          "region": "held-out-unitary",
+          "held_out": true
+        },
+        {
+          "input": "H_shape=[2,2];jump_shape=[3,3]",
+          "expected": "category=DimensionMismatch",
+          "precision": "exact",
+          "region": "held-out-error",
+          "held_out": true
+        }
+      ],
+      "workloads": [],
+      "benchmarks": {
+        "micro_ns": {},
+        "macro_ns": {}
+      },
+      "source": "workflow-contract",
+      "compat": false,
+      "spec_version": 1,
+      "spec_hash": "sha256:d5e41c6ca10e3d501d251f4fd8359d3993f51f1e086d6beebafecf2e859cc7cd"
+    }
+  ],
+  "bundle_hash": "sha256:a9093788a8b2687689113102daaef231e58d33f6188b74927e9b60c097ee1721"
+}
