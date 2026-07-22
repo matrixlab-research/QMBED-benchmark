@@ -70,5 +70,8 @@ fn linear_operator_contract_supports_rectangular_sector_changes() {
     let mut output = [0.0; 2];
     operator.apply(&[2.0, -4.0, 8.0], &mut output).unwrap();
     assert_eq!(operator.shape(), (2, 3));
-    assert_eq!(output, [-1.0, 2.0]);
+    assert!(output
+        .iter()
+        .zip([-1.0, 2.0])
+        .all(|(actual, expected)| (*actual - expected).abs() < f64::EPSILON));
 }
