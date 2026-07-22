@@ -1,0 +1,9 @@
+{
+  "package": "quspin",
+  "version": "0.1.0",
+  "target_language": "rust",
+  "bundle_hash": "sha256:a9093788a8b2687689113102daaef231e58d33f6188b74927e9b60c097ee1721",
+  "artifact": "0.1.0.a9093788a8b2.json",
+  "snapshot": "quspin-julia-verify:b43f6c8",
+  "frozen_at": "2026-07-22T00:00:00Z"
+}

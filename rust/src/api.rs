@@ -170,13 +170,13 @@ pub trait BasisHandle {
     fn state_index(&self, state: u128) -> Result<usize, Self::Error>;
 }
 
-/// Narrow waist shared by stored and matrix-free operators.
+/// Rectangular-capable narrow waist shared by stored and matrix-free maps.
 #[allow(clippy::missing_errors_doc)]
 pub trait LinearOperator {
     type Scalar: Copy + Default + Send + Sync + 'static;
     type Error: Error + Send + Sync + 'static;
 
-    fn dimension(&self) -> usize;
+    fn shape(&self) -> (usize, usize);
     fn format(&self) -> MatrixFormat;
     fn apply(&self, input: &[Self::Scalar], output: &mut [Self::Scalar])
         -> Result<(), Self::Error>;

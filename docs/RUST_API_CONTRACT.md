@@ -58,10 +58,15 @@ pub trait Basis: Send + Sync {
 }
 
 pub trait LinearOperator: Send + Sync {
-    fn dimension(&self) -> usize;
+    fn shape(&self) -> (usize, usize);
     fn apply(&self, input: &[Complex64], output: &mut [Complex64]) -> Result<()>;
 }
 ```
+
+`shape()` is `(rows, columns)`, so this same interface also represents a
+sector-changing probe. Hamiltonians and time generators are square; a
+particle-addition operator may map an N-particle source basis to an
+(N+1)-particle target basis. Algorithms validate the shape they require.
 
 Algorithms accept `&impl LinearOperator`; therefore the same `eigsh`, Krylov
 evolution, spectrum, and Lindblad code works with dense, CSC, CSR, DIA, or a
@@ -151,7 +156,8 @@ Important semantic requirements:
 - `evolve` supports a single time and a time grid without first densifying.
 - subspace fidelity is invariant under unitary rotations inside a degenerate
   subspace.
-- spectral functions support same-sector and cross-sector sources.
+- spectral functions support same-sector and cross-sector sources; the probe
+  shape is `(target_dimension, source_dimension)`.
 - `LindbladGenerator` implements `LinearOperator` over vectorized density
   matrices, so open-system evolution can remain matrix-free.
 

@@ -5,6 +5,7 @@ on:
     paths:
       - "rust/**"
       - "docs/RUST_API_CONTRACT.md"
+      - "ci/freeze_rust_spec.py"
       - ".github/workflows/rust-contract.yml"
   push:
     branches:
@@ -12,6 +13,7 @@ on:
     paths:
       - "rust/**"
       - "docs/RUST_API_CONTRACT.md"
+      - "ci/freeze_rust_spec.py"
       - ".github/workflows/rust-contract.yml"
   workflow_dispatch:
 
@@ -25,6 +27,8 @@ jobs:
           components: rustfmt, clippy
       - name: Check the frozen Rust API denominator
         run: python ci/check_rust_api_plan.py
+      - name: Check the content-addressed Rust SpecBundle
+        run: python ci/freeze_rust_spec.py --check
       - name: Check formatting
         run: cargo fmt --manifest-path rust/Cargo.toml --check
       - name: Lint the verification harness

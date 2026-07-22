@@ -29,12 +29,21 @@ or namespace coverage from drifting silently. `contract_ready` means only that
 the adapter/test boundary exists; it does not mean the Rust implementation or
 Python-oracle parity exists.
 
+The rewrite task itself is frozen from [`spec_source.json`](spec_source.json)
+into the content-addressed bundle under [`specs/quspin`](specs/quspin). Minos
+renders the public [`MOTIVATION.md`](taskdoc/MOTIVATION.md),
+[`CONTRACT.md`](taskdoc/CONTRACT.md), and [`TESTS.md`](taskdoc/TESTS.md) from
+that one bundle. The source and bundle remain private because they contain
+held-out anchors; the three generated task documents contain only derivations,
+the required Rust surface, and small visible examples.
+
 Run locally with:
 
 ```bash
 cargo fmt --manifest-path rust/Cargo.toml --check
 cargo clippy --manifest-path rust/Cargo.toml --all-targets -- -D warnings
 cargo test --manifest-path rust/Cargo.toml
+python ci/freeze_rust_spec.py --check
 ```
 
 The proposed public package surface and the migration map from Julia are in
