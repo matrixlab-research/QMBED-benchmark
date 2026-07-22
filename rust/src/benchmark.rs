@@ -28,31 +28,36 @@ impl Default for BenchmarkOptions {
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct BenchmarkRow {
+    pub language: &'static str,
     pub suite: &'static str,
     pub case_id: &'static str,
     pub family_id: &'static str,
     pub benchmark: &'static str,
-    pub parameters: &'static str,
-    pub language: &'static str,
+    pub category: &'static str,
     pub comparison: &'static str,
     pub storage: &'static str,
+    pub supported: &'static str,
+    pub note: &'static str,
+    pub parameters: &'static str,
     pub validation: &'static str,
     pub samples: usize,
     pub iterations_per_sample: usize,
+    pub median_seconds: f64,
+    pub mean_seconds: f64,
+    pub stdev_seconds: f64,
     pub minimum_seconds: f64,
     pub p05_seconds: f64,
     pub p25_seconds: f64,
-    pub median_seconds: f64,
-    pub mean_seconds: f64,
     pub p75_seconds: f64,
     pub p95_seconds: f64,
     pub maximum_seconds: f64,
-    pub stddev_seconds: f64,
+    pub median_allocated_bytes: Option<u64>,
+    pub runtime: &'static str,
     pub raw_samples_seconds: Vec<f64>,
 }
 
 impl BenchmarkRow {
-    pub const CSV_HEADER: &'static str = "suite,case_id,family_id,benchmark,parameters,language,comparison,storage,validation,samples,iterations_per_sample,min_seconds,p05_seconds,p25_seconds,median_seconds,mean_seconds,p75_seconds,p95_seconds,max_seconds,stddev_seconds,raw_samples_seconds";
+    pub const CSV_HEADER: &'static str = "language,suite,case_id,family_id,benchmark,category,comparison,storage,supported,note,parameters,validation,samples,iterations_per_sample,median_seconds,mean_seconds,stdev_seconds,min_seconds,p05_seconds,p25_seconds,p75_seconds,p95_seconds,max_seconds,median_allocated_bytes,runtime,raw_samples_seconds";
 
     #[must_use]
     pub fn to_csv_record(&self) -> String {
@@ -63,26 +68,32 @@ impl BenchmarkRow {
             .collect::<Vec<_>>()
             .join(";");
         [
+            self.language.to_string(),
             self.suite.to_string(),
             self.case_id.to_string(),
             self.family_id.to_string(),
             csv_escape(self.benchmark),
-            csv_escape(self.parameters),
-            self.language.to_string(),
+            self.category.to_string(),
             self.comparison.to_string(),
             self.storage.to_string(),
+            self.supported.to_string(),
+            csv_escape(self.note),
+            csv_escape(self.parameters),
             self.validation.to_string(),
             self.samples.to_string(),
             self.iterations_per_sample.to_string(),
+            format!("{:.12}", self.median_seconds),
+            format!("{:.12}", self.mean_seconds),
+            format!("{:.12}", self.stdev_seconds),
             format!("{:.12}", self.minimum_seconds),
             format!("{:.12}", self.p05_seconds),
             format!("{:.12}", self.p25_seconds),
-            format!("{:.12}", self.median_seconds),
-            format!("{:.12}", self.mean_seconds),
             format!("{:.12}", self.p75_seconds),
             format!("{:.12}", self.p95_seconds),
             format!("{:.12}", self.maximum_seconds),
-            format!("{:.12}", self.stddev_seconds),
+            self.median_allocated_bytes
+                .map_or_else(String::new, |value| value.to_string()),
+            csv_escape(self.runtime),
             raw,
         ]
         .join(",")
@@ -153,38 +164,45 @@ fn summarize(
     case: &WorkflowCase,
     language: &'static str,
     storage: &'static str,
-    mut samples: Vec<f64>,
+    samples: Vec<f64>,
 ) -> BenchmarkRow {
-    samples.sort_by(f64::total_cmp);
-    let count = samples.len() as f64;
-    let mean = samples.iter().sum::<f64>() / count;
-    let variance = samples
+    let raw_samples = samples;
+    let mut sorted = raw_samples.clone();
+    sorted.sort_by(f64::total_cmp);
+    let count = sorted.len() as f64;
+    let mean = sorted.iter().sum::<f64>() / count;
+    let variance = sorted
         .iter()
         .map(|value| (value - mean).powi(2))
         .sum::<f64>()
-        / count;
+        / if sorted.len() > 1 { count - 1.0 } else { count };
     BenchmarkRow {
+        language,
         suite: "paper",
         case_id: case.case_id,
         family_id: case.family_id,
         benchmark: case.name,
-        parameters: case.parameters,
-        language,
-        comparison: "current_backend",
+        category: "workflow",
+        comparison: "end_to_end",
         storage,
-        validation: "physical_invariant",
-        samples: samples.len(),
+        supported: "true",
+        note: "Full basis + Hamiltonian + solver/observable pipeline.",
+        parameters: case.parameters,
+        validation: "passed",
+        samples: sorted.len(),
         iterations_per_sample: 1,
-        minimum_seconds: samples[0],
-        p05_seconds: percentile(&samples, 0.05),
-        p25_seconds: percentile(&samples, 0.25),
-        median_seconds: percentile(&samples, 0.50),
+        median_seconds: percentile(&sorted, 0.50),
         mean_seconds: mean,
-        p75_seconds: percentile(&samples, 0.75),
-        p95_seconds: percentile(&samples, 0.95),
-        maximum_seconds: samples[samples.len() - 1],
-        stddev_seconds: variance.sqrt(),
-        raw_samples_seconds: samples,
+        stdev_seconds: variance.sqrt(),
+        minimum_seconds: sorted[0],
+        p05_seconds: percentile(&sorted, 0.05),
+        p25_seconds: percentile(&sorted, 0.25),
+        p75_seconds: percentile(&sorted, 0.75),
+        p95_seconds: percentile(&sorted, 0.95),
+        maximum_seconds: sorted[sorted.len() - 1],
+        median_allocated_bytes: None,
+        runtime: "Rust; QuSpin.rs pinned candidate",
+        raw_samples_seconds: raw_samples,
     }
 }
 

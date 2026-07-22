@@ -8,6 +8,7 @@
 pub mod api;
 pub mod benchmark;
 pub mod candidate;
+mod candidate_workflows;
 pub mod catalog;
 pub mod observation;
 

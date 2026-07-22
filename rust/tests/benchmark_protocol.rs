@@ -57,8 +57,14 @@ fn rust_rows_match_the_existing_paper_csv_contract() {
         quspin_rust_verify::BenchmarkRow::CSV_HEADER,
         rows[0].to_csv_record()
     );
-    assert!(csv.contains(",rust,"));
+    assert!(csv
+        .lines()
+        .nth(1)
+        .is_some_and(|row| row.starts_with("rust,")));
     assert!(csv.contains("raw_samples_seconds"));
+    assert!(csv.contains("stdev_seconds"));
+    assert!(!csv.contains("stddev_seconds"));
+    assert!(csv.contains(",workflow,end_to_end,csc,true,"));
 }
 
 #[test]

@@ -13,11 +13,13 @@
       "verification_contracts": [
         "rust/src/api.rs",
         "rust/src/candidate.rs",
+        "rust/src/candidate_workflows.rs",
         "rust/tests/api_contract.rs",
         "rust/tests/candidate_adapter.rs",
+        "rust/tests/candidate_workflows.rs",
         "rust/tests/workflow_catalog.rs"
       ],
-      "status": "adapter_compiles"
+      "status": "paper_benchmark_recorded"
     },
     "operators": {
       "objects": 12,
@@ -25,11 +27,13 @@
       "verification_contracts": [
         "rust/src/api.rs",
         "rust/src/candidate.rs",
+        "rust/src/candidate_workflows.rs",
         "rust/tests/api_contract.rs",
         "rust/tests/candidate_adapter.rs",
+        "rust/tests/candidate_workflows.rs",
         "rust/tests/benchmark_protocol.rs"
       ],
-      "status": "adapter_compiles"
+      "status": "paper_benchmark_recorded"
     },
     "tools": {
       "objects": 24,
@@ -42,12 +46,14 @@
       "verification_contracts": [
         "rust/src/api.rs",
         "rust/src/candidate.rs",
+        "rust/src/candidate_workflows.rs",
         "rust/src/catalog.rs",
         "rust/tests/candidate_adapter.rs",
+        "rust/tests/candidate_workflows.rs",
         "rust/tests/workflow_catalog.rs",
         "rust/tests/benchmark_protocol.rs"
       ],
-      "status": "adapter_compiles"
+      "status": "paper_benchmark_recorded"
     }
   },
   "activation_states": [
@@ -57,5 +63,5 @@
     "workflow_passes",
     "paper_benchmark_recorded"
   ],
-  "current_boundary": "The private adapter compiles against a pinned QuSpin.rs commit and passes a low-level basis/operator/eigsh smoke test; twelve-workflow numerical parity and paper benchmarks are not yet claimed."
+  "current_boundary": "The private adapter and all twelve medium-size paper workflows pass their physical invariants against the pinned QuSpin.rs commit; a one-warm-up, five-sample local paper benchmark is recorded, while cross-language oracle comparison and same-runner hosted timings are not yet claimed."
 }
