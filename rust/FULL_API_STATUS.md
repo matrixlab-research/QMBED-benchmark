@@ -1,7 +1,7 @@
 # QuSpin.rs full-package candidate status
 
 Date: 2026-07-23  
-Pinned candidate: `42887668e1d6a7373185dc99f252bc080b004be2`
+Pinned candidate: `85a3f5d44b2f5b5bce58e0c35b3e6d31148d43ce`
 
 ## Completion boundary
 
@@ -35,10 +35,11 @@ spelling.
   sector-sized, or transition-sized storage rather than full-square fallback.
 - Workflow gate: all twelve medium-size literature-derived cases must satisfy
   physical invariants before their timings are accepted.
-- Performance continuity: the complete candidate's five-sample local record
-  uses one streamed transition/assembler contract and is stored beside the
-  first Rust baseline; ten of twelve medians are within 4%, with no
-  workflow-specific assembly path.
+- Performance continuity: the current five-sample local record uses one
+  streamed transition/assembler contract and one coarse numerical-backend
+  boundary. Real CSC shift-invert stays real through factorization and
+  Lanczos, reducing the MBL median from 0.403 s to 0.114 s while the summed
+  twelve-workflow median falls from 8.99 s to 8.79 s.
 
 ## Language-boundary exclusions
 

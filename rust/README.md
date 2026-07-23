@@ -39,8 +39,8 @@ namespace coverage, or complete-version object mapping from drifting silently.
 The low-level adapter, held-out full-API oracles, structural scale gates, and
 all twelve workflows run against the pinned candidate. Current completion
 evidence is summarized in [`FULL_API_STATUS.md`](FULL_API_STATUS.md). The first
-baseline and the complete candidate's one-warm-up, five-sample local records
-are stored under `rust/benchmarks/`.
+baseline, complete candidate, universal assembler, and numerical-backend
+one-warm-up/five-sample local records are stored under `rust/benchmarks/`.
 Same-runner hosted Python/Julia/Rust timing remains a separate observational
 gate.
 
