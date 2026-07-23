@@ -1,6 +1,18 @@
 # Proposed Rust QuSpin API contract
 
-Status: verification-first design for the first Rust implementation.
+Status: implemented paper-workflow core and bootstrap design for the full Rust
+package.
+
+The accepted first-stage Minos contract is frozen under `rust/taskdoc/`. The
+complete Python-1.0.1 capability design is now specified separately in:
+
+- [`rust/full-taskdoc/MOTIVATION.md`](../rust/full-taskdoc/MOTIVATION.md);
+- [`rust/full-taskdoc/CONTRACT.md`](../rust/full-taskdoc/CONTRACT.md);
+- [`rust/full-taskdoc/TESTS.md`](../rust/full-taskdoc/TESTS.md).
+
+Those documents are the implementation-preparation boundary for the full
+package. This file remains the shorter architectural overview and migration
+map for the original paper-workflow core.
 
 ## Design boundary
 

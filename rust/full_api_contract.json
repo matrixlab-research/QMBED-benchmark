@@ -17,9 +17,11 @@
         "rust/tests/api_contract.rs",
         "rust/tests/candidate_adapter.rs",
         "rust/tests/candidate_workflows.rs",
+        "rust/tests/full_api_oracles.rs",
+        "rust/tests/full_api_scale.rs",
         "rust/tests/workflow_catalog.rs"
       ],
-      "status": "paper_benchmark_recorded"
+      "status": "complete_candidate"
     },
     "operators": {
       "objects": 12,
@@ -31,9 +33,11 @@
         "rust/tests/api_contract.rs",
         "rust/tests/candidate_adapter.rs",
         "rust/tests/candidate_workflows.rs",
+        "rust/tests/full_api_oracles.rs",
+        "rust/tests/full_api_scale.rs",
         "rust/tests/benchmark_protocol.rs"
       ],
-      "status": "paper_benchmark_recorded"
+      "status": "complete_candidate"
     },
     "tools": {
       "objects": 24,
@@ -50,10 +54,12 @@
         "rust/src/catalog.rs",
         "rust/tests/candidate_adapter.rs",
         "rust/tests/candidate_workflows.rs",
+        "rust/tests/full_api_oracles.rs",
+        "rust/tests/full_api_scale.rs",
         "rust/tests/workflow_catalog.rs",
         "rust/tests/benchmark_protocol.rs"
       ],
-      "status": "paper_benchmark_recorded"
+      "status": "complete_candidate"
     }
   },
   "activation_states": [
@@ -61,7 +67,13 @@
     "adapter_compiles",
     "oracle_passes",
     "workflow_passes",
-    "paper_benchmark_recorded"
+    "paper_benchmark_recorded",
+    "public_properties",
+    "private_oracle",
+    "workflow_covered",
+    "scale_covered",
+    "complete_candidate"
   ],
-  "current_boundary": "The private adapter and all twelve medium-size paper workflows pass their physical invariants against the pinned QuSpin.rs commit; a one-warm-up, five-sample local paper benchmark is recorded, while cross-language oracle comparison and same-runner hosted timings are not yet claimed."
+  "current_boundary": "QuSpin.rs commit b87e0e7a5bb318307baa09586b374b3f516e0e29 is the complete Rust-native candidate for the frozen Python QuSpin 1.0.1 scientific capability map. Public properties, seven held-out oracle families, four multi-size structural scale gates, and all twelve medium-size paper workflows pass. Its universal transition interface streams every basis through one assembler path, keeps up to two local destinations inline, and fuses reduction with target indexing. The existing local paper benchmark remains observational; same-runner cross-language hosted timings are not claimed as a semantic completion condition.",
+  "namespace_status_scope": "Complete-candidate status applies to the many-to-one Rust-native scientific behavior map, not Python object identity, pickling, NumPy dtype aliases, warning text, or one Rust method per Python member. Evidence and intentional language-boundary exclusions are recorded in rust/FULL_API_STATUS.md."
 }

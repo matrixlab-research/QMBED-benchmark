@@ -286,7 +286,7 @@ fn interacting_ssh() -> Result<Observation, QuSpinError> {
         .particles(8)
         .build()?;
     require_dimension(basis.len(), 12_870)?;
-    let hopping = |site: usize| if site.is_multiple_of(2) { 0.6 } else { 1.0 };
+    let hopping = |site: usize| if site % 2 == 0 { 0.6 } else { 1.0 };
     let bonds = 0..(sites - 1);
     let hamiltonian = OperatorBuilder::on(&basis)
         .terms([
@@ -656,9 +656,8 @@ fn conb_dynamical_structure_factor() -> Result<Observation, QuSpinError> {
     let spin_q = OperatorBuilder::on(&basis)
         .term(OperatorTerm::new(
             "z",
-            (0..sites).map(|site| {
-                Coupling::new(if site.is_multiple_of(2) { 1.0 } else { -1.0 }, vec![site])
-            }),
+            (0..sites)
+                .map(|site| Coupling::new(if site % 2 == 0 { 1.0 } else { -1.0 }, vec![site])),
         )?)
         .build(PublicMatrixFormat::Csc)?;
     let spectrum = spectral_function(
