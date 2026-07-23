@@ -286,7 +286,7 @@ fn interacting_ssh() -> Result<Observation, QuSpinError> {
         .particles(8)
         .build()?;
     require_dimension(basis.len(), 12_870)?;
-    let hopping = |site: usize| if site % 2 == 0 { 0.6 } else { 1.0 };
+    let hopping = |site: usize| if site.is_multiple_of(2) { 0.6 } else { 1.0 };
     let bonds = 0..(sites - 1);
     let hamiltonian = OperatorBuilder::on(&basis)
         .terms([
