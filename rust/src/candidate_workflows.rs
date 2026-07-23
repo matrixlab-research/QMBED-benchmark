@@ -206,15 +206,9 @@ fn floquet_heating() -> Result<Observation, QuSpinError> {
     ])?;
     let dimension = basis.len();
     let mut column_major = vec![c(0.0); dimension * dimension];
-    let mut input = vec![c(0.0); dimension];
-    let mut output = vec![c(0.0); dimension];
-    for column in 0..dimension {
-        input.fill(c(0.0));
-        input[column] = c(1.0);
-        floquet.apply_period(&input, &mut output)?;
-        for row in 0..dimension {
-            column_major[row + column * dimension] = output[row];
-        }
+    let full_unitary = floquet.full_unitary(PublicMatrixFormat::Dense)?;
+    for (row, column, value) in full_unitary.triplets() {
+        column_major[row + column * dimension] = value;
     }
     let unitary = DMatrix::from_column_slice(dimension, dimension, &column_major);
     let gram = unitary.adjoint() * &unitary;

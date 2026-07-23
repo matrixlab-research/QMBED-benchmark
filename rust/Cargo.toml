@@ -11,7 +11,7 @@ path = "src/lib.rs"
 [dependencies]
 nalgebra = "0.33"
 num-bigint = "0.4"
-quspin = { git = "https://github.com/matrixlab-research/QuSpin.rs.git", rev = "42887668e1d6a7373185dc99f252bc080b004be2" }
+quspin = { git = "https://github.com/matrixlab-research/QuSpin.rs.git", rev = "85a3f5d44b2f5b5bce58e0c35b3e6d31148d43ce" }
 
 [lints.rust]
 unsafe_code = "forbid"

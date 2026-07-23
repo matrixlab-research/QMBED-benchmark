@@ -698,7 +698,7 @@ dependencies = [
 [[package]]
 name = "quspin"
 version = "0.1.0"
-source = "git+https://github.com/matrixlab-research/QuSpin.rs.git?rev=42887668e1d6a7373185dc99f252bc080b004be2#42887668e1d6a7373185dc99f252bc080b004be2"
+source = "git+https://github.com/matrixlab-research/QuSpin.rs.git?rev=85a3f5d44b2f5b5bce58e0c35b3e6d31148d43ce#85a3f5d44b2f5b5bce58e0c35b3e6d31148d43ce"
 dependencies = [
  "faer",
  "nalgebra",
