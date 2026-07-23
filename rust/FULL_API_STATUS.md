@@ -1,7 +1,7 @@
 # QuSpin.rs full-package candidate status
 
 Date: 2026-07-23  
-Pinned candidate: `b87e0e7a5bb318307baa09586b374b3f516e0e29`
+Pinned candidate: `42887668e1d6a7373185dc99f252bc080b004be2`
 
 ## Completion boundary
 
