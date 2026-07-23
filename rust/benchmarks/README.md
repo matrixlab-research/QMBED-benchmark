@@ -19,6 +19,10 @@ transition interface: every basis feeds the same assembler, zero to two local
 destinations remain inline, and symmetry reduction is fused with target-index
 lookup. It does not contain workflow-specific assemblers.
 
+The final pinned commit `b87e0e7a5bb318307baa09586b374b3f516e0e29`
+differs only by an equivalent `contains` spelling required by Clippy 1.97; the
+CSV retains the exact commit that produced its samples.
+
 | Workflow | First baseline (s) | Complete candidate (s) |
 |---|---:|---:|
 | MBL shift-invert | 0.420 | 0.427 |
