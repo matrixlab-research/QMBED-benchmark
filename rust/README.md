@@ -15,6 +15,14 @@ deliberately split into four concerns:
 4. `src/candidate.rs` pins and adapts one public QuSpin.rs commit.
    `src/candidate_workflows.rs` independently constructs every frozen paper
    workflow and returns its named physical observations.
+5. `tests/full_api_oracles.rs` exercises held-out full-package semantics that
+   are not covered by the original 23-symbol adapter: general symmetry
+   projectors, higher-spin and Majorana algebra, wide and branching bases,
+   photon sectors, dynamic/parameterized operators, mixed-state measurements,
+   general exponential action, and dense/sparse archives.
+6. `tests/full_api_scale.rs` checks multiple-size combinatorial enumeration,
+   two-map symmetry intersections, direct cross-sector action, sparse algebra
+   memory, arbitrary subsystems, and state widths above `u128`.
 
 `ci/render_timing_report.py` accepts the resulting Rust CSV either alongside
 the existing Python/Julia files or as a Python/Rust pair.
@@ -28,10 +36,13 @@ invariant before a benchmark row can be emitted.
 64-object / 282-method / 180-attribute migration denominator into the proposed
 Rust module boundaries. `ci/check_rust_api_plan.py` prevents the denominator,
 namespace coverage, or complete-version object mapping from drifting silently.
-The low-level adapter and all
-twelve workflows run against the pinned candidate, and the first one-warm-up,
-five-sample local record is stored under `rust/benchmarks/`. Cross-language
-oracle comparison and same-runner hosted timings remain separate gates.
+The low-level adapter, held-out full-API oracles, structural scale gates, and
+all twelve workflows run against the pinned candidate. Current completion
+evidence is summarized in [`FULL_API_STATUS.md`](FULL_API_STATUS.md). The first
+baseline and the complete candidate's one-warm-up, five-sample local records
+are stored under `rust/benchmarks/`.
+Same-runner hosted Python/Julia/Rust timing remains a separate observational
+gate.
 
 The rewrite task itself is frozen from [`spec_source.json`](spec_source.json)
 into the content-addressed bundle under [`specs/quspin`](specs/quspin). Minos
@@ -56,6 +67,7 @@ Run locally with:
 cargo fmt --manifest-path rust/Cargo.toml --check
 cargo clippy --manifest-path rust/Cargo.toml --all-targets -- -D warnings
 cargo test --manifest-path rust/Cargo.toml
+cargo test --manifest-path rust/Cargo.toml --test full_api_scale
 cargo test --release --manifest-path rust/Cargo.toml --test candidate_workflows -- --ignored
 QUSPIN_RUST_SAMPLES=5 cargo run --release --manifest-path rust/Cargo.toml --bin paper_benchmark
 python ci/freeze_rust_spec.py --check
