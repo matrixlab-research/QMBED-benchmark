@@ -171,9 +171,11 @@ the benchmark CSV protocol are mirrored in a small compilable Rust crate.
 
 The public Rust candidate now connects through a private adapter pinned to an
 immutable commit. Release CI executes all twelve paper workflows and validates
-their physical invariants; a five-sample local baseline is recorded under
-[`rust/benchmarks`](rust/benchmarks/). Same-runner Python/Rust comparisons and
-the cross-language numerical oracle remain separate follow-up gates. See
+their physical invariants; the original and structure-aware five-sample local
+records are retained under [`rust/benchmarks`](rust/benchmarks/). The current
+record documents a 1.69× geometric-mean end-to-end speedup without
+workflow-specific backends. Same-runner Python/Rust comparisons and the
+cross-language numerical oracle remain separate follow-up gates. See
 [`docs/RUST_API_CONTRACT.md`](docs/RUST_API_CONTRACT.md) for the API proposal and
 Julia-to-Rust migration map.
 
