@@ -50,6 +50,7 @@ jobs:
         with:
           version: "1.12"
       - uses: julia-actions/cache@v2
+      - uses: dtolnay/rust-toolchain@stable
       - name: Run public Julia conformance suite
         env:
           A_REPO_URL: https://github.com/${{ inputs.candidate_repository }}.git
@@ -121,15 +122,33 @@ jobs:
           --output artifacts/julia-ed-workflow-benchmarks.csv
       - name: Measure paper-scale Python QuSpin workflows
         if: inputs.benchmark_tier == 'paper'
-        run: >-
-          python benchmark/python_paper_workflow_benchmarks.py
-          --output artifacts/python-paper-workflow-benchmarks.csv
+        run: |
+          python ci/run_with_peak_rss.py \
+            --language python \
+            --output artifacts/python-paper-workflow-memory.csv \
+            -- python benchmark/python_paper_workflow_benchmarks.py \
+            --output artifacts/python-paper-workflow-benchmarks.csv
       - name: Measure paper-scale Julia workflows
         if: inputs.benchmark_tier == 'paper'
-        run: >-
-          julia --startup-file=no --project=.
-          benchmark/julia_paper_workflow_benchmarks.jl
-          --output artifacts/julia-paper-workflow-benchmarks.csv
+        run: |
+          python ci/run_with_peak_rss.py \
+            --language julia \
+            --output artifacts/julia-paper-workflow-memory.csv \
+            -- julia --startup-file=no --project=. \
+            benchmark/julia_paper_workflow_benchmarks.jl \
+            --output artifacts/julia-paper-workflow-benchmarks.csv
+      - name: Measure paper-scale Rust QMBED workflows
+        if: inputs.benchmark_tier == 'paper'
+        env:
+          QMBED_RUST_WARMUPS: "1"
+          QMBED_RUST_SAMPLES: "5"
+        run: |
+          cargo build --release --manifest-path rust/Cargo.toml --bin paper_benchmark
+          python ci/run_with_peak_rss.py \
+            --language rust \
+            --output artifacts/rust-paper-workflow-memory.csv \
+            --stdout artifacts/rust-paper-workflow-benchmarks.csv \
+            -- rust/target/release/paper_benchmark
       - name: Measure fresh-process package load
         run: >-
           python benchmark/startup_benchmarks.py
@@ -150,7 +169,20 @@ jobs:
           python ci/render_timing_report.py benchmarks
           artifacts/python-paper-workflow-benchmarks.csv
           artifacts/julia-paper-workflow-benchmarks.csv
+          artifacts/rust-paper-workflow-benchmarks.csv
           --output artifacts/paper-performance-report.md
+          >> "$GITHUB_STEP_SUMMARY"
+      - name: Render same-runner timing and memory report
+        if: inputs.benchmark_tier == 'paper'
+        run: >-
+          python ci/render_three_language_report.py
+          --python-timing artifacts/python-paper-workflow-benchmarks.csv
+          --julia-timing artifacts/julia-paper-workflow-benchmarks.csv
+          --rust-timing artifacts/rust-paper-workflow-benchmarks.csv
+          --python-memory artifacts/python-paper-workflow-memory.csv
+          --julia-memory artifacts/julia-paper-workflow-memory.csv
+          --rust-memory artifacts/rust-paper-workflow-memory.csv
+          --output artifacts/three-language-performance-report.md
           >> "$GITHUB_STEP_SUMMARY"
       - name: Render paper-workflow timing chart
         if: inputs.benchmark_tier == 'paper'
