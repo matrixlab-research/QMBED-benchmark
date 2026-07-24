@@ -1,4 +1,4 @@
-//! Thin private adapter from the frozen verification contract to QuSpin.rs.
+//! Thin verification adapter from the frozen contract to QMBED.
 
 use quspin::basis::{
     Basis as PublicBasis, BosonBasis1D, SpinBasis1D, SpinfulFermionBasis1D, SpinlessFermionBasis1D,
@@ -19,7 +19,7 @@ use quspin::{Complex64, QuSpinError};
 
 use crate::api::{
     BasisHandle, BasisSpec, EigshOptions, EvolutionOptions, HamiltonianOptions, LinearOperator,
-    MatrixFormat, OperatorTerm, QuSpinApi, SpectrumOptions, SpectrumTarget,
+    MatrixFormat, OperatorTerm, QmbedApi, SpectrumOptions, SpectrumTarget,
 };
 
 pub enum CandidateBasis {
@@ -88,7 +88,7 @@ impl LinearOperator for CandidateOperator {
 }
 
 #[derive(Default)]
-pub struct QuSpinAdapter;
+pub struct QmbedAdapter;
 
 fn checked_count(value: i32, label: &str) -> Result<usize, QuSpinError> {
     usize::try_from(value)
@@ -164,7 +164,7 @@ fn user_basis(
     builder.build()
 }
 
-impl QuSpinApi for QuSpinAdapter {
+impl QmbedApi for QmbedAdapter {
     type Scalar = Complex64;
     type Error = QuSpinError;
     type Basis = CandidateBasis;

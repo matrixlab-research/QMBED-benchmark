@@ -19,7 +19,7 @@ correctness and user-scenario checks, not attempted paper reproductions.
 
 An additional set of larger workflow validations covers fidelity tracking,
 constrained dynamics, response functions, transport, and open-system
-evolution. Its public-CI/private-validation split and literature sources are
+evolution. Its package-CI/independent-validation split and literature sources are
 documented in [`LKM_WORKFLOW_VALIDATION.md`](LKM_WORKFLOW_VALIDATION.md).
 
 | ID | Literature topic | ED application | Integration size | Verified quantity | Coverage | Representative paper-scale range |

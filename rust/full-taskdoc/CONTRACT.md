@@ -391,7 +391,7 @@ The full-package contract is complete only when:
 
 1. every mapping row has a public Rust target and a public behavior test;
 2. every required Python member is assigned to one Rust semantic test family;
-3. private Python-oracle and Python-independent property tests pass;
+3. independent Python-oracle and Python-independent property tests pass;
 4. all twelve paper workflows pass through only the public candidate crate;
 5. scale tests show that sparse, symmetry, cross-sector, and matrix-free paths
    avoid forbidden dense intermediates;

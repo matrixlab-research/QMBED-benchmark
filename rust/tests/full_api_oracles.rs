@@ -432,7 +432,7 @@ fn held_out_mixed_measurements_and_named_archives_round_trip() {
         .duration_since(UNIX_EPOCH)
         .unwrap()
         .as_nanos();
-    let path = std::env::temp_dir().join(format!("quspin-private-{nonce}.npz"));
+    let path = std::env::temp_dir().join(format!("qmbed-benchmark-{nonce}.npz"));
     save_zip(&path, &archive).unwrap();
     let restored = load_zip(&path).unwrap();
     assert_eq!(

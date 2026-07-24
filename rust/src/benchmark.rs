@@ -201,7 +201,7 @@ fn summarize(
         p95_seconds: percentile(&sorted, 0.95),
         maximum_seconds: sorted[sorted.len() - 1],
         median_allocated_bytes: None,
-        runtime: "Rust; QuSpin.rs pinned candidate",
+        runtime: "Rust; QMBED pinned candidate",
         raw_samples_seconds: raw_samples,
     }
 }

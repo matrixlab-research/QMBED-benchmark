@@ -1,6 +1,6 @@
 use std::convert::Infallible;
 
-use quspin_rust_verify::{
+use qmbed_benchmark::{
     benchmark_suite, paper_workflows, BenchmarkOptions, Invariant, MatrixFormat, Observation,
     WorkflowBackend,
 };
@@ -14,7 +14,7 @@ impl WorkflowBackend for ContractBackend {
         "rust"
     }
 
-    fn run(&mut self, case: &quspin_rust_verify::WorkflowCase) -> Result<Observation, Self::Error> {
+    fn run(&mut self, case: &qmbed_benchmark::WorkflowCase) -> Result<Observation, Self::Error> {
         let mut observation = Observation::new(MatrixFormat::Csc);
         for invariant in case.invariants {
             let value = match *invariant {
@@ -54,7 +54,7 @@ fn rust_rows_match_the_existing_paper_csv_contract() {
 
     let csv = format!(
         "{}\n{}\n",
-        quspin_rust_verify::BenchmarkRow::CSV_HEADER,
+        qmbed_benchmark::BenchmarkRow::CSV_HEADER,
         rows[0].to_csv_record()
     );
     assert!(csv
@@ -80,7 +80,7 @@ fn invalid_observations_fail_before_timing_is_reported() {
 
         fn run(
             &mut self,
-            _case: &quspin_rust_verify::WorkflowCase,
+            _case: &qmbed_benchmark::WorkflowCase,
         ) -> Result<Observation, Self::Error> {
             Ok(Observation::new(MatrixFormat::Csc).metric("residual", f64::NAN))
         }

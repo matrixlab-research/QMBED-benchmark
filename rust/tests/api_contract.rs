@@ -1,7 +1,7 @@
 use std::error::Error;
 use std::fmt::{Display, Formatter};
 
-use quspin_rust_verify::{LinearOperator, MatrixFormat};
+use qmbed_benchmark::{LinearOperator, MatrixFormat};
 
 #[derive(Debug)]
 struct DimensionError;

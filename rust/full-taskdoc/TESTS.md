@@ -15,14 +15,14 @@ The suite must distinguish four questions:
 A green answer to one question must not be reported as a green answer to the
 others.
 
-## Public/private split
+## Package/independent-verification split
 
 Public crate tests contain deterministic examples, algebraic properties,
-regressions, and small scale checks. The private verification repository owns
-independent parameters, held-out seeds, Python oracle comparison, and
+regressions, and small scale checks. The independent verification repository
+owns additional parameters and seeds, Python oracle comparison, and
 paper-workflow release gates.
 
-The private adapter may translate public Rust outputs into observations. It
+The external verification adapter may translate public Rust outputs into observations. It
 must not implement basis enumeration, Hamiltonian assembly, eigensolvers,
 evolution, or measurements on behalf of the candidate.
 
@@ -33,7 +33,7 @@ evolution, or measurements on behalf of the candidate.
   made.
 - Every Python object maps to a Rust symbol or a documented many-to-one
   replacement in `CONTRACT.md`.
-- Every mapped object names at least one public test and one private semantic
+- Every mapped object names at least one package test and one independent semantic
   family.
 - The first-stage 23-symbol contract remains separately reproducible.
 - CI rejects removal of a mapping, test family, or paper-workflow requirement.
@@ -42,14 +42,14 @@ evolution, or measurements on behalf of the candidate.
 
 | Capability | Public properties | Independent verification |
 |---|---|---|
-| State/index bijection | round trip every state in small sectors | held-out sectors and wide-state samples |
+| State/index bijection | round trip every state in small sectors | independent sectors and wide-state samples |
 | Spin bases | combinatorial dimensions, spin/Pauli conventions, higher-spin ladder algebra | Python dimensions, projectors and operator matrices |
 | Boson bases | cutoff and particle-number dimensions, ladder factors | Python basis and Hamiltonian observations |
 | Fermion bases | canonical signs, species ordering, particle-hole maps | independent Clifford/sign properties and Python matrices |
-| General symmetries | map period, character, projector orthonormality, commuting-map intersection | held-out 1D/2D maps and Python projectors |
+| General symmetries | map period, character, projector orthonormality, commuting-map intersection | independent 1D/2D maps and Python projectors |
 | Tensor basis | state/index factorization and multi-factor Kronecker action | independent explicit product-space oracle |
 | Photon basis | oscillator ladder action and total-excitation sectors | Python dimensions, matrices and entropy |
-| User basis | deterministic filters, callbacks, map sectors, deferred construction | held-out callbacks and direct transition tables |
+| User basis | deterministic filters, callbacks, map sectors, deferred construction | independent callbacks and direct transition tables |
 | Wide states | high-site bit action, conversion, shift and mask identities | randomized round trips for every fixed width |
 | Projection | lift/project identities and particle-conserving output modes | independent sparse projector multiplication |
 | Partial trace/entropy | trace, positivity and product/maximally-entangled limits | independent dense reduced-density oracle |
@@ -62,7 +62,7 @@ and unsupported local operators must return stable errors and never panic.
 
 | Capability | Public properties | Independent verification |
 |---|---|---|
-| Parsed terms | arity and site validation; coefficient linearity | held-out operator strings and complex coefficients |
+| Parsed terms | arity and site validation; coefficient linearity | independent operator strings and complex coefficients |
 | Stored formats | Dense/CSC/CSR/DIA values agree; sparse indices canonical | Python matrices plus format-structure assertions |
 | Matrix-free action | agrees with stored action for states and batches | independently generated transition sums |
 | Dynamic Hamiltonian | evaluation at multiple times; transform/algebra consistency | original and transformed Python operators |
@@ -71,7 +71,7 @@ and unsupported local operators must return stable errors and never panic.
 | Operator algebra | sum, product, powers, commutator and anticommutator identities | dense small-system oracle |
 | Observables | expectation, matrix element and variance identities | direct dense vector contractions |
 | Conversions | values preserved across supported formats and element types | round-trip structure and value checks |
-| Archives | Rust round trip and bidirectional Python interoperability | held-out dense/sparse NPZ fixtures |
+| Archives | Rust round trip and bidirectional Python interoperability | independent dense/sparse NPZ fixtures |
 
 Sparse constructors are instrumented to reject a dense full-Hilbert
 intermediate. Matrix-free constructors are instrumented to reject any complete
@@ -191,7 +191,7 @@ Every capability family moves independently through:
 planned
 → public_surface
 → public_properties
-→ private_oracle
+→ independent_oracle
 → workflow_covered
 → scale_covered
 → complete
@@ -229,5 +229,5 @@ family.
 - measurements, diagonal ensembles, misc statistics and conversion helpers;
 - state tracking and workflow extensions.
 
-No batch is complete until its public tests, private verification, and relevant
+No batch is complete until its package tests, independent verification, and relevant
 scale checks are all active.

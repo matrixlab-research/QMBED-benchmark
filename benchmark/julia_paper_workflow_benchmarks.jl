@@ -1060,6 +1060,6 @@ function main(arguments=ARGS)
 end
 
 if abspath(PROGRAM_FILE) == abspath(@__FILE__) &&
-   get(ENV, "QUSPIN_BENCHMARK_LIBRARY_MODE", "") != "1"
+   get(ENV, "QMBED_BENCHMARK_LIBRARY_MODE", "") != "1"
     main()
 end

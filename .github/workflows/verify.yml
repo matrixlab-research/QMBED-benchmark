@@ -1,4 +1,4 @@
-name: private-verification
+name: julia-compat-benchmarks
 
 on:
   workflow_dispatch:
@@ -50,11 +50,11 @@ jobs:
         with:
           version: "1.12"
       - uses: julia-actions/cache@v2
-      - name: Run held-out Julia verification
+      - name: Run public Julia conformance suite
         env:
           A_REPO_URL: https://github.com/${{ inputs.candidate_repository }}.git
           A_REF: ${{ inputs.candidate_ref }}
-          QUSPIN_TEST_TIMING_OUTPUT: ${{ github.workspace }}/artifacts/test-timings.csv
+          QMBED_TEST_TIMING_OUTPUT: ${{ github.workspace }}/artifacts/test-timings.csv
         run: julia --startup-file=no ci/runcandidate.jl
       - name: Render detailed verification timing
         if: always()
@@ -169,7 +169,7 @@ jobs:
       - name: Upload performance baseline and candidate timing
         uses: actions/upload-artifact@v4
         with:
-          name: quspin-performance-${{ github.run_id }}
+          name: qmbed-performance-${{ github.run_id }}
           path: artifacts/
           retention-days: 90
 
@@ -184,7 +184,7 @@ jobs:
       - name: Download paper-workflow timing chart
         uses: actions/download-artifact@v4
         with:
-          name: quspin-performance-${{ github.run_id }}
+          name: qmbed-performance-${{ github.run_id }}
           path: artifacts
       - name: Publish latest paper-workflow chart
         run: |

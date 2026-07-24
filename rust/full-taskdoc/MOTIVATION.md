@@ -38,7 +38,7 @@ Completion has four independent layers:
 2. **Semantic coverage.** Valid inputs give the same physical result, and
    invalid inputs fail in a stable documented category.
 3. **Workflow coverage.** The public API composes into the twelve existing
-   paper workflows without a private implementation hidden in the adapter.
+   paper workflows without a second implementation hidden in the adapter.
 4. **Scale usability.** Representative sparse, symmetry-reduced, and
    matrix-free cases avoid dense parent-space or full-Hilbert intermediates.
 
@@ -198,5 +198,5 @@ The following are design invariants, not optional optimizations:
 5. Activate Python differential tests for all mapped objects, then add scale
    gates that are independent of Python performance.
 
-Each stage must include public behavior tests and private verification before
+Each stage must include package behavior tests and independent verification before
 the corresponding row in the full contract is marked complete.

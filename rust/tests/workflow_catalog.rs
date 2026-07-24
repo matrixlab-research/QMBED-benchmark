@@ -1,6 +1,6 @@
 use std::collections::HashSet;
 
-use quspin_rust_verify::{paper_workflows, Capability, WorkflowOrigin};
+use qmbed_benchmark::{paper_workflows, Capability, WorkflowOrigin};
 
 #[test]
 fn catalog_preserves_the_twelve_python_julia_workflows() {
