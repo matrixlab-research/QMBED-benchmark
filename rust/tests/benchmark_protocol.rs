@@ -78,10 +78,7 @@ fn invalid_observations_fail_before_timing_is_reported() {
             "rust"
         }
 
-        fn run(
-            &mut self,
-            _case: &qmbed_verify::WorkflowCase,
-        ) -> Result<Observation, Self::Error> {
+        fn run(&mut self, _case: &qmbed_verify::WorkflowCase) -> Result<Observation, Self::Error> {
             Ok(Observation::new(MatrixFormat::Csc).metric("residual", f64::NAN))
         }
     }
