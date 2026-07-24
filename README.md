@@ -176,8 +176,10 @@ their physical invariants; the original and structure-aware five-sample local
 records are retained under [`rust/benchmarks`](rust/benchmarks/). The current
 record documents a 1.85× geometric-mean end-to-end speedup from the complete
 candidate, including a capability-selected real shift-invert backend and no
-workflow-specific dispatch. Same-runner Python/Rust comparisons and the
-cross-language numerical oracle remain separate follow-up gates. See
+workflow-specific dispatch. A `paper`-tier run now executes Python, Julia, and
+Rust sequentially on the same hosted runner, requires every physical invariant
+to pass, and uploads both the twelve per-workflow timing CSVs and whole-suite
+peak-RSS records. See
 [`docs/RUST_API_CONTRACT.md`](docs/RUST_API_CONTRACT.md) for the API proposal and
 Julia-to-Rust migration map.
 
