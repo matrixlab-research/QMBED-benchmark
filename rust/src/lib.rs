@@ -1,9 +1,9 @@
 //! Language-neutral verification contracts for a future Rust `QuSpin` package.
 //!
 //! This crate intentionally does not implement exact diagonalization. It owns
-//! the private test-side adapter boundary, the paper-workflow catalog, and the
+//! the independent test-side adapter boundary, the paper-workflow catalog, and the
 //! timing protocol. A candidate package supplies an adapter that implements
-//! [`WorkflowBackend`] and, for API-level tests, [`QuSpinApi`].
+//! [`WorkflowBackend`] and, for API-level tests, [`QmbedApi`].
 
 pub mod api;
 pub mod benchmark;
@@ -14,7 +14,7 @@ pub mod observation;
 
 pub use api::{
     AssemblyChecks, BasisHandle, BasisSpec, ComplexCoefficient, Coupling, EigshOptions,
-    EvolutionOptions, HamiltonianOptions, LinearOperator, MatrixFormat, OperatorTerm, QuSpinApi,
+    EvolutionOptions, HamiltonianOptions, LinearOperator, MatrixFormat, OperatorTerm, QmbedApi,
     SpectrumOptions, SpectrumTarget,
 };
 pub use benchmark::{benchmark_suite, BenchmarkOptions, BenchmarkRow, WorkflowBackend};

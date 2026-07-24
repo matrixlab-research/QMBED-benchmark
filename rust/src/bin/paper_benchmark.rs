@@ -1,8 +1,8 @@
 use std::env;
 use std::error::Error;
 
-use quspin_rust_verify::candidate::QuSpinAdapter;
-use quspin_rust_verify::{benchmark_suite, paper_workflows, BenchmarkOptions, BenchmarkRow};
+use qmbed_verify::candidate::QmbedAdapter;
+use qmbed_verify::{benchmark_suite, paper_workflows, BenchmarkOptions, BenchmarkRow};
 
 fn count_from_environment(name: &str, default: usize) -> Result<usize, Box<dyn Error>> {
     match env::var(name) {
@@ -14,10 +14,10 @@ fn count_from_environment(name: &str, default: usize) -> Result<usize, Box<dyn E
 
 fn main() -> Result<(), Box<dyn Error>> {
     let options = BenchmarkOptions {
-        warmups: count_from_environment("QUSPIN_RUST_WARMUPS", 1)?,
-        samples: count_from_environment("QUSPIN_RUST_SAMPLES", 5)?,
+        warmups: count_from_environment("QMBED_RUST_WARMUPS", 1)?,
+        samples: count_from_environment("QMBED_RUST_SAMPLES", 5)?,
     };
-    let rows = benchmark_suite(&mut QuSpinAdapter, &paper_workflows(), options)?;
+    let rows = benchmark_suite(&mut QmbedAdapter, &paper_workflows(), options)?;
     println!("{}", BenchmarkRow::CSV_HEADER);
     for row in rows {
         println!("{}", row.to_csv_record());

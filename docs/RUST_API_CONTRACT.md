@@ -190,16 +190,16 @@ Panics are reserved for internal invariant violations, not user input.
 
 ## Verification adapter
 
-The private crate under `rust/` owns two traits:
+The public verification crate under `rust/` owns two traits:
 
-- `QuSpinApi`: a low-level adapter over basis construction, Hamiltonian
+- `QmbedApi`: a low-level adapter over basis construction, Hamiltonian
   assembly, solvers, dynamics, spectra, and Lindblad evolution;
 - `WorkflowBackend`: an end-to-end adapter that returns named physical metrics
   for the twelve paper workflows.
 
-The adapter remains private. This prevents the public package from depending on
-the answer-key repository and avoids forcing public types to implement a
-foreign verification trait.
+The adapter remains external to the candidate crate. This prevents the public
+package from depending on its verification repository and avoids forcing
+public types to implement a foreign verification trait.
 
 The original Python-to-Julia denominator remains the source of truth. The
 Rust-side [`full_api_contract.json`](../rust/full_api_contract.json) maps all
@@ -248,5 +248,5 @@ report without special cases.
 3. Add Krylov evolution, Floquet, subspace tracking, and spectra.
 4. Add matrix-free Lindblad and advanced symmetry/storage backends.
 
-Every stage should activate the corresponding existing private tests and paper
+Every stage should activate the corresponding independent tests and paper
 workflows; API presence alone is not completion.

@@ -1,5 +1,5 @@
 [package]
-name = "quspin-rust-verify"
+name = "qmbed-verify"
 version = "0.1.0"
 edition = "2021"
 license = "MIT"
@@ -11,7 +11,7 @@ path = "src/lib.rs"
 [dependencies]
 nalgebra = "0.33"
 num-bigint = "0.4"
-quspin = { git = "https://github.com/matrixlab-research/QuSpin.rs.git", rev = "85a3f5d44b2f5b5bce58e0c35b3e6d31148d43ce" }
+quspin = { git = "https://github.com/matrixlab-research/QMBED.git", rev = "85a3f5d44b2f5b5bce58e0c35b3e6d31148d43ce" }
 
 [lints.rust]
 unsafe_code = "forbid"

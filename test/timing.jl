@@ -13,7 +13,7 @@ end
 const VERIFICATION_TIMINGS = VerificationTiming[]
 const VERIFICATION_SUITE_START_NS = time_ns()
 const VERIFICATION_TIMING_OUTPUT =
-    get(ENV, "QUSPIN_TEST_TIMING_OUTPUT", "")
+    get(ENV, "QMBED_TEST_TIMING_OUTPUT", "")
 
 function timed_include(path::AbstractString, scope::AbstractString)
     started_ns = time_ns()

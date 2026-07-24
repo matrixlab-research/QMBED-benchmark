@@ -1,7 +1,7 @@
 //! Candidate-facing API adapter contract.
 //!
 //! The concrete Rust package may use generic basis and matrix types internally.
-//! The private verifier only requires that an adapter can express this narrow
+//! The public verifier only requires that an adapter can express this narrow
 //! set of operations without exposing implementation details.
 
 use std::error::Error;
@@ -184,10 +184,10 @@ pub trait LinearOperator {
 /// Verification-side adapter over the proposed public Rust API.
 ///
 /// The future package is not required to implement this trait directly. The
-/// private repository can own a thin wrapper, avoiding an orphan-rule coupling
+/// verification repository can own a thin wrapper, avoiding an orphan-rule coupling
 /// between the public crate and the verifier.
 #[allow(clippy::missing_errors_doc)]
-pub trait QuSpinApi {
+pub trait QmbedApi {
     type Scalar: Copy + Default + Send + Sync + 'static;
     type Error: Error + Send + Sync + 'static;
     type Basis: BasisHandle<Error = Self::Error>;

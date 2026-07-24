@@ -15,7 +15,7 @@ use quspin::operator::{
 use quspin::solve::{eigsh, evolve, EigshOptions, EvolutionOptions, SpectrumTarget};
 use quspin::{Complex64, QuSpinError};
 
-use crate::candidate::QuSpinAdapter;
+use crate::candidate::QmbedAdapter;
 use crate::{MatrixFormat, Observation, WorkflowBackend, WorkflowCase};
 
 fn c(value: f64) -> Complex64 {
@@ -783,7 +783,7 @@ fn particle_addition_spectrum() -> Result<Observation, QuSpinError> {
         .metric("finite_fraction", finite_fraction))
 }
 
-impl WorkflowBackend for QuSpinAdapter {
+impl WorkflowBackend for QmbedAdapter {
     type Error = QuSpinError;
 
     fn language(&self) -> &'static str {
@@ -805,7 +805,7 @@ impl WorkflowBackend for QuSpinAdapter {
             "paper_conb_dsf_l16" => conb_dynamical_structure_factor(),
             "paper_particle_addition_6x3" => particle_addition_spectrum(),
             identifier => Err(QuSpinError::InvalidOptions(format!(
-                "unknown private workflow case {identifier}"
+                "unknown verification workflow case {identifier}"
             ))),
         }
     }

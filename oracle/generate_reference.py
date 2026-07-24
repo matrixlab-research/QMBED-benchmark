@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Generate a small, deterministic QuSpin reference corpus.
 
-This program is an oracle only.  It is run while preparing the private Minos
-verification campaign and is never a dependency of the Julia package.
+This program is an oracle only. It regenerates the public, pinned upstream
+reference corpus and is never a dependency of a candidate package.
 """
 
 from __future__ import annotations

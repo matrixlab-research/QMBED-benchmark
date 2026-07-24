@@ -1,12 +1,12 @@
 # LKM-derived workflow validation
 
-This suite separates fast package tests from held-out scientific validation.
+This suite separates fast package tests from independent scientific validation.
 The split is based on numerical role, not on model names:
 
 - **QuSpin.jl CI tests** use tiny systems with analytic or independently
   constructed answers. They test public API contracts on every push and pull
   request.
-- **Private validation** uses larger Hilbert spaces, parameter scans,
+- **Independent validation** uses larger Hilbert spaces, parameter scans,
   truncation checks, cross-sector observables, and paper-shaped invariants.
   These tests live only in this repository and are timed by the verification
   workflow.
@@ -30,7 +30,7 @@ The small performance suite also records paired `L=20` PXP state-generation
 rows for prefix pruning and full-space predicate filtering. These timings are
 observational and do not introduce a noisy CI threshold.
 
-## Private validation set
+## Independent validation set
 
 | Validation workflow | Size/path | Verified scientific or numerical invariant | Source |
 |---|---|---|---|

@@ -63,6 +63,6 @@ comparison rather than a compiler-controlled microbenchmark; the original
 Regenerate the CSV with:
 
 ```bash
-QUSPIN_RUST_WARMUPS=1 QUSPIN_RUST_SAMPLES=5 \
+QMBED_RUST_WARMUPS=1 QMBED_RUST_SAMPLES=5 \
   cargo run --release --manifest-path rust/Cargo.toml --bin paper_benchmark
 ```

@@ -1,13 +1,13 @@
 use quspin::Complex64;
-use quspin_rust_verify::candidate::QuSpinAdapter;
-use quspin_rust_verify::{
+use qmbed_verify::candidate::QmbedAdapter;
+use qmbed_verify::{
     AssemblyChecks, BasisHandle, BasisSpec, ComplexCoefficient, Coupling, EigshOptions,
-    HamiltonianOptions, MatrixFormat, OperatorTerm, QuSpinApi, SpectrumTarget,
+    HamiltonianOptions, MatrixFormat, OperatorTerm, QmbedApi, SpectrumTarget,
 };
 
 #[test]
-fn public_candidate_is_reached_through_the_private_adapter() {
-    let adapter = QuSpinAdapter;
+fn public_candidate_is_reached_through_the_verification_adapter() {
+    let adapter = QmbedAdapter;
     let basis = adapter
         .basis(&BasisSpec::Spin {
             sites: 2,

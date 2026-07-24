@@ -1,4 +1,4 @@
-# QuSpin.rs full-package candidate status
+# QMBED full-package candidate status
 
 Date: 2026-07-23  
 Pinned candidate: `85a3f5d44b2f5b5bce58e0c35b3e6d31148d43ce`
@@ -9,7 +9,7 @@ The frozen source denominator is Python QuSpin 1.0.1: 64 public objects, 282
 non-constructor methods, and 180 documented attributes. Rust intentionally
 maps these into fewer mathematical interfaces. Completion means that every
 scientific behavior family has a public Rust boundary and passes public
-properties, held-out numerical oracles, composed workflows, and relevant
+properties, independent numerical oracles, composed workflows, and relevant
 structural scale checks. It does not mean one Rust method for every Python
 spelling.
 
@@ -29,9 +29,9 @@ spelling.
 
 - Public crate: all targets, strict Clippy, rustdoc warnings, and twelve ignored
   release-mode paper workflows.
-- Private oracle gate: seven independent families covering capabilities outside
+- Independent oracle gate: seven families covering capabilities outside
   the original 23-symbol workflow adapter.
-- Private scale gate: four tests sweeping several sizes and asserting sparse,
+- Independent scale gate: four tests sweeping several sizes and asserting sparse,
   sector-sized, or transition-sized storage rather than full-square fallback.
 - Workflow gate: all twelve medium-size literature-derived cases must satisfy
   physical invariants before their timings are accepted.

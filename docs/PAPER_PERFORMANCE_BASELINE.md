@@ -61,7 +61,7 @@ language counterparts explicitly.
 ## Same-runner GitHub Actions snapshot
 
 The first complete `paper`-tier run on GitHub Actions
-([run 29749615993](https://github.com/matrixlab-research/quspin-julia-verify/actions/runs/29749615993))
+([run 29749615993](https://github.com/matrixlab-research/QMBED-verify/actions/runs/29749615993))
 passed the oracle, all 670 verification assertions, all 21 small workflows,
 and all six paired paper workflows. On that Ubuntu x86-64 runner the paired
 medians were:

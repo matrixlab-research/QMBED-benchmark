@@ -1,53 +1,54 @@
-# QuSpinVerify — private verification package
+# QMBED Verify — public conformance, workflow, and benchmark suite
 
-Native Julia package that verifies `matrixlab-research/QuSpin.jl`. Scaffolded
-by [minos](https://github.com/kunyuan/minos) `build`; kept **private in the
-Matrix Lab organization** so its tests and CI logs are never visible to the
-implementing agent.
+This public repository independently verifies the QMBED simulator family. It
+currently contains the original Python-to-Julia QuSpin compatibility campaign,
+the Rust QMBED contract and adapter, and literature-derived exact-diagonalization
+workflows shared across language implementations.
 
-For the Python-to-Julia QuSpin campaign, the `private-verification` GitHub
-Actions workflow first regenerates the frozen observations with a pinned
-Python QuSpin commit. It then installs the requested Julia candidate ref and
-runs this private Test.jl suite. Python is not present in the candidate job.
+The `julia-compat-verification` GitHub Actions workflow first regenerates the
+reference observations with a pinned Python QuSpin commit. It then installs the
+requested Julia candidate ref and runs the public Test.jl conformance suite.
+Python is not present in the candidate test job.
 
 ```
 Project.toml         deps: Test (+ the package under test, added at CI time)
-test/runtests.jl     the private suite — ordinary @testset / @test; the answer
-                     key. It delegates to namespace/object files under
+test/runtests.jl     the public conformance suite — ordinary @testset / @test.
+                     It delegates to namespace/object files under
                      test/full_api/, which mirror the 64-object migration plan.
 test/full_api_migration_plan.json
                      frozen 64-object / 282-method / 180-attribute denominator.
 ci/runcandidate.jl   develop + test the package the MR proposes.
 .github/workflows/verify.yml
                      first reproduces the pinned Python oracle, then runs the
-                     private Julia suite against a selected candidate ref.
+                     Julia conformance suite against a selected candidate ref.
 ```
 
 ## How a candidate is judged
 
-1. A maintainer dispatches `private-verification` with the public candidate
+1. A maintainer dispatches `julia-compat-verification` with the public candidate
    repository and an immutable commit SHA or selected ref.
 2. The oracle job installs the pinned Python QuSpin commit, regenerates its
    deterministic observations, and compares them structurally against the
    frozen reference. Keys, shapes, integer values, and strings remain exact;
    floating-point values use a `5e-12` relative/absolute tolerance for
    platform-specific BLAS tails.
-3. Only after that passes, the Julia job installs the candidate and runs
-   `Pkg.test()` with the held-out suite.
+3. Only after that passes, the Julia job installs the candidate and runs the
+   independent conformance suite with `Pkg.test()`.
 
-Failure logs — including any expected values Test.jl prints — stay in this
-private repository. Repository privacy replaces log redaction; no blind
-evaluation harness is involved.
+Tests, expected values, artifacts, and Actions logs are public. This is an
+independent verification repository, not a hidden evaluation gate; its value
+comes from keeping the scientific oracle and workflow composition separate
+from candidate-package unit tests.
 
 ## Timing and performance baselines
 
-Every candidate run produces two private timing artifacts:
+Every candidate run produces two public timing artifacts:
 
 1. `verification-timing-*` records every API/integration test file's wall,
    compile, recompile, GC, allocation, and lock-conflict measurements. These
    are cold, ordered verification-suite timings and answer which test files
    dominate CI time.
-2. `quspin-performance-*` compares the pinned Python QuSpin commit with the
+2. `qmbed-performance-*` compares the pinned Python QuSpin commit with the
    Julia candidate on the same GitHub Actions runner. It covers basis and
    Hamiltonian construction, dense and CSC matrix-vector action, dense and CSC
    Lanczos, CSC ARPACK partial eigenspectra, dense full diagonalization,
@@ -95,8 +96,8 @@ exact-diagonalization workflows. See
 [`docs/ED_WORKFLOW_COVERAGE.md`](docs/ED_WORKFLOW_COVERAGE.md) for the model,
 observable, integration size, representative paper scale, and explicit
 direct/assisted/proxy boundary of every scenario.
-The newer workflow-analysis capabilities use a deliberate public-test/private-
-validation split documented in
+The newer workflow-analysis capabilities use a deliberate package-test/
+independent-validation split documented in
 [`docs/LKM_WORKFLOW_VALIDATION.md`](docs/LKM_WORKFLOW_VALIDATION.md).
 The first paired local paper-scale result is recorded in
 [`docs/PAPER_PERFORMANCE_BASELINE.md`](docs/PAPER_PERFORMANCE_BASELINE.md).
@@ -162,14 +163,14 @@ observable are timed end to end.
 
 ### Rust candidate preparation
 
-The private repository now also carries a Rust-first verification contract in
+The repository also carries a Rust-first verification contract in
 [`rust/`](rust/). It does not mechanically translate Julia syntax. The proposed
 public API is built around typed bases, reusable operator terms, universal
 Hamiltonian assembly, and a shared stored/matrix-free `LinearOperator` boundary.
 The exact twelve paper workflows, their parameters, physical invariants, and
 the benchmark CSV protocol are mirrored in a small compilable Rust crate.
 
-The public Rust candidate now connects through a private adapter pinned to an
+The public Rust candidate now connects through a public verification adapter pinned to an
 immutable commit. Release CI executes all twelve paper workflows and validates
 their physical invariants; the original and structure-aware five-sample local
 records are retained under [`rust/benchmarks`](rust/benchmarks/). The current
@@ -183,7 +184,7 @@ Julia-to-Rust migration map.
 The accepted first-stage task documents stay frozen. Preparation for the
 complete package is maintained separately under [`rust/full-taskdoc/`](rust/full-taskdoc/):
 the scientific motivation, a Rust-native contract mapping all 64 frozen Python
-objects, and the public/private/workflow/scale gates required before full
+objects, and the package/conformance/workflow/scale gates required before full
 parity can be claimed.
 
 ### Latest twelve-workflow timing chart
@@ -202,6 +203,12 @@ do not rewrite this README snapshot.
 
 Each namespace has a directory under `test/full_api/`; add one file per public
 object or tightly coupled helper family, then include it from `test/runtests.jl`.
-The held-out goldens are a floor, not a ceiling: add randomized property checks
-and real multi-call integration tests. `ci/check_full_api_plan.py` prevents the
-source denominator from silently shrinking.
+The committed independent goldens are a floor, not a ceiling: add randomized
+property checks and real multi-call integration tests.
+`ci/check_full_api_plan.py` prevents the source denominator from silently
+shrinking.
+
+Some frozen task documents and historical benchmark records retain the terms
+`QuSpin.rs`, `private`, or `held_out` because they record the provenance and
+clean-room boundary of earlier campaigns. They do not describe this
+repository's current visibility: **QMBED Verify and its CI are public**.

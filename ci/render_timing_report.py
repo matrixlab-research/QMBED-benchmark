@@ -23,7 +23,7 @@ def render_tests(path: Path) -> str:
     files = [row for row in rows if row["path"] != "__suite__"]
     files.sort(key=lambda row: float(row["wall_seconds"]), reverse=True)
     lines = [
-        "## Private verification timing",
+        "## Public conformance-suite timing",
         "",
         (
             f"Total wall time: **{float(suite['wall_seconds']):.3f} s**; "

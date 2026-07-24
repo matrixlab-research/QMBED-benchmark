@@ -1,6 +1,6 @@
-# Rust verification preparation
+# QMBED Rust verification
 
-This directory is the private test-side foundation for QuSpin.rs. It is
+This directory is the public, independent test-side foundation for QMBED. It is
 deliberately split into four concerns:
 
 1. `src/api.rs` defines the narrow adapter contract expected from a candidate:
@@ -12,10 +12,10 @@ deliberately split into four concerns:
    invariants.
 3. `src/benchmark.rs` ports the warm-up/sample protocol and emits the same CSV
    fields used by the current timing renderer, with `language=rust`.
-4. `src/candidate.rs` pins and adapts one public QuSpin.rs commit.
+4. `src/candidate.rs` pins and adapts one public QMBED commit.
    `src/candidate_workflows.rs` independently constructs every frozen paper
    workflow and returns its named physical observations.
-5. `tests/full_api_oracles.rs` exercises held-out full-package semantics that
+5. `tests/full_api_oracles.rs` exercises independent full-package semantics that
    are not covered by the original 23-symbol adapter: general symmetry
    projectors, higher-spin and Majorana algebra, wide and branching bases,
    photon sectors, dynamic/parameterized operators, mixed-state measurements,
@@ -27,7 +27,7 @@ deliberately split into four concerns:
 `ci/render_timing_report.py` accepts the resulting Rust CSV either alongside
 the existing Python/Julia files or as a Python/Rust pair.
 
-The crate does **not** contain a hidden Rust ED implementation. The private
+The crate does **not** contain a second Rust ED implementation. Its
 `WorkflowBackend` calls the pinned public crate and executes all twelve
 medium-size workflows. Release-mode CI validates every returned physical
 invariant before a benchmark row can be emitted.
@@ -36,7 +36,7 @@ invariant before a benchmark row can be emitted.
 64-object / 282-method / 180-attribute migration denominator into the proposed
 Rust module boundaries. `ci/check_rust_api_plan.py` prevents the denominator,
 namespace coverage, or complete-version object mapping from drifting silently.
-The low-level adapter, held-out full-API oracles, structural scale gates, and
+The low-level adapter, independent full-API oracles, structural scale gates, and
 all twelve workflows run against the pinned candidate. Current completion
 evidence is summarized in [`FULL_API_STATUS.md`](FULL_API_STATUS.md). The first
 baseline, complete candidate, universal assembler, and numerical-backend
@@ -46,11 +46,11 @@ gate.
 
 The rewrite task itself is frozen from [`spec_source.json`](spec_source.json)
 into the content-addressed bundle under [`specs/quspin`](specs/quspin). Minos
-renders the public [`MOTIVATION.md`](taskdoc/MOTIVATION.md),
+renders [`MOTIVATION.md`](taskdoc/MOTIVATION.md),
 [`CONTRACT.md`](taskdoc/CONTRACT.md), and [`TESTS.md`](taskdoc/TESTS.md) from
-that one bundle. The source and bundle remain private because they contain
-held-out anchors; the three generated task documents contain only derivations,
-the required Rust surface, and small visible examples.
+that one bundle. The source, bundle, and generated documents are now public.
+Their `held_out` fields are frozen provenance labels from the original
+clean-room campaign, not claims about current repository visibility.
 
 Those frozen documents specify the accepted 23-symbol paper-workflow core.
 They are intentionally not edited as the package grows. The design inputs for
@@ -69,7 +69,7 @@ cargo clippy --manifest-path rust/Cargo.toml --all-targets -- -D warnings
 cargo test --manifest-path rust/Cargo.toml
 cargo test --manifest-path rust/Cargo.toml --test full_api_scale
 cargo test --release --manifest-path rust/Cargo.toml --test candidate_workflows -- --ignored
-QUSPIN_RUST_SAMPLES=5 cargo run --release --manifest-path rust/Cargo.toml --bin paper_benchmark
+QMBED_RUST_SAMPLES=5 cargo run --release --manifest-path rust/Cargo.toml --bin paper_benchmark
 python ci/freeze_rust_spec.py --check
 ```
 
