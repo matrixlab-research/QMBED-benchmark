@@ -1,0 +1,26 @@
+name: benchmark-tooling
+
+on:
+  pull_request:
+    paths:
+      - "ci/**"
+      - ".github/workflows/verify.yml"
+      - ".github/workflows/benchmark-tools.yml"
+  push:
+    branches:
+      - main
+    paths:
+      - "ci/**"
+      - ".github/workflows/verify.yml"
+      - ".github/workflows/benchmark-tools.yml"
+  workflow_dispatch:
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: python -m unittest discover -s ci/tests -p 'test_*.py' -v
