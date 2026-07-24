@@ -1,16 +1,16 @@
 use num_bigint::BigUint;
-use quspin::basis::{
+use qmbed::basis::{
     state_from_biguint, state_to_biguint, Basis, BasisProjector, BosonBasis1D, ClosureSymmetryMap,
     GeneralBasis, SpinBasis1D, SpinlessFermionBasis1D, SymmetrySector, WideSpinBasis1024, U1024,
 };
-use quspin::measure::{
+use qmbed::measure::{
     entanglement_entropy_density_subsystem, partial_trace_subsystem, EntropyOrder,
 };
-use quspin::operator::{
+use qmbed::operator::{
     apply_sector_shift, Coupling, LinearOperator, MatrixFormat, Operator, OperatorBuilder,
     OperatorTerm,
 };
-use quspin::Complex64;
+use qmbed::Complex64;
 
 fn periodic_heisenberg(sites: usize) -> Vec<OperatorTerm> {
     let bonds = |coefficient| {

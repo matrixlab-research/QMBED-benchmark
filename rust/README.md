@@ -1,6 +1,6 @@
-# QMBED Rust verification
+# QMBED Rust benchmark adapter
 
-This directory is the public, independent test-side foundation for QMBED. It is
+This directory is the public, independent benchmark-side foundation for QMBED. It is
 deliberately split into four concerns:
 
 1. `src/api.rs` defines the narrow adapter contract expected from a candidate:

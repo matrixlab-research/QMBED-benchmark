@@ -1,21 +1,21 @@
 //! Thin verification adapter from the frozen contract to QMBED.
 
-use quspin::basis::{
+use qmbed::basis::{
     Basis as PublicBasis, BosonBasis1D, SpinBasis1D, SpinfulFermionBasis1D, SpinlessFermionBasis1D,
     UserBasis,
 };
-use quspin::dynamics::{spectral_function, SpectrumOptions as PublicSpectrumOptions};
-use quspin::measure::{subspace_fidelity, Subspace};
-use quspin::operator::{
+use qmbed::dynamics::{spectral_function, SpectrumOptions as PublicSpectrumOptions};
+use qmbed::measure::{subspace_fidelity, Subspace};
+use qmbed::operator::{
     AssemblyChecks as PublicAssemblyChecks, Coupling as PublicCoupling,
     LinearOperator as PublicLinearOperator, MatrixFormat as PublicMatrixFormat, Operator,
     OperatorBuilder, OperatorTerm as PublicOperatorTerm,
 };
-use quspin::solve::{
+use qmbed::solve::{
     eigsh, evolve, Eigensystem, EigshOptions as PublicEigshOptions,
     EvolutionOptions as PublicEvolutionOptions, SpectrumTarget as PublicSpectrumTarget,
 };
-use quspin::{Complex64, QuSpinError};
+use qmbed::{Complex64, QmbedError};
 
 use crate::api::{
     BasisHandle, BasisSpec, EigshOptions, EvolutionOptions, HamiltonianOptions, LinearOperator,
@@ -43,7 +43,7 @@ impl CandidateBasis {
 }
 
 impl BasisHandle for CandidateBasis {
-    type Error = QuSpinError;
+    type Error = QmbedError;
 
     fn dimension(&self) -> usize {
         self.as_basis().len()
@@ -62,7 +62,7 @@ pub struct CandidateOperator(Operator);
 
 impl LinearOperator for CandidateOperator {
     type Scalar = Complex64;
-    type Error = QuSpinError;
+    type Error = QmbedError;
 
     fn shape(&self) -> (usize, usize) {
         self.0.shape()
@@ -90,9 +90,9 @@ impl LinearOperator for CandidateOperator {
 #[derive(Default)]
 pub struct QmbedAdapter;
 
-fn checked_count(value: i32, label: &str) -> Result<usize, QuSpinError> {
+fn checked_count(value: i32, label: &str) -> Result<usize, QmbedError> {
     usize::try_from(value)
-        .map_err(|_| QuSpinError::InvalidSector(format!("{label} must be nonnegative")))
+        .map_err(|_| QmbedError::InvalidSector(format!("{label} must be nonnegative")))
 }
 
 fn public_format(format: MatrixFormat) -> PublicMatrixFormat {
@@ -105,7 +105,7 @@ fn public_format(format: MatrixFormat) -> PublicMatrixFormat {
     }
 }
 
-fn public_terms(terms: &[OperatorTerm]) -> Result<Vec<PublicOperatorTerm>, QuSpinError> {
+fn public_terms(terms: &[OperatorTerm]) -> Result<Vec<PublicOperatorTerm>, QmbedError> {
     terms
         .iter()
         .map(|term| {
@@ -124,7 +124,7 @@ fn build_operator<B>(
     basis: &B,
     terms: &[PublicOperatorTerm],
     options: HamiltonianOptions,
-) -> Result<Operator, QuSpinError>
+) -> Result<Operator, QmbedError>
 where
     B: PublicBasis<State = u128>,
 {
@@ -142,7 +142,7 @@ fn user_basis(
     sites: usize,
     states: &[u128],
     allowed_operators: &[String],
-) -> Result<UserBasis<u128>, QuSpinError> {
+) -> Result<UserBasis<u128>, QmbedError> {
     let mut builder = UserBasis::builder(sites).states(states.iter().copied());
     for operator in allowed_operators {
         builder = match operator.as_str() {
@@ -158,7 +158,7 @@ fn user_basis(
                 };
                 Ok(Some((state, Complex64::new(value, 0.0))))
             }),
-            name => return Err(QuSpinError::InvalidOperator(name.to_string())),
+            name => return Err(QmbedError::InvalidOperator(name.to_string())),
         };
     }
     builder.build()
@@ -166,7 +166,7 @@ fn user_basis(
 
 impl QmbedApi for QmbedAdapter {
     type Scalar = Complex64;
-    type Error = QuSpinError;
+    type Error = QmbedError;
     type Basis = CandidateBasis;
     type Operator = CandidateOperator;
     type State = Vec<Complex64>;
@@ -241,7 +241,7 @@ impl QmbedApi for QmbedAdapter {
                 allowed_operators,
             } => user_basis(*sites, states, allowed_operators).map(CandidateBasis::User),
             BasisSpec::Photon { .. } | BasisSpec::Tensor { .. } => Err(
-                QuSpinError::UnsupportedBackend("basis is outside the frozen Rust surface".into()),
+                QmbedError::UnsupportedBackend("basis is outside the frozen Rust surface".into()),
             ),
         }
     }
@@ -340,7 +340,7 @@ impl QmbedApi for QmbedAdapter {
             .chain(right)
             .any(|vector| vector.len() != ambient)
         {
-            return Err(QuSpinError::DimensionMismatch(
+            return Err(QmbedError::DimensionMismatch(
                 "subspace vectors must share an ambient dimension".into(),
             ));
         }

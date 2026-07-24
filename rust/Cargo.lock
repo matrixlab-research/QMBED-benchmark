@@ -696,9 +696,9 @@ dependencies = [
 ]
 
 [[package]]
-name = "quspin"
+name = "qmbed"
 version = "0.1.0"
-source = "git+https://github.com/matrixlab-research/QMBED.git?rev=85a3f5d44b2f5b5bce58e0c35b3e6d31148d43ce#85a3f5d44b2f5b5bce58e0c35b3e6d31148d43ce"
+source = "git+https://github.com/matrixlab-research/QMBED.git?rev=4bfcad10989ce39fe05931165a74eef489a54211#4bfcad10989ce39fe05931165a74eef489a54211"
 dependencies = [
  "faer",
  "nalgebra",
@@ -715,7 +715,7 @@ version = "0.1.0"
 dependencies = [
  "nalgebra",
  "num-bigint",
- "quspin",
+ "qmbed",
 ]
 
 [[package]]

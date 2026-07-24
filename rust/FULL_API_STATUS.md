@@ -1,7 +1,7 @@
 # QMBED full-package candidate status
 
-Date: 2026-07-23  
-Pinned candidate: `85a3f5d44b2f5b5bce58e0c35b3e6d31148d43ce`
+Date: 2026-07-24
+Pinned candidate: `4bfcad10989ce39fe05931165a74eef489a54211`
 
 ## Completion boundary
 
