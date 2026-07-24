@@ -3,7 +3,7 @@ use qmbed_benchmark::{
     AssemblyChecks, BasisHandle, BasisSpec, ComplexCoefficient, Coupling, EigshOptions,
     HamiltonianOptions, MatrixFormat, OperatorTerm, QmbedApi, SpectrumTarget,
 };
-use quspin::Complex64;
+use qmbed::Complex64;
 
 #[test]
 fn public_candidate_is_reached_through_the_verification_adapter() {

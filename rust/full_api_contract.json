@@ -9,7 +9,7 @@
   "namespaces": {
     "basis": {
       "objects": 28,
-      "rust_modules": ["quspin::basis"],
+      "rust_modules": ["qmbed::basis"],
       "verification_contracts": [
         "rust/src/api.rs",
         "rust/src/candidate.rs",
@@ -25,7 +25,7 @@
     },
     "operators": {
       "objects": 12,
-      "rust_modules": ["quspin::operator"],
+      "rust_modules": ["qmbed::operator"],
       "verification_contracts": [
         "rust/src/api.rs",
         "rust/src/candidate.rs",
@@ -42,10 +42,10 @@
     "tools": {
       "objects": 24,
       "rust_modules": [
-        "quspin::solve",
-        "quspin::dynamics",
-        "quspin::measure",
-        "quspin::workflow"
+        "qmbed::solve",
+        "qmbed::dynamics",
+        "qmbed::measure",
+        "qmbed::workflow"
       ],
       "verification_contracts": [
         "rust/src/api.rs",
@@ -74,6 +74,6 @@
     "scale_covered",
     "complete_candidate"
   ],
-  "current_boundary": "QMBED commit 85a3f5d44b2f5b5bce58e0c35b3e6d31148d43ce is the complete Rust-native candidate for the frozen Python QuSpin 1.0.1 scientific capability map. Public properties, seven independent oracle families, four multi-size structural scale gates, and all twelve medium-size paper workflows pass. Its universal transition interface streams every basis through one assembler path, compiles local operator symbols once, preserves column locality during sparse assembly, uses structural state indexers, and crosses one coarse numerical-backend boundary for dense kernels and sparse shifted factorization. Real CSC shift-invert remains real through factorization and Lanczos without workflow-specific code. The existing local paper benchmark remains observational; same-runner cross-language hosted timings are not claimed as a semantic completion condition.",
+  "current_boundary": "QMBED commit 4bfcad10989ce39fe05931165a74eef489a54211 is the complete Rust-native candidate for the frozen Python QuSpin 1.0.1 scientific capability map. Public properties, seven independent oracle families, four multi-size structural scale gates, and all twelve medium-size paper workflows pass through the native qmbed crate identity. Its universal transition interface streams every basis through one assembler path, compiles local operator symbols once, preserves column locality during sparse assembly, uses structural state indexers, and crosses one coarse numerical-backend boundary for dense kernels and sparse shifted factorization. Real CSC shift-invert remains real through factorization and Lanczos without workflow-specific code. The existing local paper benchmark remains observational; same-runner cross-language hosted timings are not claimed as a semantic completion condition.",
   "namespace_status_scope": "Complete-candidate status applies to the many-to-one Rust-native scientific behavior map, not Python object identity, pickling, NumPy dtype aliases, warning text, or one Rust method per Python member. Evidence and intentional language-boundary exclusions are recorded in rust/FULL_API_STATUS.md."
 }

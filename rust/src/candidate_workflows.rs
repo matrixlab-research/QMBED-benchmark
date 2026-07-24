@@ -4,16 +4,16 @@ use std::collections::BTreeSet;
 use std::sync::Arc;
 
 use nalgebra::{linalg::Schur, DMatrix};
-use quspin::basis::{
+use qmbed::basis::{
     Basis, BosonBasis1D, SpinBasis1D, SpinfulFermionBasis1D, SpinlessFermionBasis1D, UserBasis,
 };
-use quspin::dynamics::{spectral_function, DriveStep, Floquet, SpectrumOptions};
-use quspin::measure::{subspace_fidelity, Subspace};
-use quspin::operator::{
+use qmbed::dynamics::{spectral_function, DriveStep, Floquet, SpectrumOptions};
+use qmbed::measure::{subspace_fidelity, Subspace};
+use qmbed::operator::{
     Coupling, LinearOperator, MatrixFormat as PublicMatrixFormat, OperatorBuilder, OperatorTerm,
 };
-use quspin::solve::{eigsh, evolve, EigshOptions, EvolutionOptions, SpectrumTarget};
-use quspin::{Complex64, QuSpinError};
+use qmbed::solve::{eigsh, evolve, EigshOptions, EvolutionOptions, SpectrumTarget};
+use qmbed::{Complex64, QmbedError};
 
 use crate::candidate::QmbedAdapter;
 use crate::{MatrixFormat, Observation, WorkflowBackend, WorkflowCase};
@@ -26,11 +26,11 @@ fn observation() -> Observation {
     Observation::new(MatrixFormat::Csc)
 }
 
-fn require_dimension(actual: usize, expected: usize) -> Result<(), QuSpinError> {
+fn require_dimension(actual: usize, expected: usize) -> Result<(), QmbedError> {
     if actual == expected {
         Ok(())
     } else {
-        Err(QuSpinError::InvalidSector(format!(
+        Err(QmbedError::InvalidSector(format!(
             "paper workflow expected dimension {expected}, got {actual}"
         )))
     }
@@ -44,13 +44,13 @@ fn state_norm(state: &[Complex64]) -> f64 {
     state.iter().map(Complex64::norm_sqr).sum::<f64>().sqrt()
 }
 
-fn usize_as_f64(value: usize) -> Result<f64, QuSpinError> {
+fn usize_as_f64(value: usize) -> Result<f64, QmbedError> {
     u32::try_from(value).map(f64::from).map_err(|_| {
-        QuSpinError::InvalidOptions(format!("workflow count {value} exceeds exact f64 range"))
+        QmbedError::InvalidOptions(format!("workflow count {value} exceeds exact f64 range"))
     })
 }
 
-fn periodic_heisenberg_terms(sites: usize) -> Result<[OperatorTerm; 3], QuSpinError> {
+fn periodic_heisenberg_terms(sites: usize) -> Result<[OperatorTerm; 3], QmbedError> {
     let mut zz = Vec::with_capacity(sites);
     let mut forward = Vec::with_capacity(sites);
     let mut backward = Vec::with_capacity(sites);
@@ -101,7 +101,7 @@ fn periodic_blockade_states(sites: usize) -> Vec<u128> {
     states
 }
 
-fn mbl_shift_invert() -> Result<Observation, QuSpinError> {
+fn mbl_shift_invert() -> Result<Observation, QmbedError> {
     let sites = 14;
     let basis = SpinBasis1D::builder(sites).up(7).build()?;
     require_dimension(basis.len(), 3_432)?;
@@ -139,7 +139,7 @@ fn mbl_shift_invert() -> Result<Observation, QuSpinError> {
     Ok(observation().metric("residual", residual))
 }
 
-fn xxz_lanczos_quench() -> Result<Observation, QuSpinError> {
+fn xxz_lanczos_quench() -> Result<Observation, QmbedError> {
     let sites = 16;
     let basis = SpinBasis1D::builder(sites).up(8).build()?;
     require_dimension(basis.len(), 12_870)?;
@@ -184,7 +184,7 @@ fn xxz_lanczos_quench() -> Result<Observation, QuSpinError> {
     Ok(observation().metric("norm_error", norm_error))
 }
 
-fn floquet_heating() -> Result<Observation, QuSpinError> {
+fn floquet_heating() -> Result<Observation, QmbedError> {
     let sites = 9;
     let basis = SpinBasis1D::builder(sites).pauli(true).build()?;
     require_dimension(basis.len(), 512)?;
@@ -223,7 +223,7 @@ fn floquet_heating() -> Result<Observation, QuSpinError> {
         .metric("phase_modulus_error", phase_modulus_error))
 }
 
-fn spinful_hubbard() -> Result<Observation, QuSpinError> {
+fn spinful_hubbard() -> Result<Observation, QmbedError> {
     let sites = 8;
     let basis = SpinfulFermionBasis1D::builder(sites)
         .particles(4, 4)
@@ -274,7 +274,7 @@ fn spinful_hubbard() -> Result<Observation, QuSpinError> {
     Ok(observation().metric("residual", maximum_residual(&result.residuals)))
 }
 
-fn interacting_ssh() -> Result<Observation, QuSpinError> {
+fn interacting_ssh() -> Result<Observation, QmbedError> {
     let sites = 16;
     let basis = SpinlessFermionBasis1D::builder(sites)
         .particles(8)
@@ -316,7 +316,7 @@ fn interacting_ssh() -> Result<Observation, QuSpinError> {
     Ok(observation().metric("residual", maximum_residual(&result.residuals)))
 }
 
-fn translation_sector_xxz() -> Result<Observation, QuSpinError> {
+fn translation_sector_xxz() -> Result<Observation, QmbedError> {
     let basis = SpinBasis1D::builder(18).up(9).momentum(0).build()?;
     require_dimension(basis.len(), 2_704)?;
     let hamiltonian = OperatorBuilder::on(&basis)
@@ -336,7 +336,7 @@ fn translation_sector_xxz() -> Result<Observation, QuSpinError> {
     Ok(observation().metric("residual", maximum_residual(&result.residuals)))
 }
 
-fn tfim_fidelity_scan() -> Result<Observation, QuSpinError> {
+fn tfim_fidelity_scan() -> Result<Observation, QmbedError> {
     let sites = 16;
     let basis = SpinBasis1D::builder(sites).pauli(true).build()?;
     require_dimension(basis.len(), 65_536)?;
@@ -381,7 +381,7 @@ fn tfim_fidelity_scan() -> Result<Observation, QuSpinError> {
         .iter()
         .enumerate()
         .min_by(|left, right| left.1.total_cmp(right.1))
-        .ok_or_else(|| QuSpinError::InvalidOptions("TFIM fidelity scan was empty".into()))?;
+        .ok_or_else(|| QmbedError::InvalidOptions("TFIM fidelity scan was empty".into()))?;
     Ok(observation()
         .metric("residual", residual)
         .metric("minimum_fidelity", *minimum_fidelity)
@@ -391,7 +391,7 @@ fn tfim_fidelity_scan() -> Result<Observation, QuSpinError> {
         ))
 }
 
-fn pxp_revival() -> Result<Observation, QuSpinError> {
+fn pxp_revival() -> Result<Observation, QmbedError> {
     let sites = 24;
     let basis = UserBasis::builder(sites)
         .states(periodic_blockade_states(sites))
@@ -439,7 +439,7 @@ fn pxp_revival() -> Result<Observation, QuSpinError> {
         .metric("revival_gain", fidelities[2] - fidelities[1]))
 }
 
-fn bose_hubbard_mott_quench() -> Result<Observation, QuSpinError> {
+fn bose_hubbard_mott_quench() -> Result<Observation, QmbedError> {
     let sites = 11;
     let basis = BosonBasis1D::builder(sites, 3).particles(sites).build()?;
     require_dimension(basis.len(), 25_653)?;
@@ -499,7 +499,7 @@ fn bose_hubbard_mott_quench() -> Result<Observation, QuSpinError> {
         .metric("minimum_return_after_t0", minimum_return))
 }
 
-fn spinful_kinetic_terms(sites: usize) -> Result<[OperatorTerm; 4], QuSpinError> {
+fn spinful_kinetic_terms(sites: usize) -> Result<[OperatorTerm; 4], QmbedError> {
     let bonds = 0..(sites - 1);
     Ok([
         OperatorTerm::new(
@@ -527,14 +527,14 @@ fn spinful_kinetic_terms(sites: usize) -> Result<[OperatorTerm; 4], QuSpinError>
     ])
 }
 
-fn hubbard_interaction(sites: usize, strength: f64) -> Result<OperatorTerm, QuSpinError> {
+fn hubbard_interaction(sites: usize, strength: f64) -> Result<OperatorTerm, QmbedError> {
     OperatorTerm::new(
         "n|n",
         (0..sites).map(|site| Coupling::new(strength, vec![site, site])),
     )
 }
 
-fn spinful_hubbard_current_quench() -> Result<Observation, QuSpinError> {
+fn spinful_hubbard_current_quench() -> Result<Observation, QmbedError> {
     let sites = 10;
     let basis = SpinfulFermionBasis1D::builder(sites)
         .particles(5, 5)
@@ -610,7 +610,7 @@ fn spinful_hubbard_current_quench() -> Result<Observation, QuSpinError> {
         .metric("maximum_absolute_current", maximum_current))
 }
 
-fn conb_dynamical_structure_factor() -> Result<Observation, QuSpinError> {
+fn conb_dynamical_structure_factor() -> Result<Observation, QmbedError> {
     let sites = 16;
     let basis = SpinBasis1D::builder(sites).pauli(false).build()?;
     require_dimension(basis.len(), 65_536)?;
@@ -693,7 +693,7 @@ fn triangular_bonds(width: usize, height: usize) -> BTreeSet<(usize, usize)> {
     bonds
 }
 
-fn particle_addition_spectrum() -> Result<Observation, QuSpinError> {
+fn particle_addition_spectrum() -> Result<Observation, QmbedError> {
     let (width, height) = (6, 3);
     let sites = width * height;
     let source_basis = SpinlessFermionBasis1D::builder(sites)
@@ -706,13 +706,13 @@ fn particle_addition_spectrum() -> Result<Observation, QuSpinError> {
     require_dimension(target_basis.len(), 31_824)?;
     let bonds = triangular_bonds(width, height);
     if bonds.len() != 54 {
-        return Err(QuSpinError::InvalidSector(format!(
+        return Err(QmbedError::InvalidSector(format!(
             "triangular workflow expected 54 bonds, got {}",
             bonds.len()
         )));
     }
     let hamiltonian_terms = || {
-        Ok::<_, QuSpinError>([
+        Ok::<_, QmbedError>([
             OperatorTerm::new(
                 "+-",
                 bonds
@@ -784,7 +784,7 @@ fn particle_addition_spectrum() -> Result<Observation, QuSpinError> {
 }
 
 impl WorkflowBackend for QmbedAdapter {
-    type Error = QuSpinError;
+    type Error = QmbedError;
 
     fn language(&self) -> &'static str {
         "rust"
@@ -804,7 +804,7 @@ impl WorkflowBackend for QmbedAdapter {
             "paper_hubbard_current_l10" => spinful_hubbard_current_quench(),
             "paper_conb_dsf_l16" => conb_dynamical_structure_factor(),
             "paper_particle_addition_6x3" => particle_addition_spectrum(),
-            identifier => Err(QuSpinError::InvalidOptions(format!(
+            identifier => Err(QmbedError::InvalidOptions(format!(
                 "unknown verification workflow case {identifier}"
             ))),
         }

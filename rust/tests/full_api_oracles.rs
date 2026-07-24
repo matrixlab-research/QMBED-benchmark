@@ -2,23 +2,23 @@ use std::collections::HashMap;
 use std::sync::Arc;
 use std::time::{SystemTime, UNIX_EPOCH};
 
-use quspin::archive::{load_zip, save_zip, OperatorArchive};
-use quspin::basis::{
+use qmbed::archive::{load_zip, save_zip, OperatorArchive};
+use qmbed::basis::{
     Basis, BasisProjector, BosonBasis1D, ClosureSymmetryMap, GeneralBasis, PhotonBasis,
     SpinBasis1D, SpinfulFermionBasis1D, SymmetrySector, UserBasis, WideSpinBasis256, U256,
 };
-use quspin::measure::{
+use qmbed::measure::{
     diagonal_ensemble_density, entanglement_entropy, entanglement_spectrum_density,
     partial_trace_density, EntropyOrder,
 };
-use quspin::operator::{
+use qmbed::operator::{
     AssemblyChecks, Coupling, LinearOperator, MatrixFormat, Operator, OperatorBuilder,
     OperatorTerm, QuantumComponent, QuantumLinearOperator, QuantumOperator, TimeOperator,
 };
-use quspin::solve::{
+use qmbed::solve::{
     eigsh, lanczos_full, EigshOptions, ExpmMultiplyParallel, LanczosOptions, SpectrumTarget,
 };
-use quspin::Complex64;
+use qmbed::Complex64;
 
 fn close(actual: Complex64, expected: Complex64, tolerance: f64) {
     assert!(
