@@ -710,7 +710,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "qmbed-verify"
+name = "qmbed-benchmark"
 version = "0.1.0"
 dependencies = [
  "nalgebra",

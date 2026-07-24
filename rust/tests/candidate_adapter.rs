@@ -1,5 +1,5 @@
-use qmbed_verify::candidate::QmbedAdapter;
-use qmbed_verify::{
+use qmbed_benchmark::candidate::QmbedAdapter;
+use qmbed_benchmark::{
     AssemblyChecks, BasisHandle, BasisSpec, ComplexCoefficient, Coupling, EigshOptions,
     HamiltonianOptions, MatrixFormat, OperatorTerm, QmbedApi, SpectrumTarget,
 };

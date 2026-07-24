@@ -1,5 +1,5 @@
-use qmbed_verify::candidate::QmbedAdapter;
-use qmbed_verify::{paper_workflows, validate_observation, WorkflowBackend};
+use qmbed_benchmark::candidate::QmbedAdapter;
+use qmbed_benchmark::{paper_workflows, validate_observation, WorkflowBackend};
 
 #[test]
 #[ignore = "paper-scale workflows; exercised in release mode"]

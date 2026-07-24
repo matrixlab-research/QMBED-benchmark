@@ -1,8 +1,8 @@
 use std::env;
 use std::error::Error;
 
-use qmbed_verify::candidate::QmbedAdapter;
-use qmbed_verify::{benchmark_suite, paper_workflows, BenchmarkOptions, BenchmarkRow};
+use qmbed_benchmark::candidate::QmbedAdapter;
+use qmbed_benchmark::{benchmark_suite, paper_workflows, BenchmarkOptions, BenchmarkRow};
 
 fn count_from_environment(name: &str, default: usize) -> Result<usize, Box<dyn Error>> {
     match env::var(name) {

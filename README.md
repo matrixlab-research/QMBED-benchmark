@@ -1,11 +1,11 @@
-# QMBED Verify — public conformance, workflow, and benchmark suite
+# QMBED Benchmark — public correctness and performance suite
 
 This public repository independently verifies the QMBED simulator family. It
 currently contains the original Python-to-Julia QuSpin compatibility campaign,
 the Rust QMBED contract and adapter, and literature-derived exact-diagonalization
 workflows shared across language implementations.
 
-The `julia-compat-verification` GitHub Actions workflow first regenerates the
+The `julia-compat-benchmarks` GitHub Actions workflow first regenerates the
 reference observations with a pinned Python QuSpin commit. It then installs the
 requested Julia candidate ref and runs the public Test.jl conformance suite.
 Python is not present in the candidate test job.
@@ -25,7 +25,7 @@ ci/runcandidate.jl   develop + test the package the MR proposes.
 
 ## How a candidate is judged
 
-1. A maintainer dispatches `julia-compat-verification` with the public candidate
+1. A maintainer dispatches `julia-compat-benchmarks` with the public candidate
    repository and an immutable commit SHA or selected ref.
 2. The oracle job installs the pinned Python QuSpin commit, regenerates its
    deterministic observations, and compares them structurally against the
@@ -211,4 +211,4 @@ shrinking.
 Some frozen task documents and historical benchmark records retain the terms
 `QuSpin.rs`, `private`, or `held_out` because they record the provenance and
 clean-room boundary of earlier campaigns. They do not describe this
-repository's current visibility: **QMBED Verify and its CI are public**.
+repository's current visibility: **QMBED Benchmark and its CI are public**.

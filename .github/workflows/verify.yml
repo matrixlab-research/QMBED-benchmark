@@ -1,4 +1,4 @@
-name: julia-compat-verification
+name: julia-compat-benchmarks
 
 on:
   workflow_dispatch:
