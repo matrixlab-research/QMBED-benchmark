@@ -687,18 +687,9 @@ dependencies = [
 ]
 
 [[package]]
-name = "quote"
-version = "1.0.47"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1fbf4db142a473a8d80c26bbf18454ed458bf8d26c8219c331daecfdbd079001"
-dependencies = [
- "proc-macro2",
-]
-
-[[package]]
 name = "qmbed"
 version = "0.1.0"
-source = "git+https://github.com/matrixlab-research/QMBED.git?rev=4bfcad10989ce39fe05931165a74eef489a54211#4bfcad10989ce39fe05931165a74eef489a54211"
+source = "git+https://github.com/matrixlab-research/QMBED.git?rev=58360f5ffed845d0f2fbd3649ad7588420edbc83#58360f5ffed845d0f2fbd3649ad7588420edbc83"
 dependencies = [
  "faer",
  "nalgebra",
@@ -716,6 +707,15 @@ dependencies = [
  "nalgebra",
  "num-bigint",
  "qmbed",
+]
+
+[[package]]
+name = "quote"
+version = "1.0.47"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1fbf4db142a473a8d80c26bbf18454ed458bf8d26c8219c331daecfdbd079001"
+dependencies = [
+ "proc-macro2",
 ]
 
 [[package]]
