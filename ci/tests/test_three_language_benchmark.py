@@ -8,6 +8,7 @@ from pathlib import Path
 
 
 CI_DIR = Path(__file__).resolve().parents[1]
+ROOT = CI_DIR.parent
 sys.path.insert(0, str(CI_DIR))
 
 from render_paper_workflow_chart import CASE_ORDER
@@ -106,3 +107,17 @@ class ThreeLanguageBenchmarkTests(unittest.TestCase):
         self.assertEqual(exit_code, 0)
         self.assertEqual(row["metric"], "peak_resident_bytes")
         self.assertGreater(int(row["value"]), 0)
+
+    def test_chart_publish_is_serialized_and_retries_from_remote_main(self) -> None:
+        workflow = (ROOT / ".github/workflows/verify.yml").read_text()
+        publish = workflow.split("  publish-chart:\n", maxsplit=1)[1]
+        self.assertIn("group: paper-workflow-chart-publish", publish)
+        self.assertIn("for attempt in 1 2 3; do", publish)
+        self.assertLess(
+            publish.index("git reset --hard origin/main"),
+            publish.index(
+                "cp artifacts/paper-workflow-timings.svg "
+                "docs/paper-workflow-timings.svg"
+            ),
+        )
+        self.assertNotIn("git pull --rebase", publish)
