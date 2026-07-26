@@ -37,3 +37,5 @@ jobs:
         run: cargo test --manifest-path rust/Cargo.toml
       - name: Execute all twelve paper workflows
         run: cargo test --release --manifest-path rust/Cargo.toml --test candidate_workflows -- --ignored --nocapture
+      - name: Check adaptive-evolution accuracy against a tighter oracle
+        run: cargo test --release --manifest-path rust/Cargo.toml --test evolution_accuracy -- --ignored --nocapture

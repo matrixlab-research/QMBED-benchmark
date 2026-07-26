@@ -1,0 +1,13 @@
+case_id,workflow,baseline_sha,baseline_median_seconds,candidate_sha,candidate_median_seconds,candidate_over_baseline,lanczos_projections,matrix_vector_products,real_lanczos_projections,real_matrix_vector_products,candidate_error_vs_tighter,legacy_error_vs_tighter,justification
+paper_mbl_shift_invert_l14,MBL mid-spectrum shift-invert,58360f5ffed845d0f2fbd3649ad7588420edbc83,0.131582917,bc7159e6370b3a9c55eede50cf99c8a7df8b9847,0.128103083,0.973554,,,,,,,
+paper_xxz_lanczos_quench_l16,XXZ Lanczos quench,58360f5ffed845d0f2fbd3649ad7588420edbc83,0.035562542,bc7159e6370b3a9c55eede50cf99c8a7df8b9847,0.032828709,0.923126,1,80,1,80,,,
+paper_floquet_heating_l9,Floquet heating full unitary,58360f5ffed845d0f2fbd3649ad7588420edbc83,1.125655292,bc7159e6370b3a9c55eede50cf99c8a7df8b9847,1.097562708,0.975043,,,,,,,
+paper_spinful_hubbard_l8,Spinful Hubbard low-energy spectrum,58360f5ffed845d0f2fbd3649ad7588420edbc83,0.071652292,bc7159e6370b3a9c55eede50cf99c8a7df8b9847,0.073586500,1.026994,,,,,,,
+paper_interacting_ssh_l16,Interacting SSH low-energy spectrum,58360f5ffed845d0f2fbd3649ad7588420edbc83,0.201375709,bc7159e6370b3a9c55eede50cf99c8a7df8b9847,0.199866375,0.992505,,,,,,,
+paper_translation_xxz_l18,Translation-sector XXZ spectrum,58360f5ffed845d0f2fbd3649ad7588420edbc83,0.031517375,bc7159e6370b3a9c55eede50cf99c8a7df8b9847,0.031093917,0.986564,,,,,,,
+paper_tfim_fidelity_l16,TFIM degenerate-subspace fidelity scan,58360f5ffed845d0f2fbd3649ad7588420edbc83,2.511797000,bc7159e6370b3a9c55eede50cf99c8a7df8b9847,2.477079750,0.986178,,,,,,,
+paper_pxp_revival_l24,PXP constrained-state revival,58360f5ffed845d0f2fbd3649ad7588420edbc83,0.326872250,bc7159e6370b3a9c55eede50cf99c8a7df8b9847,0.446288958,1.365331,2,200,1,100,0.000000000000e0,5.960969374400e-1,adaptive accuracy repair; baseline single-projection result had order-one state error
+paper_bose_hubbard_quench_l11,Bose-Hubbard Mott quench,58360f5ffed845d0f2fbd3649ad7588420edbc83,0.083551833,bc7159e6370b3a9c55eede50cf99c8a7df8b9847,0.318656791,3.813882,8,800,1,100,4.836761645385e-10,5.594873741273e-1,adaptive accuracy repair; baseline single-projection result had order-one state error
+paper_hubbard_current_l10,Spinful-Hubbard current quench,58360f5ffed845d0f2fbd3649ad7588420edbc83,1.709256333,bc7159e6370b3a9c55eede50cf99c8a7df8b9847,1.751786625,1.024882,,,,,,,
+paper_conb_dsf_l16,CoNb2O6 dynamical structure factor,58360f5ffed845d0f2fbd3649ad7588420edbc83,2.107866750,bc7159e6370b3a9c55eede50cf99c8a7df8b9847,1.995495125,0.946689,,,,,,,
+paper_particle_addition_6x3,Particle-addition spectrum,58360f5ffed845d0f2fbd3649ad7588420edbc83,0.734549833,bc7159e6370b3a9c55eede50cf99c8a7df8b9847,0.719197958,0.979100,,,,,,,

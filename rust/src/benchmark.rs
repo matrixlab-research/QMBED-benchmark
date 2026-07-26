@@ -1,3 +1,4 @@
+use std::collections::BTreeMap;
 use std::error::Error;
 use std::fmt::{Display, Formatter};
 use std::time::Instant;
@@ -53,11 +54,12 @@ pub struct BenchmarkRow {
     pub maximum_seconds: f64,
     pub median_allocated_bytes: Option<u64>,
     pub runtime: &'static str,
+    pub observation_metrics: BTreeMap<String, f64>,
     pub raw_samples_seconds: Vec<f64>,
 }
 
 impl BenchmarkRow {
-    pub const CSV_HEADER: &'static str = "language,suite,case_id,family_id,benchmark,category,comparison,storage,supported,note,parameters,validation,samples,iterations_per_sample,median_seconds,mean_seconds,stdev_seconds,min_seconds,p05_seconds,p25_seconds,p75_seconds,p95_seconds,max_seconds,median_allocated_bytes,runtime,raw_samples_seconds";
+    pub const CSV_HEADER: &'static str = "language,suite,case_id,family_id,benchmark,category,comparison,storage,supported,note,parameters,validation,samples,iterations_per_sample,median_seconds,mean_seconds,stdev_seconds,min_seconds,p05_seconds,p25_seconds,p75_seconds,p95_seconds,max_seconds,median_allocated_bytes,runtime,observation_metrics,raw_samples_seconds";
 
     #[must_use]
     pub fn to_csv_record(&self) -> String {
@@ -65,6 +67,12 @@ impl BenchmarkRow {
             .raw_samples_seconds
             .iter()
             .map(|value| format!("{value:.12}"))
+            .collect::<Vec<_>>()
+            .join(";");
+        let metrics = self
+            .observation_metrics
+            .iter()
+            .map(|(name, value)| format!("{name}={value:.12}"))
             .collect::<Vec<_>>()
             .join(";");
         [
@@ -94,6 +102,7 @@ impl BenchmarkRow {
             self.median_allocated_bytes
                 .map_or_else(String::new, |value| value.to_string()),
             csv_escape(self.runtime),
+            csv_escape(&metrics),
             raw,
         ]
         .join(",")
@@ -145,6 +154,7 @@ pub fn benchmark_suite<B: WorkflowBackend>(
 
         let mut samples = Vec::with_capacity(options.samples);
         let mut storage = "unspecified";
+        let mut observation_metrics = BTreeMap::new();
         for _ in 0..options.samples {
             let started = Instant::now();
             let observation = backend.run(case).map_err(BenchmarkError::Backend)?;
@@ -152,9 +162,16 @@ pub fn benchmark_suite<B: WorkflowBackend>(
             validate_observation(case.case_id, &observation, case.invariants)
                 .map_err(BenchmarkError::Validation)?;
             storage = observation.storage.as_str();
+            observation_metrics = observation.metrics;
             samples.push(elapsed);
         }
-        rows.push(summarize(case, backend.language(), storage, samples));
+        rows.push(summarize(
+            case,
+            backend.language(),
+            storage,
+            observation_metrics,
+            samples,
+        ));
     }
     Ok(rows)
 }
@@ -164,6 +181,7 @@ fn summarize(
     case: &WorkflowCase,
     language: &'static str,
     storage: &'static str,
+    observation_metrics: BTreeMap<String, f64>,
     samples: Vec<f64>,
 ) -> BenchmarkRow {
     let raw_samples = samples;
@@ -202,6 +220,7 @@ fn summarize(
         maximum_seconds: sorted[sorted.len() - 1],
         median_allocated_bytes: None,
         runtime: "Rust; QMBED pinned candidate",
+        observation_metrics,
         raw_samples_seconds: raw_samples,
     }
 }

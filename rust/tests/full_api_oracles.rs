@@ -316,7 +316,12 @@ fn held_out_solver_and_general_exponential_oracles_pass() {
         },
     )
     .unwrap();
-    assert_eq!(selected.eigenvalues, vec![0.2, -0.3, 2.5]);
+    for (actual, expected) in selected.eigenvalues.iter().zip([0.2, -0.3, 2.5]) {
+        assert!(
+            (actual - expected).abs() <= 1.0e-12 * expected.abs().max(1.0),
+            "eigenvalue mismatch: actual={actual:.16e}, expected={expected:.16e}"
+        );
+    }
 
     let initial = vec![
         Complex64::new(1.0, 0.0),
