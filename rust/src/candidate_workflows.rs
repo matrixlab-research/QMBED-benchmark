@@ -3,7 +3,6 @@
 use std::collections::BTreeSet;
 use std::sync::Arc;
 
-use nalgebra::{linalg::Schur, DMatrix};
 use qmbed::basis::{
     Basis, BosonBasis1D, SpinBasis1D, SpinfulFermionBasis1D, SpinlessFermionBasis1D, UserBasis,
 };
@@ -11,10 +10,11 @@ use qmbed::dynamics::{spectral_function, DriveStep, Floquet, SpectrumOptions};
 use qmbed::measure::{subspace_fidelity, Subspace};
 use qmbed::operator::{
     Coupling, LinearOperator, MatrixFormat as PublicMatrixFormat, OperatorBuilder, OperatorTerm,
+    QuantumComponent, QuantumOperator,
 };
 use qmbed::solve::{
-    eigsh, evolve, evolve_with_diagnostics, EigshOptions, EvolutionDiagnostics, EvolutionOptions,
-    SpectrumTarget,
+    eigsh, eigsh_with_workspace, evolve, evolve_with_diagnostics, EigshOptions, EigshWorkspace,
+    EvolutionDiagnostics, EvolutionOptions, SpectrumTarget,
 };
 use qmbed::{Complex64, QmbedError};
 
@@ -242,22 +242,15 @@ fn floquet_heating() -> Result<Observation, QmbedError> {
         DriveStep::new(Arc::new(zz), 0.17)?,
         DriveStep::new(Arc::new(x), 0.23)?,
     ])?;
-    let dimension = basis.len();
-    let mut column_major = vec![c(0.0); dimension * dimension];
-    let full_unitary = floquet.full_unitary(PublicMatrixFormat::Dense)?;
-    for (row, column, value) in full_unitary.triplets() {
-        column_major[row + column * dimension] = value;
-    }
-    let unitary = DMatrix::from_column_slice(dimension, dimension, &column_major);
-    let gram = unitary.adjoint() * &unitary;
-    let unitarity_error = (gram - DMatrix::<Complex64>::identity(dimension, dimension)).norm()
-        / usize_as_f64(dimension)?;
-    let (_, triangular) = Schur::new(unitary).unpack();
-    let phase_modulus_error = (0..dimension)
-        .map(|index| (triangular[(index, index)].norm() - 1.0).abs())
+    let spectrum = floquet.spectrum(PublicMatrixFormat::Dense)?;
+    let phase_modulus_error = spectrum
+        .eigensystem
+        .eigenvalues
+        .iter()
+        .map(|value| (value.norm() - 1.0).abs())
         .fold(0.0_f64, f64::max);
     Ok(observation()
-        .metric("unitarity_error", unitarity_error)
+        .metric("unitarity_error", spectrum.unitarity_residual)
         .metric("phase_modulus_error", phase_modulus_error))
 }
 
@@ -378,23 +371,31 @@ fn tfim_fidelity_scan() -> Result<Observation, QmbedError> {
     let sites = 16;
     let basis = SpinBasis1D::builder(sites).pauli(true).build()?;
     require_dimension(basis.len(), 65_536)?;
+    let interaction = OperatorBuilder::on(&basis)
+        .term(OperatorTerm::new(
+            "zz",
+            (0..sites).map(|site| Coupling::new(-1.0, vec![site, (site + 1) % sites])),
+        )?)
+        .build(PublicMatrixFormat::Csc)?;
+    let field_operator = OperatorBuilder::on(&basis)
+        .term(OperatorTerm::new(
+            "x",
+            (0..sites).map(|site| Coupling::new(-1.0, vec![site])),
+        )?)
+        .build(PublicMatrixFormat::Csc)?;
+    let family = QuantumOperator::new([
+        QuantumComponent::with_default("interaction", interaction, 1.0),
+        QuantumComponent::required("field", field_operator),
+    ])?;
+    let mut operator_plan = family.plan(PublicMatrixFormat::Csc)?;
+    let mut eigsh_workspace = EigshWorkspace::new();
     let mut subspaces = Vec::new();
     let mut residual = 0.0_f64;
     for (field_index, field) in [0.8, 0.9, 1.0, 1.1, 1.2].into_iter().enumerate() {
-        let hamiltonian = OperatorBuilder::on(&basis)
-            .terms([
-                OperatorTerm::new(
-                    "zz",
-                    (0..sites).map(|site| Coupling::new(-1.0, vec![site, (site + 1) % sites])),
-                )?,
-                OperatorTerm::new(
-                    "x",
-                    (0..sites).map(|site| Coupling::new(-field, vec![site])),
-                )?,
-            ])
-            .build(PublicMatrixFormat::Csc)?;
-        let result = eigsh(
-            &hamiltonian,
+        let hamiltonian =
+            operator_plan.evaluate_coefficients(&[Complex64::new(1.0, 0.0), c(field)])?;
+        let result = eigsh_with_workspace(
+            hamiltonian,
             EigshOptions {
                 eigenpairs: 2,
                 target: SpectrumTarget::SmallestAlgebraic,
@@ -403,6 +404,7 @@ fn tfim_fidelity_scan() -> Result<Observation, QmbedError> {
                 max_iterations: 128,
                 seed: 43 + field_index as u64,
             },
+            &mut eigsh_workspace,
         )?;
         residual = residual.max(maximum_residual(&result.residuals));
         subspaces.push(Subspace::from_columns(

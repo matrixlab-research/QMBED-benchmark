@@ -689,7 +689,7 @@ dependencies = [
 [[package]]
 name = "qmbed"
 version = "0.1.0"
-source = "git+https://github.com/matrixlab-research/QMBED.git?rev=bc7159e6370b3a9c55eede50cf99c8a7df8b9847#bc7159e6370b3a9c55eede50cf99c8a7df8b9847"
+source = "git+https://github.com/matrixlab-research/QMBED.git?rev=ddebb3647eea6c37ee195f21594c05ab7cdab825#ddebb3647eea6c37ee195f21594c05ab7cdab825"
 dependencies = [
  "faer",
  "nalgebra",
@@ -704,7 +704,6 @@ dependencies = [
 name = "qmbed-benchmark"
 version = "0.1.0"
 dependencies = [
- "nalgebra",
  "num-bigint",
  "qmbed",
 ]
