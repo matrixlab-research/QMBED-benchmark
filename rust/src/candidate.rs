@@ -9,7 +9,7 @@ use qmbed::measure::{subspace_fidelity, Subspace};
 use qmbed::operator::{
     AssemblyChecks as PublicAssemblyChecks, Coupling as PublicCoupling,
     LinearOperator as PublicLinearOperator, MatrixFormat as PublicMatrixFormat, Operator,
-    OperatorBuilder, OperatorTerm as PublicOperatorTerm,
+    OperatorBuilder, OperatorSpec as PublicOperatorSpec,
 };
 use qmbed::solve::{
     eigsh, evolve, Eigensystem, EigshOptions as PublicEigshOptions,
@@ -19,7 +19,7 @@ use qmbed::{Complex64, QmbedError};
 
 use crate::api::{
     BasisHandle, BasisSpec, EigshOptions, EvolutionOptions, HamiltonianOptions, LinearOperator,
-    MatrixFormat, OperatorTerm, QmbedApi, SpectrumOptions, SpectrumTarget,
+    MatrixFormat, OperatorSpec, QmbedApi, SpectrumOptions, SpectrumTarget,
 };
 
 pub enum CandidateBasis {
@@ -75,6 +75,7 @@ impl LinearOperator for CandidateOperator {
             PublicMatrixFormat::Csr => MatrixFormat::Csr,
             PublicMatrixFormat::Dia => MatrixFormat::Dia,
             PublicMatrixFormat::MatrixFree => MatrixFormat::MatrixFree,
+            _ => unreachable!("the adapter constructs only the five contracted storage formats"),
         }
     }
 
@@ -105,11 +106,11 @@ fn public_format(format: MatrixFormat) -> PublicMatrixFormat {
     }
 }
 
-fn public_terms(terms: &[OperatorTerm]) -> Result<Vec<PublicOperatorTerm>, QmbedError> {
+fn public_terms(terms: &[OperatorSpec]) -> Result<Vec<PublicOperatorSpec>, QmbedError> {
     terms
         .iter()
         .map(|term| {
-            PublicOperatorTerm::new(
+            PublicOperatorSpec::new(
                 &term.operator,
                 term.couplings.iter().map(|coupling| PublicCoupling {
                     coefficient: Complex64::new(coupling.coefficient.re, coupling.coefficient.im),
@@ -122,7 +123,7 @@ fn public_terms(terms: &[OperatorTerm]) -> Result<Vec<PublicOperatorTerm>, Qmbed
 
 fn build_operator<B>(
     basis: &B,
-    terms: &[PublicOperatorTerm],
+    terms: &[PublicOperatorSpec],
     options: HamiltonianOptions,
 ) -> Result<Operator, QmbedError>
 where
@@ -249,7 +250,7 @@ impl QmbedApi for QmbedAdapter {
     fn hamiltonian(
         &self,
         basis: &Self::Basis,
-        terms: &[OperatorTerm],
+        terms: &[OperatorSpec],
         options: HamiltonianOptions,
     ) -> Result<Self::Operator, Self::Error> {
         let terms = public_terms(terms)?;
@@ -275,17 +276,13 @@ impl QmbedApi for QmbedAdapter {
             SpectrumTarget::LargestMagnitude => PublicSpectrumTarget::LargestMagnitude,
             SpectrumTarget::Shift(value) => PublicSpectrumTarget::Shift(value),
         };
-        eigsh(
-            &operator.0,
-            PublicEigshOptions {
-                eigenpairs: options.eigenpairs,
-                target,
-                krylov_dimension: options.krylov_dimension,
-                tolerance: options.tolerance,
-                max_iterations: options.max_iterations,
-                seed: 0,
-            },
-        )
+        let mut public_options = PublicEigshOptions::new(options.eigenpairs, target)
+            .with_tolerance(options.tolerance)
+            .with_max_iterations(options.max_iterations);
+        if let Some(dimension) = options.krylov_dimension {
+            public_options = public_options.with_krylov_dimension(dimension);
+        }
+        eigsh(&operator.0, public_options)
     }
 
     fn evolve(
@@ -297,13 +294,9 @@ impl QmbedApi for QmbedAdapter {
         evolve(
             &operator.0,
             initial,
-            PublicEvolutionOptions {
-                times: options.times.clone(),
-                krylov_dimension: options.krylov_dimension,
-                tolerance: options.tolerance,
-                max_substeps: 10_000,
-                hamiltonian: true,
-            },
+            PublicEvolutionOptions::new(options.times.clone())
+                .with_krylov_dimension(options.krylov_dimension)
+                .with_tolerance(options.tolerance),
         )
         .map(|trajectory| trajectory.states)
     }
@@ -319,13 +312,12 @@ impl QmbedApi for QmbedAdapter {
             &operator.0,
             source,
             &probe.0,
-            PublicSpectrumOptions {
-                frequencies: options.frequencies.clone(),
-                reference_energy: options.reference_energy,
-                broadening: options.broadening,
-                krylov_dimension: options.krylov_dimension,
-                tolerance: 1.0e-10,
-            },
+            PublicSpectrumOptions::new(
+                options.frequencies.clone(),
+                options.reference_energy,
+                options.broadening,
+            )
+            .with_krylov_dimension(options.krylov_dimension),
         )
     }
 
@@ -371,13 +363,10 @@ impl QmbedApi for QmbedAdapter {
         evolve(
             &generator.0,
             initial_density,
-            PublicEvolutionOptions {
-                times: options.times.clone(),
-                krylov_dimension: options.krylov_dimension,
-                tolerance: options.tolerance,
-                max_substeps: 10_000,
-                hamiltonian: false,
-            },
+            PublicEvolutionOptions::new(options.times.clone())
+                .with_krylov_dimension(options.krylov_dimension)
+                .with_tolerance(options.tolerance)
+                .with_hamiltonian(false),
         )
         .map(|trajectory| trajectory.states)
     }

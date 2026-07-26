@@ -1,7 +1,7 @@
 # QMBED full-package candidate status
 
 Date: 2026-07-26
-Pinned candidate: `bc7159e6370b3a9c55eede50cf99c8a7df8b9847`
+Pinned candidate: `2b0196d9ad134a080712cb3daa1b56ebe000e470`
 
 ## Completion boundary
 
@@ -24,6 +24,11 @@ spelling.
 | Solvers and evolution | complex Hermitian dense/partial spectra, all targets, Lanczos, cached shift-invert, batches, density, FTLM/LTLM | complete candidate |
 | Dynamics and measurements | Floquet, block tools, response, arbitrary-site pure/mixed entropy, ensembles, statistics | complete candidate |
 | Persistence and workflows | safe named dense/sparse archives, state tracking, Lindblad generator, twelve paper workflows | complete candidate |
+
+The candidate exposes one canonical Rust vocabulary for the 0.2 line:
+`OperatorSpec`, `QmbedError`, `SymmetryReducer`, `EvolutionOptions`, and the
+`U256`–`U16384` state names. The benchmark adapter and direct workflow tests
+compile against those names; the removed migration aliases are not exercised.
 
 ## Active evidence
 

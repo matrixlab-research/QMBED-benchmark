@@ -9,7 +9,7 @@ use qmbed::basis::{
 use qmbed::dynamics::{spectral_function, DriveStep, Floquet, SpectrumOptions};
 use qmbed::measure::{subspace_fidelity, Subspace};
 use qmbed::operator::{
-    Coupling, LinearOperator, MatrixFormat as PublicMatrixFormat, OperatorBuilder, OperatorTerm,
+    Coupling, LinearOperator, MatrixFormat as PublicMatrixFormat, OperatorBuilder, OperatorSpec,
     QuantumComponent, QuantumOperator,
 };
 use qmbed::solve::{
@@ -53,6 +53,45 @@ fn usize_as_f64(value: usize) -> Result<f64, QmbedError> {
     })
 }
 
+fn selected_spectrum_options(
+    eigenpairs: usize,
+    target: SpectrumTarget,
+    krylov_dimension: usize,
+    tolerance: f64,
+    max_iterations: usize,
+    seed: u64,
+) -> EigshOptions {
+    EigshOptions::new(eigenpairs, target)
+        .with_krylov_dimension(krylov_dimension)
+        .with_tolerance(tolerance)
+        .with_max_iterations(max_iterations)
+        .with_seed(seed)
+}
+
+fn evolution_options(
+    times: impl Into<Vec<f64>>,
+    krylov_dimension: usize,
+    tolerance: f64,
+    max_substeps: usize,
+) -> EvolutionOptions {
+    EvolutionOptions::new(times)
+        .with_krylov_dimension(krylov_dimension)
+        .with_tolerance(tolerance)
+        .with_max_substeps(max_substeps)
+}
+
+fn response_options(
+    frequencies: impl Into<Vec<f64>>,
+    reference_energy: f64,
+    broadening: f64,
+    krylov_dimension: usize,
+    tolerance: f64,
+) -> SpectrumOptions {
+    SpectrumOptions::new(frequencies, reference_energy, broadening)
+        .with_krylov_dimension(krylov_dimension)
+        .with_tolerance(tolerance)
+}
+
 fn with_evolution_diagnostics(
     observation: Observation,
     diagnostics: &EvolutionDiagnostics,
@@ -88,7 +127,7 @@ fn with_evolution_diagnostics(
         ))
 }
 
-fn periodic_heisenberg_terms(sites: usize) -> Result<[OperatorTerm; 3], QmbedError> {
+fn periodic_heisenberg_terms(sites: usize) -> Result<[OperatorSpec; 3], QmbedError> {
     let mut zz = Vec::with_capacity(sites);
     let mut forward = Vec::with_capacity(sites);
     let mut backward = Vec::with_capacity(sites);
@@ -99,9 +138,9 @@ fn periodic_heisenberg_terms(sites: usize) -> Result<[OperatorTerm; 3], QmbedErr
         backward.push(Coupling::new(0.5, vec![site, next]));
     }
     Ok([
-        OperatorTerm::new("zz", zz)?,
-        OperatorTerm::new("+-", forward)?,
-        OperatorTerm::new("-+", backward)?,
+        OperatorSpec::new("zz", zz)?,
+        OperatorSpec::new("+-", forward)?,
+        OperatorSpec::new("-+", backward)?,
     ])
 }
 
@@ -147,7 +186,7 @@ fn mbl_shift_invert() -> Result<Observation, QmbedError> {
         2.13, -1.77, 0.31, 3.24, -2.63, 0.82, 1.46, -3.17, 2.71, -0.54, 1.09, -2.28, 0.67, 2.94,
     ];
     let mut terms = periodic_heisenberg_terms(sites)?.to_vec();
-    terms.push(OperatorTerm::new(
+    terms.push(OperatorSpec::new(
         "z",
         fields
             .into_iter()
@@ -159,14 +198,7 @@ fn mbl_shift_invert() -> Result<Observation, QmbedError> {
         .build(PublicMatrixFormat::Csc)?;
     let result = eigsh(
         &hamiltonian,
-        EigshOptions {
-            eigenpairs: 6,
-            target: SpectrumTarget::Shift(0.0),
-            krylov_dimension: Some(32),
-            tolerance: 1.0e-9,
-            max_iterations: 5_000,
-            seed: 47,
-        },
+        selected_spectrum_options(6, SpectrumTarget::Shift(0.0), 32, 1.0e-9, 5_000, 47),
     )?;
     let residual = result
         .residuals
@@ -184,19 +216,19 @@ fn xxz_lanczos_quench() -> Result<Observation, QmbedError> {
     let bonds = 0..(sites - 1);
     let hamiltonian = OperatorBuilder::on(&basis)
         .terms([
-            OperatorTerm::new(
+            OperatorSpec::new(
                 "+-",
                 bonds
                     .clone()
                     .map(|site| Coupling::new(0.5, vec![site, site + 1])),
             )?,
-            OperatorTerm::new(
+            OperatorSpec::new(
                 "-+",
                 bonds
                     .clone()
                     .map(|site| Coupling::new(0.5, vec![site, site + 1])),
             )?,
-            OperatorTerm::new(
+            OperatorSpec::new(
                 "zz",
                 bonds.map(|site| Coupling::new(0.8, vec![site, site + 1])),
             )?,
@@ -210,13 +242,7 @@ fn xxz_lanczos_quench() -> Result<Observation, QmbedError> {
     let (trajectory, diagnostics) = evolve_with_diagnostics(
         &hamiltonian,
         &initial,
-        EvolutionOptions {
-            times: vec![0.7],
-            krylov_dimension: 80,
-            tolerance: 1.0e-10,
-            max_substeps: 100,
-            hamiltonian: true,
-        },
+        evolution_options([0.7], 80, 1.0e-10, 100),
     )?;
     let norm_error = (state_norm(&trajectory.states[0]) - 1.0).abs();
     with_evolution_diagnostics(observation().metric("norm_error", norm_error), &diagnostics)
@@ -227,13 +253,13 @@ fn floquet_heating() -> Result<Observation, QmbedError> {
     let basis = SpinBasis1D::builder(sites).pauli(true).build()?;
     require_dimension(basis.len(), 512)?;
     let zz = OperatorBuilder::on(&basis)
-        .term(OperatorTerm::new(
+        .term(OperatorSpec::new(
             "zz",
             (0..sites).map(|site| Coupling::new(0.9, vec![site, (site + 1) % sites])),
         )?)
         .build(PublicMatrixFormat::Csc)?;
     let x = OperatorBuilder::on(&basis)
-        .term(OperatorTerm::new(
+        .term(OperatorSpec::new(
             "x",
             (0..sites).map(|site| Coupling::new(0.73, vec![site])),
         )?)
@@ -263,29 +289,29 @@ fn spinful_hubbard() -> Result<Observation, QmbedError> {
     let bonds = 0..(sites - 1);
     let hamiltonian = OperatorBuilder::on(&basis)
         .terms([
-            OperatorTerm::new(
+            OperatorSpec::new(
                 "+-|",
                 bonds
                     .clone()
                     .map(|site| Coupling::new(-1.0, vec![site, site + 1])),
             )?,
-            OperatorTerm::new(
+            OperatorSpec::new(
                 "-+|",
                 bonds
                     .clone()
                     .map(|site| Coupling::new(1.0, vec![site, site + 1])),
             )?,
-            OperatorTerm::new(
+            OperatorSpec::new(
                 "|+-",
                 bonds
                     .clone()
                     .map(|site| Coupling::new(-1.0, vec![site, site + 1])),
             )?,
-            OperatorTerm::new(
+            OperatorSpec::new(
                 "|-+",
                 bonds.map(|site| Coupling::new(1.0, vec![site, site + 1])),
             )?,
-            OperatorTerm::new(
+            OperatorSpec::new(
                 "n|n",
                 (0..sites).map(|site| Coupling::new(4.0, vec![site, site])),
             )?,
@@ -293,14 +319,7 @@ fn spinful_hubbard() -> Result<Observation, QmbedError> {
         .build(PublicMatrixFormat::Csc)?;
     let result = eigsh(
         &hamiltonian,
-        EigshOptions {
-            eigenpairs: 6,
-            target: SpectrumTarget::SmallestAlgebraic,
-            krylov_dimension: Some(160),
-            tolerance: 1.0e-9,
-            max_iterations: 192,
-            seed: 37,
-        },
+        selected_spectrum_options(6, SpectrumTarget::SmallestAlgebraic, 160, 1.0e-9, 192, 37),
     )?;
     Ok(observation().metric("residual", maximum_residual(&result.residuals)))
 }
@@ -315,19 +334,19 @@ fn interacting_ssh() -> Result<Observation, QmbedError> {
     let bonds = 0..(sites - 1);
     let hamiltonian = OperatorBuilder::on(&basis)
         .terms([
-            OperatorTerm::new(
+            OperatorSpec::new(
                 "+-",
                 bonds
                     .clone()
                     .map(|site| Coupling::new(-hopping(site), vec![site, site + 1])),
             )?,
-            OperatorTerm::new(
+            OperatorSpec::new(
                 "-+",
                 bonds
                     .clone()
                     .map(|site| Coupling::new(hopping(site), vec![site, site + 1])),
             )?,
-            OperatorTerm::new(
+            OperatorSpec::new(
                 "nn",
                 bonds.map(|site| Coupling::new(2.0, vec![site, site + 1])),
             )?,
@@ -335,14 +354,7 @@ fn interacting_ssh() -> Result<Observation, QmbedError> {
         .build(PublicMatrixFormat::Csc)?;
     let result = eigsh(
         &hamiltonian,
-        EigshOptions {
-            eigenpairs: 6,
-            target: SpectrumTarget::SmallestAlgebraic,
-            krylov_dimension: Some(160),
-            tolerance: 1.0e-9,
-            max_iterations: 192,
-            seed: 41,
-        },
+        selected_spectrum_options(6, SpectrumTarget::SmallestAlgebraic, 160, 1.0e-9, 192, 41),
     )?;
     Ok(observation().metric("residual", maximum_residual(&result.residuals)))
 }
@@ -355,14 +367,7 @@ fn translation_sector_xxz() -> Result<Observation, QmbedError> {
         .build(PublicMatrixFormat::Csc)?;
     let result = eigsh(
         &hamiltonian,
-        EigshOptions {
-            eigenpairs: 4,
-            target: SpectrumTarget::SmallestAlgebraic,
-            krylov_dimension: Some(96),
-            tolerance: 1.0e-8,
-            max_iterations: 128,
-            seed: 31,
-        },
+        selected_spectrum_options(4, SpectrumTarget::SmallestAlgebraic, 96, 1.0e-8, 128, 31),
     )?;
     Ok(observation().metric("residual", maximum_residual(&result.residuals)))
 }
@@ -372,13 +377,13 @@ fn tfim_fidelity_scan() -> Result<Observation, QmbedError> {
     let basis = SpinBasis1D::builder(sites).pauli(true).build()?;
     require_dimension(basis.len(), 65_536)?;
     let interaction = OperatorBuilder::on(&basis)
-        .term(OperatorTerm::new(
+        .term(OperatorSpec::new(
             "zz",
             (0..sites).map(|site| Coupling::new(-1.0, vec![site, (site + 1) % sites])),
         )?)
         .build(PublicMatrixFormat::Csc)?;
     let field_operator = OperatorBuilder::on(&basis)
-        .term(OperatorTerm::new(
+        .term(OperatorSpec::new(
             "x",
             (0..sites).map(|site| Coupling::new(-1.0, vec![site])),
         )?)
@@ -396,14 +401,14 @@ fn tfim_fidelity_scan() -> Result<Observation, QmbedError> {
             operator_plan.evaluate_coefficients(&[Complex64::new(1.0, 0.0), c(field)])?;
         let result = eigsh_with_workspace(
             hamiltonian,
-            EigshOptions {
-                eigenpairs: 2,
-                target: SpectrumTarget::SmallestAlgebraic,
-                krylov_dimension: Some(100),
-                tolerance: 1.0e-9,
-                max_iterations: 128,
-                seed: 43 + field_index as u64,
-            },
+            selected_spectrum_options(
+                2,
+                SpectrumTarget::SmallestAlgebraic,
+                100,
+                1.0e-9,
+                128,
+                43 + field_index as u64,
+            ),
             &mut eigsh_workspace,
         )?;
         residual = residual.max(maximum_residual(&result.residuals));
@@ -441,7 +446,7 @@ fn pxp_revival() -> Result<Observation, QmbedError> {
         .build()?;
     require_dimension(basis.len(), 103_682)?;
     let hamiltonian = OperatorBuilder::on(&basis)
-        .term(OperatorTerm::new(
+        .term(OperatorSpec::new(
             "x",
             (0..sites).map(|site| Coupling::new(1.0, vec![site])),
         )?)
@@ -455,13 +460,7 @@ fn pxp_revival() -> Result<Observation, QmbedError> {
     let (trajectory, diagnostics) = evolve_with_diagnostics(
         &hamiltonian,
         &initial,
-        EvolutionOptions {
-            times: vec![0.0, 2.4, 4.8, 7.2, 9.6],
-            krylov_dimension: 100,
-            tolerance: 1.0e-9,
-            max_substeps: 100,
-            hamiltonian: true,
-        },
+        evolution_options([0.0, 2.4, 4.8, 7.2, 9.6], 100, 1.0e-9, 100),
     )?;
     let norm_error = trajectory
         .states
@@ -489,23 +488,23 @@ fn bose_hubbard_mott_quench() -> Result<Observation, QmbedError> {
     let bonds = 0..(sites - 1);
     let hamiltonian = OperatorBuilder::on(&basis)
         .terms([
-            OperatorTerm::new(
+            OperatorSpec::new(
                 "+-",
                 bonds
                     .clone()
                     .map(|site| Coupling::new(-0.1, vec![site, site + 1])),
             )?,
-            OperatorTerm::new(
+            OperatorSpec::new(
                 "-+",
                 bonds
                     .clone()
                     .map(|site| Coupling::new(-0.1, vec![site, site + 1])),
             )?,
-            OperatorTerm::new(
+            OperatorSpec::new(
                 "nn",
                 (0..sites).map(|site| Coupling::new(0.5, vec![site, site])),
             )?,
-            OperatorTerm::new("n", (0..sites).map(|site| Coupling::new(-0.5, vec![site])))?,
+            OperatorSpec::new("n", (0..sites).map(|site| Coupling::new(-0.5, vec![site])))?,
         ])
         .build(PublicMatrixFormat::Csc)?;
     let mut mott = 0_u128;
@@ -520,13 +519,7 @@ fn bose_hubbard_mott_quench() -> Result<Observation, QmbedError> {
     let (trajectory, diagnostics) = evolve_with_diagnostics(
         &hamiltonian,
         &initial,
-        EvolutionOptions {
-            times: vec![0.0, 25.0, 50.0, 100.0, 200.0],
-            krylov_dimension: 100,
-            tolerance: 1.0e-9,
-            max_substeps: 1_000,
-            hamiltonian: true,
-        },
+        evolution_options([0.0, 25.0, 50.0, 100.0, 200.0], 100, 1.0e-9, 1_000),
     )?;
     let norm_error = trajectory
         .states
@@ -545,36 +538,36 @@ fn bose_hubbard_mott_quench() -> Result<Observation, QmbedError> {
     )
 }
 
-fn spinful_kinetic_terms(sites: usize) -> Result<[OperatorTerm; 4], QmbedError> {
+fn spinful_kinetic_terms(sites: usize) -> Result<[OperatorSpec; 4], QmbedError> {
     let bonds = 0..(sites - 1);
     Ok([
-        OperatorTerm::new(
+        OperatorSpec::new(
             "+-|",
             bonds
                 .clone()
                 .map(|site| Coupling::new(-1.0, vec![site, site + 1])),
         )?,
-        OperatorTerm::new(
+        OperatorSpec::new(
             "-+|",
             bonds
                 .clone()
                 .map(|site| Coupling::new(1.0, vec![site, site + 1])),
         )?,
-        OperatorTerm::new(
+        OperatorSpec::new(
             "|+-",
             bonds
                 .clone()
                 .map(|site| Coupling::new(-1.0, vec![site, site + 1])),
         )?,
-        OperatorTerm::new(
+        OperatorSpec::new(
             "|-+",
             bonds.map(|site| Coupling::new(1.0, vec![site, site + 1])),
         )?,
     ])
 }
 
-fn hubbard_interaction(sites: usize, strength: f64) -> Result<OperatorTerm, QmbedError> {
-    OperatorTerm::new(
+fn hubbard_interaction(sites: usize, strength: f64) -> Result<OperatorSpec, QmbedError> {
+    OperatorSpec::new(
         "n|n",
         (0..sites).map(|site| Coupling::new(strength, vec![site, site])),
     )
@@ -589,12 +582,12 @@ fn spinful_hubbard_current_quench() -> Result<Observation, QmbedError> {
     let mut biased_terms = spinful_kinetic_terms(sites)?.to_vec();
     biased_terms.push(hubbard_interaction(sites, 8.0)?);
     biased_terms.extend([
-        OperatorTerm::new(
+        OperatorSpec::new(
             "n|",
             (0..sites)
                 .map(|site| Coupling::new(if site < sites / 2 { -1.5 } else { 1.5 }, vec![site])),
         )?,
-        OperatorTerm::new(
+        OperatorSpec::new(
             "|n",
             (0..sites)
                 .map(|site| Coupling::new(if site < sites / 2 { -1.5 } else { 1.5 }, vec![site])),
@@ -605,14 +598,7 @@ fn spinful_hubbard_current_quench() -> Result<Observation, QmbedError> {
         .build(PublicMatrixFormat::Csc)?;
     let ground = eigsh(
         &biased,
-        EigshOptions {
-            eigenpairs: 1,
-            target: SpectrumTarget::SmallestAlgebraic,
-            krylov_dimension: Some(200),
-            tolerance: 1.0e-9,
-            max_iterations: 240,
-            seed: 53,
-        },
+        selected_spectrum_options(1, SpectrumTarget::SmallestAlgebraic, 200, 1.0e-9, 240, 53),
     )?;
     let mut unbiased_terms = spinful_kinetic_terms(sites)?.to_vec();
     unbiased_terms.push(hubbard_interaction(sites, 8.0)?);
@@ -623,22 +609,16 @@ fn spinful_hubbard_current_quench() -> Result<Observation, QmbedError> {
     let minus_i = Complex64::new(0.0, -1.0);
     let current = OperatorBuilder::on(&basis)
         .terms([
-            OperatorTerm::new("+-|", [Coupling::new(minus_i, vec![center, center + 1])])?,
-            OperatorTerm::new("-+|", [Coupling::new(minus_i, vec![center, center + 1])])?,
-            OperatorTerm::new("|+-", [Coupling::new(minus_i, vec![center, center + 1])])?,
-            OperatorTerm::new("|-+", [Coupling::new(minus_i, vec![center, center + 1])])?,
+            OperatorSpec::new("+-|", [Coupling::new(minus_i, vec![center, center + 1])])?,
+            OperatorSpec::new("-+|", [Coupling::new(minus_i, vec![center, center + 1])])?,
+            OperatorSpec::new("|+-", [Coupling::new(minus_i, vec![center, center + 1])])?,
+            OperatorSpec::new("|-+", [Coupling::new(minus_i, vec![center, center + 1])])?,
         ])
         .build(PublicMatrixFormat::Csc)?;
     let trajectory = evolve(
         &unbiased,
         &ground.eigenvectors[0],
-        EvolutionOptions {
-            times: vec![0.0, 0.5, 1.0, 1.5, 2.0],
-            krylov_dimension: 100,
-            tolerance: 1.0e-9,
-            max_substeps: 100,
-            hamiltonian: true,
-        },
+        evolution_options([0.0, 0.5, 1.0, 1.5, 2.0], 100, 1.0e-9, 100),
     )?;
     let mut maximum_current = 0.0_f64;
     let mut applied = vec![c(0.0); basis.len()];
@@ -662,7 +642,7 @@ fn conb_dynamical_structure_factor() -> Result<Observation, QmbedError> {
     require_dimension(basis.len(), 65_536)?;
     let transverse_field = 3.21 * 0.057_883_8 * 7.0 / 2.88;
     let bonds = |distance: usize, coefficient: f64, operator: &str| {
-        OperatorTerm::new(
+        OperatorSpec::new(
             operator,
             (0..sites)
                 .map(move |site| Coupling::new(coefficient, vec![site, (site + distance) % sites])),
@@ -676,7 +656,7 @@ fn conb_dynamical_structure_factor() -> Result<Observation, QmbedError> {
             bonds(2, 0.135, "zz")?,
             bonds(2, 0.003, "xx")?,
             bonds(2, 0.003, "yy")?,
-            OperatorTerm::new(
+            OperatorSpec::new(
                 "x",
                 (0..sites).map(|site| Coupling::new(-transverse_field, vec![site])),
             )?,
@@ -684,17 +664,10 @@ fn conb_dynamical_structure_factor() -> Result<Observation, QmbedError> {
         .build(PublicMatrixFormat::Csc)?;
     let ground = eigsh(
         &hamiltonian,
-        EigshOptions {
-            eigenpairs: 1,
-            target: SpectrumTarget::SmallestAlgebraic,
-            krylov_dimension: Some(180),
-            tolerance: 1.0e-9,
-            max_iterations: 220,
-            seed: 59,
-        },
+        selected_spectrum_options(1, SpectrumTarget::SmallestAlgebraic, 180, 1.0e-9, 220, 59),
     )?;
     let spin_q = OperatorBuilder::on(&basis)
-        .term(OperatorTerm::new(
+        .term(OperatorSpec::new(
             "z",
             (0..sites)
                 .map(|site| Coupling::new(if site % 2 == 0 { 1.0 } else { -1.0 }, vec![site])),
@@ -704,15 +677,15 @@ fn conb_dynamical_structure_factor() -> Result<Observation, QmbedError> {
         &hamiltonian,
         &ground.eigenvectors[0],
         &spin_q,
-        SpectrumOptions {
-            frequencies: (0..=80)
+        response_options(
+            (0..=80)
                 .map(|index| 4.0 * f64::from(index) / 80.0)
-                .collect(),
-            reference_energy: ground.eigenvalues[0],
-            broadening: 0.05,
-            krylov_dimension: 100,
-            tolerance: 1.0e-9,
-        },
+                .collect::<Vec<_>>(),
+            ground.eigenvalues[0],
+            0.05,
+            100,
+            1.0e-9,
+        ),
     )?;
     let finite_fraction = usize_as_f64(spectrum.iter().filter(|value| value.is_finite()).count())?
         / usize_as_f64(spectrum.len())?;
@@ -759,19 +732,19 @@ fn particle_addition_spectrum() -> Result<Observation, QmbedError> {
     }
     let hamiltonian_terms = || {
         Ok::<_, QmbedError>([
-            OperatorTerm::new(
+            OperatorSpec::new(
                 "+-",
                 bonds
                     .iter()
                     .map(|&(left, right)| Coupling::new(-1.0, vec![left, right])),
             )?,
-            OperatorTerm::new(
+            OperatorSpec::new(
                 "-+",
                 bonds
                     .iter()
                     .map(|&(left, right)| Coupling::new(1.0, vec![left, right])),
             )?,
-            OperatorTerm::new(
+            OperatorSpec::new(
                 "nn",
                 bonds
                     .iter()
@@ -787,17 +760,10 @@ fn particle_addition_spectrum() -> Result<Observation, QmbedError> {
         .build(PublicMatrixFormat::Csc)?;
     let ground = eigsh(
         &source_hamiltonian,
-        EigshOptions {
-            eigenpairs: 1,
-            target: SpectrumTarget::SmallestAlgebraic,
-            krylov_dimension: Some(200),
-            tolerance: 1.0e-9,
-            max_iterations: 240,
-            seed: 61,
-        },
+        selected_spectrum_options(1, SpectrumTarget::SmallestAlgebraic, 200, 1.0e-9, 240, 61),
     )?;
     let probe = OperatorBuilder::between(&source_basis, &target_basis)
-        .term(OperatorTerm::new(
+        .term(OperatorSpec::new(
             "+",
             [Coupling::new(1.0, vec![sites / 2])],
         )?)
@@ -809,15 +775,15 @@ fn particle_addition_spectrum() -> Result<Observation, QmbedError> {
         &target_hamiltonian,
         &ground.eigenvectors[0],
         &probe,
-        SpectrumOptions {
-            frequencies: (0..=80)
+        response_options(
+            (0..=80)
                 .map(|index| -4.0 + 16.0 * f64::from(index) / 80.0)
-                .collect(),
-            reference_energy: ground.eigenvalues[0],
-            broadening: 0.1,
-            krylov_dimension: 100,
-            tolerance: 1.0e-9,
-        },
+                .collect::<Vec<_>>(),
+            ground.eigenvalues[0],
+            0.1,
+            100,
+            1.0e-9,
+        ),
     )?;
     let finite_fraction = usize_as_f64(spectrum.iter().filter(|value| value.is_finite()).count())?
         / usize_as_f64(spectrum.len())?;

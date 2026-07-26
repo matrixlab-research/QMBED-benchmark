@@ -66,6 +66,11 @@ the complete Python-1.0.1 capability denominator are maintained separately in
 surface, semantic, workflow, and scale completion and map every one of the 64
 frozen Python objects to a Rust-native boundary.
 
+The content-addressed bundle therefore retains its pre-0.2 symbol spellings as
+historical provenance. They are not exported QMBED aliases: the current
+adapter, direct workflows, full contract, and oracle tests use only the
+canonical 0.2 Rust names.
+
 Run locally with:
 
 ```bash

@@ -65,7 +65,7 @@ pub trait SymmetryMap<State>: Send + Sync {
     fn apply(&self, state: State) -> Result<(State, Complex64)>;
 }
 
-pub struct SymmetrySector<State> { /* finite map, character and block order */ }
+pub struct SymmetryReducer<State> { /* finite map, character and block order */ }
 
 pub struct BasisProjector { /* source and reduced shapes plus sparse action */ }
 impl LinearOperator for BasisProjector { /* projected action */ }
@@ -131,7 +131,7 @@ pub trait TimeDependentOperator: Send + Sync {
 The required operator objects are:
 
 ```rust
-OperatorTerm
+OperatorSpec
 DynamicTerm
 OperatorBuilder<Source, Target>
 Operator
@@ -180,7 +180,7 @@ pub fn lanczos_iter<'a>(op: &'a impl LinearOperator,
     -> Result<impl Iterator<Item = Result<LanczosVector>> + 'a>;
 
 pub fn expm_multiply(op: &impl LinearOperator, initial: &[Complex64],
-    options: ExpmOptions) -> Result<StateTrajectory>;
+    options: EvolutionOptions) -> Result<StateTrajectory>;
 
 pub fn evolve<G: EvolutionGenerator>(generator: &G,
     initial: StateBatchRef<'_>, options: EvolutionOptions)
@@ -287,7 +287,7 @@ does not execute serialized code or callbacks.
 
 ## Error contract
 
-All recoverable public failures return `Result<T, QuSpinError>`. Stable
+All recoverable public failures return `Result<T, QmbedError>`. Stable
 categories cover invalid operators/couplings/sites, unavailable states or
 sectors, incompatible symmetry, non-Hermitian input, invalid options,
 dimension mismatch, rank deficiency, unsupported backends/formats, archive

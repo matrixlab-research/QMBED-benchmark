@@ -45,7 +45,7 @@ fn catalog_forces_basis_and_algorithm_breadth() {
         Capability::SpinlessFermionBasis,
         Capability::SpinfulFermionBasis,
         Capability::UserBasis,
-        Capability::SymmetrySector,
+        Capability::SymmetryReducer,
         Capability::CscAssembly,
         Capability::ShiftInvert,
         Capability::KrylovEvolution,

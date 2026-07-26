@@ -1,4 +1,4 @@
-# Proposed Rust QuSpin API contract
+# Rust QMBED API contract
 
 Status: implemented paper-workflow core and bootstrap design for the full Rust
 package.
@@ -34,16 +34,16 @@ for spin, boson, fermion, symmetry-resolved, and future GPU/MPI implementations.
 ## Proposed public modules
 
 ```text
-quspin/
+qmbed/
   basis        Basis, SpinBasis1D, BosonBasis1D, SpinlessFermionBasis1D,
                SpinfulFermionBasis1D, PhotonBasis, TensorBasis, UserBasis
-  operator     OperatorTerm, HamiltonianBuilder, Hamiltonian, MatrixFormat,
+  operator     OperatorSpec, OperatorBuilder, Hamiltonian, MatrixFormat,
                LinearOperator, operator_matrix, sector-changing operators
   solve        eigsh, lanczos, expm_multiply, evolve
   dynamics     Floquet, dynamical_correlator, spectral_function
   measure      expectation, entanglement_entropy, diagonal_ensemble
   workflow     subspace_fidelity, track_eigenspaces, LindbladGenerator
-  error        QuSpinError, Result
+  error        QmbedError, Result
 ```
 
 ## Core interfaces
@@ -85,16 +85,16 @@ evolution, spectrum, and Lindblad code works with dense, CSC, CSR, DIA, or a
 matrix-free operator. Materialization is explicit:
 
 ```rust
-let h = HamiltonianBuilder::new(&basis)
-    .terms(terms)?
-    .checks(Checks::all())
+let h = OperatorBuilder::on(&basis)
+    .terms(terms)
+    .checks(AssemblyChecks::all())
     .build(MatrixFormat::Csc)?;
 
 let eigenpairs = eigsh(
     &h,
     EigshOptions::smallest_algebraic(6)
-        .tolerance(1e-9)
-        .krylov_dimension(32),
+        .with_tolerance(1e-9)
+        .with_krylov_dimension(32),
 )?;
 ```
 
@@ -125,9 +125,9 @@ PXP-only CSC constructor would pass one benchmark but fail the architecture.
 
 ```rust
 let terms = vec![
-    OperatorTerm::new("+-", hopping_forward)?,
-    OperatorTerm::new("-+", hopping_backward)?,
-    OperatorTerm::new("zz", interactions)?,
+    OperatorSpec::new("+-", hopping_forward)?,
+    OperatorSpec::new("-+", hopping_backward)?,
+    OperatorSpec::new("zz", interactions)?,
 ];
 ```
 
@@ -175,7 +175,7 @@ Important semantic requirements:
 
 ## Error model
 
-All fallible public operations return `Result<T, QuSpinError>`. The minimum
+All fallible public operations return `Result<T, QmbedError>`. The minimum
 stable categories are:
 
 - invalid operator string or coupling arity;
@@ -231,18 +231,18 @@ report without special cases.
 |---|---|
 | `SpinBasis1D(...)` | `SpinBasis1D::builder(...).build()?` |
 | `UserBasis(...; states=...)` | `UserBasis::builder(...).state_filter(...).operator(...).build()?` |
-| `OperatorTerm(opstr, couplings)` | `OperatorTerm::new(opstr, couplings)?` |
-| `Hamiltonian(basis, terms; static_fmt=:csc)` | `HamiltonianBuilder::new(&basis).terms(terms)?.build(MatrixFormat::Csc)?` |
+| `OperatorSpec(opstr, couplings)` | `OperatorSpec::new(opstr, couplings)?` |
+| `Hamiltonian(basis, terms; static_fmt=:csc)` | `OperatorBuilder::on(&basis).terms(terms).build(MatrixFormat::Csc)?` |
 | `H * vector` | `LinearOperator::apply(&h, input, output)?` |
-| `eigsh(H; ...)` | `eigsh(&h, EigshOptions { ... })?` |
-| `lanczos_full` + `expm_lanczos` | `evolve(&h, &psi0, EvolutionOptions { ... })?` |
+| `eigsh(H; ...)` | `eigsh(&h, EigshOptions::new(k, target).with_tolerance(tol))?` |
+| `lanczos_full` + `expm_lanczos` | `evolve(&h, &psi0, EvolutionOptions::new(times))?` |
 | `track_eigenspaces` | `track_eigenspaces(&subspaces)?` |
 | `spectral_function` | `spectral_function(&h, &source, &probe, options)?` |
 | `LindbladGenerator` | matrix-free `LindbladGenerator` implementing `LinearOperator` |
 
 ## Staged implementation
 
-1. Implement spin bases, `OperatorTerm`, universal COO-to-CSC assembly,
+1. Implement spin bases, `OperatorSpec`, universal COO-to-CSC assembly,
    `LinearOperator`, matvec, and low-energy `eigsh`.
 2. Add fermion/boson/user bases without changing solver interfaces.
 3. Add Krylov evolution, Floquet, subspace tracking, and spectra.
