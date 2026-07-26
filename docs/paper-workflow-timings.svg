@@ -4,78 +4,82 @@
 <desc id="chart-desc">Overlaid horizontal bars compare Python QuSpin and Julia QuSpin median wall times for twelve paper-shaped workflows. Each row directly labels whether Julia is faster, slower, or at parity.</desc>
 <rect width="100%" height="100%" rx="12" fill="#ffffff"/>
 <text class="chart-heading" x="28" y="46" font-family="system-ui, sans-serif" font-size="28" font-weight="700" fill="#172033">Twelve paper-workflow end-to-end timings</text>
-<text class="chart-subtitle" x="28" y="78" font-family="system-ui, sans-serif" font-size="15" fill="#596579">GitHub Actions run 30077646355 · matrixlab-research/QuSpin.jl@main · median wall time, lower is better</text>
+<text class="chart-subtitle" x="28" y="78" font-family="system-ui, sans-serif" font-size="15" fill="#596579">GitHub Actions run 30185875991 · matrixlab-research/QuSpin.jl@b6ffdc9fe486 · median wall time, lower is better</text>
 <rect x="28" y="98" width="24" height="16" rx="3" fill="#377eb8"/>
 <text class="legend-label" x="62" y="112" font-family="system-ui, sans-serif" font-size="15" fill="#344054">Python QuSpin</text>
 <rect x="202" y="98" width="24" height="16" rx="3" fill="#e76f51"/>
 <text class="legend-label" x="236" y="112" font-family="system-ui, sans-serif" font-size="15" fill="#344054">Julia QuSpin</text>
 <line x1="350.00" y1="152" x2="350.00" y2="960" stroke="#e6e9ef" stroke-width="1"/>
 <text class="tick-label" x="350.00" y="986" text-anchor="middle" font-family="system-ui, sans-serif" font-size="14" fill="#667085">0</text>
-<line x1="545.00" y1="152" x2="545.00" y2="960" stroke="#e6e9ef" stroke-width="1"/>
-<text class="tick-label" x="545.00" y="986" text-anchor="middle" font-family="system-ui, sans-serif" font-size="14" fill="#667085">2000</text>
-<line x1="740.00" y1="152" x2="740.00" y2="960" stroke="#e6e9ef" stroke-width="1"/>
-<text class="tick-label" x="740.00" y="986" text-anchor="middle" font-family="system-ui, sans-serif" font-size="14" fill="#667085">4000</text>
+<line x1="467.00" y1="152" x2="467.00" y2="960" stroke="#e6e9ef" stroke-width="1"/>
+<text class="tick-label" x="467.00" y="986" text-anchor="middle" font-family="system-ui, sans-serif" font-size="14" fill="#667085">2000</text>
+<line x1="584.00" y1="152" x2="584.00" y2="960" stroke="#e6e9ef" stroke-width="1"/>
+<text class="tick-label" x="584.00" y="986" text-anchor="middle" font-family="system-ui, sans-serif" font-size="14" fill="#667085">4000</text>
+<line x1="701.00" y1="152" x2="701.00" y2="960" stroke="#e6e9ef" stroke-width="1"/>
+<text class="tick-label" x="701.00" y="986" text-anchor="middle" font-family="system-ui, sans-serif" font-size="14" fill="#667085">6000</text>
+<line x1="818.00" y1="152" x2="818.00" y2="960" stroke="#e6e9ef" stroke-width="1"/>
+<text class="tick-label" x="818.00" y="986" text-anchor="middle" font-family="system-ui, sans-serif" font-size="14" fill="#667085">8000</text>
 <line x1="935.00" y1="152" x2="935.00" y2="960" stroke="#e6e9ef" stroke-width="1"/>
-<text class="tick-label" x="935.00" y="986" text-anchor="middle" font-family="system-ui, sans-serif" font-size="14" fill="#667085">6000</text>
+<text class="tick-label" x="935.00" y="986" text-anchor="middle" font-family="system-ui, sans-serif" font-size="14" fill="#667085">10000</text>
 <text class="axis-label" x="642.50" y="1018" text-anchor="middle" font-family="system-ui, sans-serif" font-size="15" fill="#475467">median wall time (ms)</text>
 <text class="workflow-label" x="334" y="202.00" text-anchor="end" font-family="system-ui, sans-serif" font-size="15" font-weight="600" fill="#283548">MBL mid-spectrum shift-invert</text>
-<rect class="python-bar" data-case-id="paper_mbl_shift_invert_l14" data-center-y="197.00" x="350" y="182.00" width="32.93" height="30" rx="4" fill="#377eb8"><title>Python: 337.771 ms</title></rect>
-<rect class="julia-bar" data-case-id="paper_mbl_shift_invert_l14" data-center-y="197.00" x="350" y="189.00" width="12.63" height="16" rx="4" fill="#e76f51"><title>Julia: 129.583 ms</title></rect>
-<text class="speedup-label faster" data-case-id="paper_mbl_shift_invert_l14" x="953.00" y="194.00" font-family="system-ui, sans-serif" font-size="15" font-weight="600" fill="#344054">Julia 2.61× faster</text>
-<text class="timing-label" data-case-id="paper_mbl_shift_invert_l14" x="953.00" y="214.00" font-family="ui-monospace, SFMono-Regular, monospace" font-size="13" fill="#667085">P 337.8 · J 129.6 ms</text>
+<rect class="python-bar" data-case-id="paper_mbl_shift_invert_l14" data-center-y="197.00" x="350" y="182.00" width="22.56" height="30" rx="4" fill="#377eb8"><title>Python: 385.703 ms</title></rect>
+<rect class="julia-bar" data-case-id="paper_mbl_shift_invert_l14" data-center-y="197.00" x="350" y="189.00" width="7.78" height="16" rx="4" fill="#e76f51"><title>Julia: 133.005 ms</title></rect>
+<text class="speedup-label faster" data-case-id="paper_mbl_shift_invert_l14" x="953.00" y="194.00" font-family="system-ui, sans-serif" font-size="15" font-weight="600" fill="#344054">Julia 2.90× faster</text>
+<text class="timing-label" data-case-id="paper_mbl_shift_invert_l14" x="953.00" y="214.00" font-family="ui-monospace, SFMono-Regular, monospace" font-size="13" fill="#667085">P 385.7 · J 133.0 ms</text>
 <text class="workflow-label" x="334" y="268.00" text-anchor="end" font-family="system-ui, sans-serif" font-size="15" font-weight="600" fill="#283548">XXZ Lanczos quench</text>
-<rect class="python-bar" data-case-id="paper_xxz_lanczos_quench_l16" data-center-y="263.00" x="350" y="248.00" width="24.49" height="30" rx="4" fill="#377eb8"><title>Python: 251.228 ms</title></rect>
-<rect class="julia-bar" data-case-id="paper_xxz_lanczos_quench_l16" data-center-y="263.00" x="350" y="255.00" width="18.28" height="16" rx="4" fill="#e76f51"><title>Julia: 187.451 ms</title></rect>
-<text class="speedup-label faster" data-case-id="paper_xxz_lanczos_quench_l16" x="953.00" y="260.00" font-family="system-ui, sans-serif" font-size="15" font-weight="600" fill="#344054">Julia 1.34× faster</text>
-<text class="timing-label" data-case-id="paper_xxz_lanczos_quench_l16" x="953.00" y="280.00" font-family="ui-monospace, SFMono-Regular, monospace" font-size="13" fill="#667085">P 251.2 · J 187.5 ms</text>
+<rect class="python-bar" data-case-id="paper_xxz_lanczos_quench_l16" data-center-y="263.00" x="350" y="248.00" width="27.07" height="30" rx="4" fill="#377eb8"><title>Python: 462.671 ms</title></rect>
+<rect class="julia-bar" data-case-id="paper_xxz_lanczos_quench_l16" data-center-y="263.00" x="350" y="255.00" width="23.56" height="16" rx="4" fill="#e76f51"><title>Julia: 402.661 ms</title></rect>
+<text class="speedup-label faster" data-case-id="paper_xxz_lanczos_quench_l16" x="953.00" y="260.00" font-family="system-ui, sans-serif" font-size="15" font-weight="600" fill="#344054">Julia 1.15× faster</text>
+<text class="timing-label" data-case-id="paper_xxz_lanczos_quench_l16" x="953.00" y="280.00" font-family="ui-monospace, SFMono-Regular, monospace" font-size="13" fill="#667085">P 462.7 · J 402.7 ms</text>
 <text class="workflow-label" x="334" y="334.00" text-anchor="end" font-family="system-ui, sans-serif" font-size="15" font-weight="600" fill="#283548">Floquet heating full unitary</text>
-<rect class="python-bar" data-case-id="paper_floquet_heating_l9" data-center-y="329.00" x="350" y="314.00" width="46.56" height="30" rx="4" fill="#377eb8"><title>Python: 477.552 ms</title></rect>
-<rect class="julia-bar" data-case-id="paper_floquet_heating_l9" data-center-y="329.00" x="350" y="321.00" width="37.22" height="16" rx="4" fill="#e76f51"><title>Julia: 381.704 ms</title></rect>
-<text class="speedup-label faster" data-case-id="paper_floquet_heating_l9" x="953.00" y="326.00" font-family="system-ui, sans-serif" font-size="15" font-weight="600" fill="#344054">Julia 1.25× faster</text>
-<text class="timing-label" data-case-id="paper_floquet_heating_l9" x="953.00" y="346.00" font-family="ui-monospace, SFMono-Regular, monospace" font-size="13" fill="#667085">P 477.6 · J 381.7 ms</text>
+<rect class="python-bar" data-case-id="paper_floquet_heating_l9" data-center-y="329.00" x="350" y="314.00" width="35.00" height="30" rx="4" fill="#377eb8"><title>Python: 598.324 ms</title></rect>
+<rect class="julia-bar" data-case-id="paper_floquet_heating_l9" data-center-y="329.00" x="350" y="321.00" width="25.71" height="16" rx="4" fill="#e76f51"><title>Julia: 439.564 ms</title></rect>
+<text class="speedup-label faster" data-case-id="paper_floquet_heating_l9" x="953.00" y="326.00" font-family="system-ui, sans-serif" font-size="15" font-weight="600" fill="#344054">Julia 1.36× faster</text>
+<text class="timing-label" data-case-id="paper_floquet_heating_l9" x="953.00" y="346.00" font-family="ui-monospace, SFMono-Regular, monospace" font-size="13" fill="#667085">P 598.3 · J 439.6 ms</text>
 <text class="workflow-label" x="334" y="400.00" text-anchor="end" font-family="system-ui, sans-serif" font-size="15" font-weight="600" fill="#283548">Spinful Hubbard low-energy spectrum</text>
-<rect class="python-bar" data-case-id="paper_spinful_hubbard_l8" data-center-y="395.00" x="350" y="380.00" width="4.34" height="30" rx="4" fill="#377eb8"><title>Python: 44.547 ms</title></rect>
-<rect class="julia-bar" data-case-id="paper_spinful_hubbard_l8" data-center-y="395.00" x="350" y="387.00" width="3.56" height="16" rx="4" fill="#e76f51"><title>Julia: 36.521 ms</title></rect>
-<text class="speedup-label faster" data-case-id="paper_spinful_hubbard_l8" x="953.00" y="392.00" font-family="system-ui, sans-serif" font-size="15" font-weight="600" fill="#344054">Julia 1.22× faster</text>
-<text class="timing-label" data-case-id="paper_spinful_hubbard_l8" x="953.00" y="412.00" font-family="ui-monospace, SFMono-Regular, monospace" font-size="13" fill="#667085">P 44.5 · J 36.5 ms</text>
+<rect class="python-bar" data-case-id="paper_spinful_hubbard_l8" data-center-y="395.00" x="350" y="380.00" width="3.00" height="30" rx="4" fill="#377eb8"><title>Python: 51.231 ms</title></rect>
+<rect class="julia-bar" data-case-id="paper_spinful_hubbard_l8" data-center-y="395.00" x="350" y="387.00" width="2.13" height="16" rx="4" fill="#e76f51"><title>Julia: 36.354 ms</title></rect>
+<text class="speedup-label faster" data-case-id="paper_spinful_hubbard_l8" x="953.00" y="392.00" font-family="system-ui, sans-serif" font-size="15" font-weight="600" fill="#344054">Julia 1.41× faster</text>
+<text class="timing-label" data-case-id="paper_spinful_hubbard_l8" x="953.00" y="412.00" font-family="ui-monospace, SFMono-Regular, monospace" font-size="13" fill="#667085">P 51.2 · J 36.4 ms</text>
 <text class="workflow-label" x="334" y="466.00" text-anchor="end" font-family="system-ui, sans-serif" font-size="15" font-weight="600" fill="#283548">Interacting SSH low-energy spectrum</text>
-<rect class="python-bar" data-case-id="paper_interacting_ssh_l16" data-center-y="461.00" x="350" y="446.00" width="7.89" height="30" rx="4" fill="#377eb8"><title>Python: 80.917 ms</title></rect>
-<rect class="julia-bar" data-case-id="paper_interacting_ssh_l16" data-center-y="461.00" x="350" y="453.00" width="6.27" height="16" rx="4" fill="#e76f51"><title>Julia: 64.335 ms</title></rect>
-<text class="speedup-label faster" data-case-id="paper_interacting_ssh_l16" x="953.00" y="458.00" font-family="system-ui, sans-serif" font-size="15" font-weight="600" fill="#344054">Julia 1.26× faster</text>
-<text class="timing-label" data-case-id="paper_interacting_ssh_l16" x="953.00" y="478.00" font-family="ui-monospace, SFMono-Regular, monospace" font-size="13" fill="#667085">P 80.9 · J 64.3 ms</text>
+<rect class="python-bar" data-case-id="paper_interacting_ssh_l16" data-center-y="461.00" x="350" y="446.00" width="6.18" height="30" rx="4" fill="#377eb8"><title>Python: 105.670 ms</title></rect>
+<rect class="julia-bar" data-case-id="paper_interacting_ssh_l16" data-center-y="461.00" x="350" y="453.00" width="5.96" height="16" rx="4" fill="#e76f51"><title>Julia: 101.831 ms</title></rect>
+<text class="speedup-label faster" data-case-id="paper_interacting_ssh_l16" x="953.00" y="458.00" font-family="system-ui, sans-serif" font-size="15" font-weight="600" fill="#344054">Julia 1.04× faster</text>
+<text class="timing-label" data-case-id="paper_interacting_ssh_l16" x="953.00" y="478.00" font-family="ui-monospace, SFMono-Regular, monospace" font-size="13" fill="#667085">P 105.7 · J 101.8 ms</text>
 <text class="workflow-label" x="334" y="532.00" text-anchor="end" font-family="system-ui, sans-serif" font-size="15" font-weight="600" fill="#283548">Translation-sector XXZ spectrum</text>
-<rect class="python-bar" data-case-id="paper_translation_xxz_l18" data-center-y="527.00" x="350" y="512.00" width="5.12" height="30" rx="4" fill="#377eb8"><title>Python: 52.560 ms</title></rect>
-<rect class="julia-bar" data-case-id="paper_translation_xxz_l18" data-center-y="527.00" x="350" y="519.00" width="6.23" height="16" rx="4" fill="#e76f51"><title>Julia: 63.877 ms</title></rect>
-<text class="speedup-label slower" data-case-id="paper_translation_xxz_l18" x="953.00" y="524.00" font-family="system-ui, sans-serif" font-size="15" font-weight="600" fill="#344054">Julia 1.22× slower</text>
-<text class="timing-label" data-case-id="paper_translation_xxz_l18" x="953.00" y="544.00" font-family="ui-monospace, SFMono-Regular, monospace" font-size="13" fill="#667085">P 52.6 · J 63.9 ms</text>
+<rect class="python-bar" data-case-id="paper_translation_xxz_l18" data-center-y="527.00" x="350" y="512.00" width="2.90" height="30" rx="4" fill="#377eb8"><title>Python: 49.554 ms</title></rect>
+<rect class="julia-bar" data-case-id="paper_translation_xxz_l18" data-center-y="527.00" x="350" y="519.00" width="4.11" height="16" rx="4" fill="#e76f51"><title>Julia: 70.290 ms</title></rect>
+<text class="speedup-label slower" data-case-id="paper_translation_xxz_l18" x="953.00" y="524.00" font-family="system-ui, sans-serif" font-size="15" font-weight="600" fill="#344054">Julia 1.42× slower</text>
+<text class="timing-label" data-case-id="paper_translation_xxz_l18" x="953.00" y="544.00" font-family="ui-monospace, SFMono-Regular, monospace" font-size="13" fill="#667085">P 49.6 · J 70.3 ms</text>
 <text class="workflow-label" x="334" y="598.00" text-anchor="end" font-family="system-ui, sans-serif" font-size="15" font-weight="600" fill="#283548">TFIM degenerate-subspace fidelity scan</text>
-<rect class="python-bar" data-case-id="paper_tfim_fidelity_l16" data-center-y="593.00" x="350" y="578.00" width="162.79" height="30" rx="4" fill="#377eb8"><title>Python: 1669.664 ms</title></rect>
-<rect class="julia-bar" data-case-id="paper_tfim_fidelity_l16" data-center-y="593.00" x="350" y="585.00" width="169.40" height="16" rx="4" fill="#e76f51"><title>Julia: 1737.477 ms</title></rect>
-<text class="speedup-label slower" data-case-id="paper_tfim_fidelity_l16" x="953.00" y="590.00" font-family="system-ui, sans-serif" font-size="15" font-weight="600" fill="#344054">Julia 1.04× slower</text>
-<text class="timing-label" data-case-id="paper_tfim_fidelity_l16" x="953.00" y="610.00" font-family="ui-monospace, SFMono-Regular, monospace" font-size="13" fill="#667085">P 1669.7 · J 1737.5 ms</text>
+<rect class="python-bar" data-case-id="paper_tfim_fidelity_l16" data-center-y="593.00" x="350" y="578.00" width="120.87" height="30" rx="4" fill="#377eb8"><title>Python: 2066.117 ms</title></rect>
+<rect class="julia-bar" data-case-id="paper_tfim_fidelity_l16" data-center-y="593.00" x="350" y="585.00" width="115.40" height="16" rx="4" fill="#e76f51"><title>Julia: 1972.583 ms</title></rect>
+<text class="speedup-label faster" data-case-id="paper_tfim_fidelity_l16" x="953.00" y="590.00" font-family="system-ui, sans-serif" font-size="15" font-weight="600" fill="#344054">Julia 1.05× faster</text>
+<text class="timing-label" data-case-id="paper_tfim_fidelity_l16" x="953.00" y="610.00" font-family="ui-monospace, SFMono-Regular, monospace" font-size="13" fill="#667085">P 2066.1 · J 1972.6 ms</text>
 <text class="workflow-label" x="334" y="664.00" text-anchor="end" font-family="system-ui, sans-serif" font-size="15" font-weight="600" fill="#283548">PXP constrained-state revival</text>
-<rect class="python-bar" data-case-id="paper_pxp_revival_l24" data-center-y="659.00" x="350" y="644.00" width="398.10" height="30" rx="4" fill="#377eb8"><title>Python: 4083.035 ms</title></rect>
-<rect class="julia-bar" data-case-id="paper_pxp_revival_l24" data-center-y="659.00" x="350" y="651.00" width="361.78" height="16" rx="4" fill="#e76f51"><title>Julia: 3710.529 ms</title></rect>
-<text class="speedup-label faster" data-case-id="paper_pxp_revival_l24" x="953.00" y="656.00" font-family="system-ui, sans-serif" font-size="15" font-weight="600" fill="#344054">Julia 1.10× faster</text>
-<text class="timing-label" data-case-id="paper_pxp_revival_l24" x="953.00" y="676.00" font-family="ui-monospace, SFMono-Regular, monospace" font-size="13" fill="#667085">P 4083.0 · J 3710.5 ms</text>
+<rect class="python-bar" data-case-id="paper_pxp_revival_l24" data-center-y="659.00" x="350" y="644.00" width="480.85" height="30" rx="4" fill="#377eb8"><title>Python: 8219.624 ms</title></rect>
+<rect class="julia-bar" data-case-id="paper_pxp_revival_l24" data-center-y="659.00" x="350" y="651.00" width="301.70" height="16" rx="4" fill="#e76f51"><title>Julia: 5157.291 ms</title></rect>
+<text class="speedup-label faster" data-case-id="paper_pxp_revival_l24" x="953.00" y="656.00" font-family="system-ui, sans-serif" font-size="15" font-weight="600" fill="#344054">Julia 1.59× faster</text>
+<text class="timing-label" data-case-id="paper_pxp_revival_l24" x="953.00" y="676.00" font-family="ui-monospace, SFMono-Regular, monospace" font-size="13" fill="#667085">P 8219.6 · J 5157.3 ms</text>
 <text class="workflow-label" x="334" y="730.00" text-anchor="end" font-family="system-ui, sans-serif" font-size="15" font-weight="600" fill="#283548">Bose-Hubbard Mott quench</text>
-<rect class="python-bar" data-case-id="paper_bose_hubbard_quench_l11" data-center-y="725.00" x="350" y="710.00" width="76.58" height="30" rx="4" fill="#377eb8"><title>Python: 785.419 ms</title></rect>
-<rect class="julia-bar" data-case-id="paper_bose_hubbard_quench_l11" data-center-y="725.00" x="350" y="717.00" width="70.26" height="16" rx="4" fill="#e76f51"><title>Julia: 720.665 ms</title></rect>
-<text class="speedup-label faster" data-case-id="paper_bose_hubbard_quench_l11" x="953.00" y="722.00" font-family="system-ui, sans-serif" font-size="15" font-weight="600" fill="#344054">Julia 1.09× faster</text>
-<text class="timing-label" data-case-id="paper_bose_hubbard_quench_l11" x="953.00" y="742.00" font-family="ui-monospace, SFMono-Regular, monospace" font-size="13" fill="#667085">P 785.4 · J 720.7 ms</text>
+<rect class="python-bar" data-case-id="paper_bose_hubbard_quench_l11" data-center-y="725.00" x="350" y="710.00" width="84.55" height="30" rx="4" fill="#377eb8"><title>Python: 1445.223 ms</title></rect>
+<rect class="julia-bar" data-case-id="paper_bose_hubbard_quench_l11" data-center-y="725.00" x="350" y="717.00" width="69.49" height="16" rx="4" fill="#e76f51"><title>Julia: 1187.918 ms</title></rect>
+<text class="speedup-label faster" data-case-id="paper_bose_hubbard_quench_l11" x="953.00" y="722.00" font-family="system-ui, sans-serif" font-size="15" font-weight="600" fill="#344054">Julia 1.22× faster</text>
+<text class="timing-label" data-case-id="paper_bose_hubbard_quench_l11" x="953.00" y="742.00" font-family="ui-monospace, SFMono-Regular, monospace" font-size="13" fill="#667085">P 1445.2 · J 1187.9 ms</text>
 <text class="workflow-label" x="334" y="796.00" text-anchor="end" font-family="system-ui, sans-serif" font-size="15" font-weight="600" fill="#283548">Spinful-Hubbard current quench</text>
-<rect class="python-bar" data-case-id="paper_hubbard_current_l10" data-center-y="791.00" x="350" y="776.00" width="156.74" height="30" rx="4" fill="#377eb8"><title>Python: 1607.570 ms</title></rect>
-<rect class="julia-bar" data-case-id="paper_hubbard_current_l10" data-center-y="791.00" x="350" y="783.00" width="153.53" height="16" rx="4" fill="#e76f51"><title>Julia: 1574.706 ms</title></rect>
-<text class="speedup-label faster" data-case-id="paper_hubbard_current_l10" x="953.00" y="788.00" font-family="system-ui, sans-serif" font-size="15" font-weight="600" fill="#344054">Julia 1.02× faster</text>
-<text class="timing-label" data-case-id="paper_hubbard_current_l10" x="953.00" y="808.00" font-family="ui-monospace, SFMono-Regular, monospace" font-size="13" fill="#667085">P 1607.6 · J 1574.7 ms</text>
+<rect class="python-bar" data-case-id="paper_hubbard_current_l10" data-center-y="791.00" x="350" y="776.00" width="149.55" height="30" rx="4" fill="#377eb8"><title>Python: 2556.334 ms</title></rect>
+<rect class="julia-bar" data-case-id="paper_hubbard_current_l10" data-center-y="791.00" x="350" y="783.00" width="145.86" height="16" rx="4" fill="#e76f51"><title>Julia: 2493.331 ms</title></rect>
+<text class="speedup-label faster" data-case-id="paper_hubbard_current_l10" x="953.00" y="788.00" font-family="system-ui, sans-serif" font-size="15" font-weight="600" fill="#344054">Julia 1.03× faster</text>
+<text class="timing-label" data-case-id="paper_hubbard_current_l10" x="953.00" y="808.00" font-family="ui-monospace, SFMono-Regular, monospace" font-size="13" fill="#667085">P 2556.3 · J 2493.3 ms</text>
 <text class="workflow-label" x="334" y="862.00" text-anchor="end" font-family="system-ui, sans-serif" font-size="15" font-weight="600" fill="#283548">CoNb2O6 dynamical structure factor</text>
-<rect class="python-bar" data-case-id="paper_conb_dsf_l16" data-center-y="857.00" x="350" y="842.00" width="487.78" height="30" rx="4" fill="#377eb8"><title>Python: 5002.923 ms</title></rect>
-<rect class="julia-bar" data-case-id="paper_conb_dsf_l16" data-center-y="857.00" x="350" y="849.00" width="499.29" height="16" rx="4" fill="#e76f51"><title>Julia: 5120.946 ms</title></rect>
-<text class="speedup-label slower" data-case-id="paper_conb_dsf_l16" x="953.00" y="854.00" font-family="system-ui, sans-serif" font-size="15" font-weight="600" fill="#344054">Julia 1.02× slower</text>
-<text class="timing-label" data-case-id="paper_conb_dsf_l16" x="953.00" y="874.00" font-family="ui-monospace, SFMono-Regular, monospace" font-size="13" fill="#667085">P 5002.9 · J 5120.9 ms</text>
+<rect class="python-bar" data-case-id="paper_conb_dsf_l16" data-center-y="857.00" x="350" y="842.00" width="338.28" height="30" rx="4" fill="#377eb8"><title>Python: 5782.605 ms</title></rect>
+<rect class="julia-bar" data-case-id="paper_conb_dsf_l16" data-center-y="857.00" x="350" y="849.00" width="315.23" height="16" rx="4" fill="#e76f51"><title>Julia: 5388.545 ms</title></rect>
+<text class="speedup-label faster" data-case-id="paper_conb_dsf_l16" x="953.00" y="854.00" font-family="system-ui, sans-serif" font-size="15" font-weight="600" fill="#344054">Julia 1.07× faster</text>
+<text class="timing-label" data-case-id="paper_conb_dsf_l16" x="953.00" y="874.00" font-family="ui-monospace, SFMono-Regular, monospace" font-size="13" fill="#667085">P 5782.6 · J 5388.5 ms</text>
 <text class="workflow-label" x="334" y="928.00" text-anchor="end" font-family="system-ui, sans-serif" font-size="15" font-weight="600" fill="#283548">Particle-addition spectrum (6x3 proxy)</text>
-<rect class="python-bar" data-case-id="paper_particle_addition_6x3" data-center-y="923.00" x="350" y="908.00" width="123.24" height="30" rx="4" fill="#377eb8"><title>Python: 1264.024 ms</title></rect>
-<rect class="julia-bar" data-case-id="paper_particle_addition_6x3" data-center-y="923.00" x="350" y="915.00" width="119.78" height="16" rx="4" fill="#e76f51"><title>Julia: 1228.479 ms</title></rect>
-<text class="speedup-label faster" data-case-id="paper_particle_addition_6x3" x="953.00" y="920.00" font-family="system-ui, sans-serif" font-size="15" font-weight="600" fill="#344054">Julia 1.03× faster</text>
-<text class="timing-label" data-case-id="paper_particle_addition_6x3" x="953.00" y="940.00" font-family="ui-monospace, SFMono-Regular, monospace" font-size="13" fill="#667085">P 1264.0 · J 1228.5 ms</text>
+<rect class="python-bar" data-case-id="paper_particle_addition_6x3" data-center-y="923.00" x="350" y="908.00" width="125.21" height="30" rx="4" fill="#377eb8"><title>Python: 2140.419 ms</title></rect>
+<rect class="julia-bar" data-case-id="paper_particle_addition_6x3" data-center-y="923.00" x="350" y="915.00" width="105.21" height="16" rx="4" fill="#e76f51"><title>Julia: 1798.380 ms</title></rect>
+<text class="speedup-label faster" data-case-id="paper_particle_addition_6x3" x="953.00" y="920.00" font-family="system-ui, sans-serif" font-size="15" font-weight="600" fill="#344054">Julia 1.19× faster</text>
+<text class="timing-label" data-case-id="paper_particle_addition_6x3" x="953.00" y="940.00" font-family="ui-monospace, SFMono-Regular, monospace" font-size="13" fill="#667085">P 2140.4 · J 1798.4 ms</text>
 </svg>
