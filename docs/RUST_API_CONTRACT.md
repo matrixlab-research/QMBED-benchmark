@@ -166,12 +166,22 @@ Important semantic requirements:
 - `eigsh` exposes target selection, optional shift-invert, deterministic seed,
   tolerance, maximum iterations, and residuals.
 - `evolve` supports a single time and a time grid without first densifying.
+- selected Floquet quasienergies use repeated `U(T)` and `U(T)†` actions and
+  must not materialize the complete period unitary when only `k` modes are
+  requested.
 - subspace fidelity is invariant under unitary rotations inside a degenerate
   subspace.
 - spectral functions support same-sector and cross-sector sources; the probe
   shape is `(target_dimension, source_dimension)`.
 - `LindbladGenerator` implements `LinearOperator` over vectorized density
   matrices, so open-system evolution can remain matrix-free.
+
+Subsystem measurements accept an explicit ordered sector-state list together
+with amplitudes or a sector density matrix. Their cost is governed by the
+sector dimension and the requested subsystem, not by enumeration of the
+`2^L` parent space. Portable basis persistence stores the state width, ordered
+wide identifiers, and scalar metadata in a versioned non-executable archive;
+runtime callbacks and closures are intentionally outside that file format.
 
 ## Error model
 
@@ -200,6 +210,12 @@ The public verification crate under `rust/` owns two traits:
 The adapter remains external to the candidate crate. This prevents the public
 package from depending on its verification repository and avoids forcing
 public types to implement a foreign verification trait.
+
+`tests/foundation_extensions.rs` directly enforces the three foundations above
+at the package boundary: a 200-site sector contraction, a 256-bit basis archive
+round trip, and selected Floquet modes at dimension 129 (above the dense
+cutoff). These are correctness and scale gates rather than extra rows in the
+twelve-workflow timing denominator.
 
 The original Python-to-Julia denominator remains the source of truth. The
 Rust-side [`full_api_contract.json`](../rust/full_api_contract.json) maps all
