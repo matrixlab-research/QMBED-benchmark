@@ -689,7 +689,7 @@ dependencies = [
 [[package]]
 name = "qmbed"
 version = "0.1.0"
-source = "git+https://github.com/matrixlab-research/QMBED.git?rev=ddebb3647eea6c37ee195f21594c05ab7cdab825#ddebb3647eea6c37ee195f21594c05ab7cdab825"
+source = "git+https://github.com/matrixlab-research/QMBED.git?rev=15facd0ab695209aad985fb0e9b5bf6211bb8844#15facd0ab695209aad985fb0e9b5bf6211bb8844"
 dependencies = [
  "faer",
  "nalgebra",
