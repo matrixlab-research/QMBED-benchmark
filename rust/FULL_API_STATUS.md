@@ -1,7 +1,7 @@
 # QMBED full-package candidate status
 
-Date: 2026-07-24
-Pinned candidate: `58360f5ffed845d0f2fbd3649ad7588420edbc83`
+Date: 2026-07-26
+Pinned candidate: `bc7159e6370b3a9c55eede50cf99c8a7df8b9847`
 
 ## Completion boundary
 
@@ -35,11 +35,16 @@ spelling.
   sector-sized, or transition-sized storage rather than full-square fallback.
 - Workflow gate: all twelve medium-size literature-derived cases must satisfy
   physical invariants before their timings are accepted.
-- Performance continuity: the current five-sample local record uses one
-  streamed transition/assembler contract and one coarse numerical-backend
-  boundary. Real CSC shift-invert stays real through factorization and
-  Lanczos, reducing the MBL median from 0.403 s to 0.114 s while the summed
-  twelve-workflow median falls from 8.99 s to 8.79 s.
+- Python compatibility gate: all 73 frozen QuSpin 1.0.1 test files execute
+  unchanged through the Rust-backed package.
+- Adaptive-evolution accuracy gate: PXP and Bose-Hubbard are compared with a
+  tighter `1e-12` run and with the former one-projection calculation.
+- Performance continuity: on the same Apple M3 Max host, the complete
+  compatibility candidate has a twelve-workflow geometric-mean
+  candidate/baseline ratio of 1.129 and a summed-median ratio of 1.022. PXP and
+  Bose-Hubbard exceed the local timing envelope only because adaptive
+  projection removes the baseline's order-one state error; projection and
+  matrix-vector-product counts are retained in the benchmark evidence.
 
 ## Language-boundary exclusions
 

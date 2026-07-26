@@ -12,7 +12,10 @@ use qmbed::measure::{subspace_fidelity, Subspace};
 use qmbed::operator::{
     Coupling, LinearOperator, MatrixFormat as PublicMatrixFormat, OperatorBuilder, OperatorTerm,
 };
-use qmbed::solve::{eigsh, evolve, EigshOptions, EvolutionOptions, SpectrumTarget};
+use qmbed::solve::{
+    eigsh, evolve, evolve_with_diagnostics, EigshOptions, EvolutionDiagnostics, EvolutionOptions,
+    SpectrumTarget,
+};
 use qmbed::{Complex64, QmbedError};
 
 use crate::candidate::QmbedAdapter;
@@ -48,6 +51,41 @@ fn usize_as_f64(value: usize) -> Result<f64, QmbedError> {
     u32::try_from(value).map(f64::from).map_err(|_| {
         QmbedError::InvalidOptions(format!("workflow count {value} exceeds exact f64 range"))
     })
+}
+
+fn with_evolution_diagnostics(
+    observation: Observation,
+    diagnostics: &EvolutionDiagnostics,
+) -> Result<Observation, QmbedError> {
+    Ok(observation
+        .metric(
+            "evolution_lanczos_projections",
+            usize_as_f64(diagnostics.lanczos_projections)?,
+        )
+        .metric(
+            "evolution_matrix_vector_products",
+            usize_as_f64(diagnostics.matrix_vector_products)?,
+        )
+        .metric(
+            "evolution_real_lanczos_projections",
+            usize_as_f64(diagnostics.real_lanczos_projections)?,
+        )
+        .metric(
+            "evolution_real_matrix_vector_products",
+            usize_as_f64(diagnostics.real_matrix_vector_products)?,
+        )
+        .metric(
+            "evolution_accepted_substeps",
+            usize_as_f64(diagnostics.accepted_substeps)?,
+        )
+        .metric(
+            "evolution_rejected_trial_intervals",
+            usize_as_f64(diagnostics.rejected_trial_intervals)?,
+        )
+        .metric(
+            "evolution_maximum_estimated_error",
+            diagnostics.maximum_estimated_error,
+        ))
 }
 
 fn periodic_heisenberg_terms(sites: usize) -> Result<[OperatorTerm; 3], QmbedError> {
@@ -169,7 +207,7 @@ fn xxz_lanczos_quench() -> Result<Observation, QmbedError> {
         .fold(0_u128, |state, site| state | (1_u128 << site));
     let mut initial = vec![c(0.0); basis.len()];
     initial[basis.index(neel)?] = c(1.0);
-    let trajectory = evolve(
+    let (trajectory, diagnostics) = evolve_with_diagnostics(
         &hamiltonian,
         &initial,
         EvolutionOptions {
@@ -181,7 +219,7 @@ fn xxz_lanczos_quench() -> Result<Observation, QmbedError> {
         },
     )?;
     let norm_error = (state_norm(&trajectory.states[0]) - 1.0).abs();
-    Ok(observation().metric("norm_error", norm_error))
+    with_evolution_diagnostics(observation().metric("norm_error", norm_error), &diagnostics)
 }
 
 fn floquet_heating() -> Result<Observation, QmbedError> {
@@ -412,7 +450,7 @@ fn pxp_revival() -> Result<Observation, QmbedError> {
     let neel_index = basis.index(neel)?;
     let mut initial = vec![c(0.0); basis.len()];
     initial[neel_index] = c(1.0);
-    let trajectory = evolve(
+    let (trajectory, diagnostics) = evolve_with_diagnostics(
         &hamiltonian,
         &initial,
         EvolutionOptions {
@@ -433,10 +471,13 @@ fn pxp_revival() -> Result<Observation, QmbedError> {
         .iter()
         .map(|state| state[neel_index].norm_sqr())
         .collect();
-    Ok(observation()
-        .metric("basis_dimension", usize_as_f64(basis.len())?)
-        .metric("norm_error", norm_error)
-        .metric("revival_gain", fidelities[2] - fidelities[1]))
+    with_evolution_diagnostics(
+        observation()
+            .metric("basis_dimension", usize_as_f64(basis.len())?)
+            .metric("norm_error", norm_error)
+            .metric("revival_gain", fidelities[2] - fidelities[1]),
+        &diagnostics,
+    )
 }
 
 fn bose_hubbard_mott_quench() -> Result<Observation, QmbedError> {
@@ -474,7 +515,7 @@ fn bose_hubbard_mott_quench() -> Result<Observation, QmbedError> {
     let mott_index = basis.index(mott)?;
     let mut initial = vec![c(0.0); basis.len()];
     initial[mott_index] = c(1.0);
-    let trajectory = evolve(
+    let (trajectory, diagnostics) = evolve_with_diagnostics(
         &hamiltonian,
         &initial,
         EvolutionOptions {
@@ -494,9 +535,12 @@ fn bose_hubbard_mott_quench() -> Result<Observation, QmbedError> {
         .iter()
         .map(|state| state[mott_index].norm_sqr())
         .fold(1.0_f64, f64::min);
-    Ok(observation()
-        .metric("norm_error", norm_error)
-        .metric("minimum_return_after_t0", minimum_return))
+    with_evolution_diagnostics(
+        observation()
+            .metric("norm_error", norm_error)
+            .metric("minimum_return_after_t0", minimum_return),
+        &diagnostics,
+    )
 }
 
 fn spinful_kinetic_terms(sites: usize) -> Result<[OperatorTerm; 4], QmbedError> {

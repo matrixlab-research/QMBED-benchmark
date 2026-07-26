@@ -23,6 +23,9 @@ deliberately split into four concerns:
 6. `tests/full_api_scale.rs` checks multiple-size combinatorial enumeration,
    two-map symmetry intersections, direct cross-sector action, sparse algebra
    memory, arbitrary subsystems, and state widths above `u128`.
+7. `tests/evolution_accuracy.rs` compares the adaptive Krylov evolution used by
+   the PXP and Bose-Hubbard workflows with a tighter independent run and with
+   the former single-projection calculation.
 
 `ci/render_timing_report.py` accepts the resulting Rust CSV either alongside
 the existing Python/Julia files or as a Python/Rust pair.
@@ -30,7 +33,9 @@ the existing Python/Julia files or as a Python/Rust pair.
 The crate does **not** contain a second Rust ED implementation. Its
 `WorkflowBackend` calls the pinned public crate and executes all twelve
 medium-size workflows. Release-mode CI validates every returned physical
-invariant before a benchmark row can be emitted.
+invariant before a benchmark row can be emitted. Timing rows also retain
+algorithmic counters such as Krylov projections and matrix-vector products, so
+an accuracy-preserving change in computational work remains visible.
 
 [`full_api_contract.json`](full_api_contract.json) also maps the frozen
 64-object / 282-method / 180-attribute migration denominator into the proposed
@@ -69,6 +74,7 @@ cargo clippy --manifest-path rust/Cargo.toml --all-targets -- -D warnings
 cargo test --manifest-path rust/Cargo.toml
 cargo test --manifest-path rust/Cargo.toml --test full_api_scale
 cargo test --release --manifest-path rust/Cargo.toml --test candidate_workflows -- --ignored
+cargo test --release --manifest-path rust/Cargo.toml --test evolution_accuracy -- --ignored --nocapture
 QMBED_RUST_SAMPLES=5 cargo run --release --manifest-path rust/Cargo.toml --bin paper_benchmark
 python ci/freeze_rust_spec.py --check
 ```

@@ -11,7 +11,7 @@ path = "src/lib.rs"
 [dependencies]
 nalgebra = "0.33"
 num-bigint = "0.4"
-qmbed = { git = "https://github.com/matrixlab-research/QMBED.git", rev = "58360f5ffed845d0f2fbd3649ad7588420edbc83" }
+qmbed = { git = "https://github.com/matrixlab-research/QMBED.git", rev = "bc7159e6370b3a9c55eede50cf99c8a7df8b9847" }
 
 [lints.rust]
 unsafe_code = "forbid"
