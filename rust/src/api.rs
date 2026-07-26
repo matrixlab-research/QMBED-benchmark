@@ -91,7 +91,7 @@ pub struct Coupling {
 
 /// Parsed once, applied many times while assembling or acting matrix-free.
 #[derive(Clone, Debug, PartialEq)]
-pub struct OperatorTerm {
+pub struct OperatorSpec {
     pub operator: String,
     pub couplings: Vec<Coupling>,
 }
@@ -200,7 +200,7 @@ pub trait QmbedApi {
     fn hamiltonian(
         &self,
         basis: &Self::Basis,
-        terms: &[OperatorTerm],
+        terms: &[OperatorSpec],
         options: HamiltonianOptions,
     ) -> Result<Self::Operator, Self::Error>;
 

@@ -1,5 +1,5 @@
 use qmbed::basis::{Basis, BosonBasis1D, UserBasis};
-use qmbed::operator::{Coupling, MatrixFormat, Operator, OperatorBuilder, OperatorTerm};
+use qmbed::operator::{Coupling, MatrixFormat, Operator, OperatorBuilder, OperatorSpec};
 use qmbed::solve::{evolve_with_diagnostics, lanczos_ritz, EvolutionOptions, LanczosOptions};
 use qmbed::{Complex64, QmbedError};
 
@@ -53,7 +53,7 @@ fn pxp_case() -> Result<EvolutionCase, QmbedError> {
         })
         .build()?;
     let operator = OperatorBuilder::on(&basis)
-        .term(OperatorTerm::new(
+        .term(OperatorSpec::new(
             "x",
             (0..sites).map(|site| Coupling::new(1.0, vec![site])),
         )?)
@@ -77,23 +77,23 @@ fn bose_hubbard_case() -> Result<EvolutionCase, QmbedError> {
     let bonds = 0..(sites - 1);
     let operator = OperatorBuilder::on(&basis)
         .terms([
-            OperatorTerm::new(
+            OperatorSpec::new(
                 "+-",
                 bonds
                     .clone()
                     .map(|site| Coupling::new(-0.1, vec![site, site + 1])),
             )?,
-            OperatorTerm::new(
+            OperatorSpec::new(
                 "-+",
                 bonds
                     .clone()
                     .map(|site| Coupling::new(-0.1, vec![site, site + 1])),
             )?,
-            OperatorTerm::new(
+            OperatorSpec::new(
                 "nn",
                 (0..sites).map(|site| Coupling::new(0.5, vec![site, site])),
             )?,
-            OperatorTerm::new("n", (0..sites).map(|site| Coupling::new(-0.5, vec![site])))?,
+            OperatorSpec::new("n", (0..sites).map(|site| Coupling::new(-0.5, vec![site])))?,
         ])
         .build(MatrixFormat::Csc)?;
     let mut mott = 0_u128;
@@ -133,34 +133,23 @@ fn adaptive_krylov_repairs_the_legacy_single_projection_error() {
         let (candidate, diagnostics) = evolve_with_diagnostics(
             &case.operator,
             &case.initial,
-            EvolutionOptions {
-                times: case.times.clone(),
-                krylov_dimension: 100,
-                tolerance: 1.0e-9,
-                max_substeps: 10_000,
-                hamiltonian: true,
-            },
+            EvolutionOptions::new(case.times.clone())
+                .with_krylov_dimension(100)
+                .with_tolerance(1.0e-9),
         )
         .unwrap();
         let (reference, _) = evolve_with_diagnostics(
             &case.operator,
             &case.initial,
-            EvolutionOptions {
-                times: case.times.clone(),
-                krylov_dimension: 100,
-                tolerance: 1.0e-12,
-                max_substeps: 10_000,
-                hamiltonian: true,
-            },
+            EvolutionOptions::new(case.times.clone())
+                .with_krylov_dimension(100)
+                .with_tolerance(1.0e-12),
         )
         .unwrap();
         let legacy_projection = lanczos_ritz(
             &case.operator,
             &case.initial,
-            LanczosOptions {
-                krylov_dimension: 100,
-                tolerance: 1.0e-14,
-            },
+            LanczosOptions::new(100).with_tolerance(1.0e-14),
         )
         .unwrap();
         let legacy = case

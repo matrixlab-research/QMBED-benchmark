@@ -1,4 +1,4 @@
-# Proposed Rust QuSpin API contract
+# Rust QMBED API contract
 
 Status: implemented paper-workflow core and bootstrap design for the full Rust
 package.
@@ -34,16 +34,16 @@ for spin, boson, fermion, symmetry-resolved, and future GPU/MPI implementations.
 ## Proposed public modules
 
 ```text
-quspin/
+qmbed/
   basis        Basis, SpinBasis1D, BosonBasis1D, SpinlessFermionBasis1D,
                SpinfulFermionBasis1D, PhotonBasis, TensorBasis, UserBasis
-  operator     OperatorTerm, HamiltonianBuilder, Hamiltonian, MatrixFormat,
+  operator     OperatorSpec, OperatorBuilder, Hamiltonian, MatrixFormat,
                LinearOperator, operator_matrix, sector-changing operators
   solve        eigsh, lanczos, expm_multiply, evolve
   dynamics     Floquet, dynamical_correlator, spectral_function
   measure      expectation, entanglement_entropy, diagonal_ensemble
   workflow     subspace_fidelity, track_eigenspaces, LindbladGenerator
-  error        QuSpinError, Result
+  error        QmbedError, Result
 ```
 
 ## Core interfaces
@@ -85,16 +85,16 @@ evolution, spectrum, and Lindblad code works with dense, CSC, CSR, DIA, or a
 matrix-free operator. Materialization is explicit:
 
 ```rust
-let h = HamiltonianBuilder::new(&basis)
-    .terms(terms)?
-    .checks(Checks::all())
+let h = OperatorBuilder::on(&basis)
+    .terms(terms)
+    .checks(AssemblyChecks::all())
     .build(MatrixFormat::Csc)?;
 
 let eigenpairs = eigsh(
     &h,
     EigshOptions::smallest_algebraic(6)
-        .tolerance(1e-9)
-        .krylov_dimension(32),
+        .with_tolerance(1e-9)
+        .with_krylov_dimension(32),
 )?;
 ```
 
@@ -125,9 +125,9 @@ PXP-only CSC constructor would pass one benchmark but fail the architecture.
 
 ```rust
 let terms = vec![
-    OperatorTerm::new("+-", hopping_forward)?,
-    OperatorTerm::new("-+", hopping_backward)?,
-    OperatorTerm::new("zz", interactions)?,
+    OperatorSpec::new("+-", hopping_forward)?,
+    OperatorSpec::new("-+", hopping_backward)?,
+    OperatorSpec::new("zz", interactions)?,
 ];
 ```
 
@@ -166,6 +166,9 @@ Important semantic requirements:
 - `eigsh` exposes target selection, optional shift-invert, deterministic seed,
   tolerance, maximum iterations, and residuals.
 - `evolve` supports a single time and a time grid without first densifying.
+- selected Floquet quasienergies use repeated `U(T)` and `U(T)†` actions and
+  must not materialize the complete period unitary when only `k` modes are
+  requested.
 - subspace fidelity is invariant under unitary rotations inside a degenerate
   subspace.
 - spectral functions support same-sector and cross-sector sources; the probe
@@ -173,9 +176,16 @@ Important semantic requirements:
 - `LindbladGenerator` implements `LinearOperator` over vectorized density
   matrices, so open-system evolution can remain matrix-free.
 
+Subsystem measurements accept an explicit ordered sector-state list together
+with amplitudes or a sector density matrix. Their cost is governed by the
+sector dimension and the requested subsystem, not by enumeration of the
+`2^L` parent space. Portable basis persistence stores the state width, ordered
+wide identifiers, and scalar metadata in a versioned non-executable archive;
+runtime callbacks and closures are intentionally outside that file format.
+
 ## Error model
 
-All fallible public operations return `Result<T, QuSpinError>`. The minimum
+All fallible public operations return `Result<T, QmbedError>`. The minimum
 stable categories are:
 
 - invalid operator string or coupling arity;
@@ -200,6 +210,12 @@ The public verification crate under `rust/` owns two traits:
 The adapter remains external to the candidate crate. This prevents the public
 package from depending on its verification repository and avoids forcing
 public types to implement a foreign verification trait.
+
+`tests/foundation_extensions.rs` directly enforces the three foundations above
+at the package boundary: a 200-site sector contraction, a 256-bit basis archive
+round trip, and selected Floquet modes at dimension 129 (above the dense
+cutoff). These are correctness and scale gates rather than extra rows in the
+twelve-workflow timing denominator.
 
 The original Python-to-Julia denominator remains the source of truth. The
 Rust-side [`full_api_contract.json`](../rust/full_api_contract.json) maps all
@@ -231,18 +247,18 @@ report without special cases.
 |---|---|
 | `SpinBasis1D(...)` | `SpinBasis1D::builder(...).build()?` |
 | `UserBasis(...; states=...)` | `UserBasis::builder(...).state_filter(...).operator(...).build()?` |
-| `OperatorTerm(opstr, couplings)` | `OperatorTerm::new(opstr, couplings)?` |
-| `Hamiltonian(basis, terms; static_fmt=:csc)` | `HamiltonianBuilder::new(&basis).terms(terms)?.build(MatrixFormat::Csc)?` |
+| `OperatorSpec(opstr, couplings)` | `OperatorSpec::new(opstr, couplings)?` |
+| `Hamiltonian(basis, terms; static_fmt=:csc)` | `OperatorBuilder::on(&basis).terms(terms).build(MatrixFormat::Csc)?` |
 | `H * vector` | `LinearOperator::apply(&h, input, output)?` |
-| `eigsh(H; ...)` | `eigsh(&h, EigshOptions { ... })?` |
-| `lanczos_full` + `expm_lanczos` | `evolve(&h, &psi0, EvolutionOptions { ... })?` |
+| `eigsh(H; ...)` | `eigsh(&h, EigshOptions::new(k, target).with_tolerance(tol))?` |
+| `lanczos_full` + `expm_lanczos` | `evolve(&h, &psi0, EvolutionOptions::new(times))?` |
 | `track_eigenspaces` | `track_eigenspaces(&subspaces)?` |
 | `spectral_function` | `spectral_function(&h, &source, &probe, options)?` |
 | `LindbladGenerator` | matrix-free `LindbladGenerator` implementing `LinearOperator` |
 
 ## Staged implementation
 
-1. Implement spin bases, `OperatorTerm`, universal COO-to-CSC assembly,
+1. Implement spin bases, `OperatorSpec`, universal COO-to-CSC assembly,
    `LinearOperator`, matvec, and low-energy `eigsh`.
 2. Add fermion/boson/user bases without changing solver interfaces.
 3. Add Krylov evolution, Floquet, subspace tracking, and spectra.

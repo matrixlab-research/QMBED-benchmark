@@ -26,6 +26,11 @@ deliberately split into four concerns:
 7. `tests/evolution_accuracy.rs` compares the adaptive Krylov evolution used by
    the PXP and Bose-Hubbard workflows with a tighter independent run and with
    the former single-projection calculation.
+8. `tests/foundation_extensions.rs` protects three package-level foundations
+   that are deliberately independent of the twelve timed workflows: direct
+   subsystem contraction in a 200-site sector basis, a portable versioned
+   archive of ordered wide-state identifiers, and selected matrix-free
+   Floquet quasienergies above the dense-unitary cutoff.
 
 `ci/render_timing_report.py` accepts the resulting Rust CSV either alongside
 the existing Python/Julia files or as a Python/Rust pair.
@@ -66,6 +71,11 @@ the complete Python-1.0.1 capability denominator are maintained separately in
 surface, semantic, workflow, and scale completion and map every one of the 64
 frozen Python objects to a Rust-native boundary.
 
+The content-addressed bundle therefore retains its pre-0.2 symbol spellings as
+historical provenance. They are not exported QMBED aliases: the current
+adapter, direct workflows, full contract, and oracle tests use only the
+canonical 0.2 Rust names.
+
 Run locally with:
 
 ```bash
@@ -73,6 +83,7 @@ cargo fmt --manifest-path rust/Cargo.toml --check
 cargo clippy --manifest-path rust/Cargo.toml --all-targets -- -D warnings
 cargo test --manifest-path rust/Cargo.toml
 cargo test --manifest-path rust/Cargo.toml --test full_api_scale
+cargo test --manifest-path rust/Cargo.toml --test foundation_extensions
 cargo test --release --manifest-path rust/Cargo.toml --test candidate_workflows -- --ignored
 cargo test --release --manifest-path rust/Cargo.toml --test evolution_accuracy -- --ignored --nocapture
 QMBED_RUST_SAMPLES=5 cargo run --release --manifest-path rust/Cargo.toml --bin paper_benchmark

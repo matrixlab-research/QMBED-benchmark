@@ -1,27 +1,27 @@
 use num_bigint::BigUint;
 use qmbed::basis::{
     state_from_biguint, state_to_biguint, Basis, BasisProjector, BosonBasis1D, ClosureSymmetryMap,
-    GeneralBasis, SpinBasis1D, SpinlessFermionBasis1D, SymmetrySector, WideSpinBasis1024, U1024,
+    GeneralBasis, SpinBasis1D, SpinlessFermionBasis1D, SymmetryReducer, WideSpinBasis1024, U1024,
 };
 use qmbed::measure::{
     entanglement_entropy_density_subsystem, partial_trace_subsystem, EntropyOrder,
 };
 use qmbed::operator::{
     apply_sector_shift, Coupling, LinearOperator, MatrixFormat, Operator, OperatorBuilder,
-    OperatorTerm,
+    OperatorSpec,
 };
 use qmbed::Complex64;
 
-fn periodic_heisenberg(sites: usize) -> Vec<OperatorTerm> {
+fn periodic_heisenberg(sites: usize) -> Vec<OperatorSpec> {
     let bonds = |coefficient| {
         (0..sites)
             .map(|site| Coupling::new(coefficient, vec![site, (site + 1) % sites]))
             .collect::<Vec<_>>()
     };
     vec![
-        OperatorTerm::new("zz", bonds(1.0)).unwrap(),
-        OperatorTerm::new("+-", bonds(0.5)).unwrap(),
-        OperatorTerm::new("-+", bonds(0.5)).unwrap(),
+        OperatorSpec::new("zz", bonds(1.0)).unwrap(),
+        OperatorSpec::new("+-", bonds(0.5)).unwrap(),
+        OperatorSpec::new("-+", bonds(0.5)).unwrap(),
     ]
 }
 
@@ -71,7 +71,7 @@ fn two_map_general_sectors_remain_sparse_and_invariant() {
         .unwrap();
         let basis = GeneralBasis::new(
             SpinBasis1D::builder(sites).up(sites / 2).build().unwrap(),
-            SymmetrySector::new()
+            SymmetryReducer::new()
                 .with_map(translation, 0)
                 .with_map(reflection, 0),
         )
@@ -105,7 +105,7 @@ fn cross_sector_action_and_sparse_algebra_avoid_square_parent_storage() {
             .unwrap();
         let terms =
             vec![
-                OperatorTerm::new("+", (0..sites).map(|site| Coupling::new(1.0, vec![site])))
+                OperatorSpec::new("+", (0..sites).map(|site| Coupling::new(1.0, vec![site])))
                     .unwrap(),
             ];
         let source_dimension = f64::from(u32::try_from(source.len()).unwrap());

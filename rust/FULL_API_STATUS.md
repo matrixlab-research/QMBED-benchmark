@@ -1,7 +1,7 @@
 # QMBED full-package candidate status
 
 Date: 2026-07-26
-Pinned candidate: `bc7159e6370b3a9c55eede50cf99c8a7df8b9847`
+Pinned candidate: `a5731e070227b59abebb47521e2768ac5acc4dbb`
 
 ## Completion boundary
 
@@ -22,8 +22,13 @@ spelling.
 | Operator families | static/dynamic `Hamiltonian`, `QuantumOperator`, `QuantumLinearOperator`, sparse algebra and transforms | complete candidate |
 | Exponential and low-level action | `ExpOp` grid/iterator/right action/transforms, matvec/matmat plans | complete candidate |
 | Solvers and evolution | complex Hermitian dense/partial spectra, all targets, Lanczos, cached shift-invert, batches, density, FTLM/LTLM | complete candidate |
-| Dynamics and measurements | Floquet, block tools, response, arbitrary-site pure/mixed entropy, ensembles, statistics | complete candidate |
-| Persistence and workflows | safe named dense/sparse archives, state tracking, Lindblad generator, twelve paper workflows | complete candidate |
+| Dynamics and measurements | Floquet, selected matrix-free quasienergies, block tools, response, sector-native arbitrary-site pure/mixed entropy, ensembles, statistics | complete candidate |
+| Persistence and workflows | safe named dense/sparse archives, portable basis manifests, state tracking, Lindblad generator, twelve paper workflows | complete candidate |
+
+The candidate exposes one canonical Rust vocabulary for the 0.2 line:
+`OperatorSpec`, `QmbedError`, `SymmetryReducer`, `EvolutionOptions`, and the
+`U256`–`U16384` state names. The benchmark adapter and direct workflow tests
+compile against those names; the removed migration aliases are not exercised.
 
 ## Active evidence
 
@@ -33,6 +38,9 @@ spelling.
   the original 23-symbol workflow adapter.
 - Independent scale gate: four tests sweeping several sizes and asserting sparse,
   sector-sized, or transition-sized storage rather than full-square fallback.
+- Foundation-extension gate: a 200-site direct sector contraction, a portable
+  256-bit basis-manifest round trip, and selected Floquet eigenmodes above the
+  dense-unitary cutoff.
 - Workflow gate: all twelve medium-size literature-derived cases must satisfy
   physical invariants before their timings are accepted.
 - Python compatibility gate: all 73 frozen QuSpin 1.0.1 test files execute

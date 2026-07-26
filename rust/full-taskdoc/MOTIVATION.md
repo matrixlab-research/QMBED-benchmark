@@ -153,7 +153,7 @@ SSH, PXP, or Hubbard.
 The current public types remain the bootstrap layer:
 
 - `Basis` and the five implemented basis builders;
-- `OperatorTerm`, `OperatorBuilder`, `Operator`, and `LinearOperator`;
+- `OperatorSpec`, `OperatorBuilder`, `Operator`, and `LinearOperator`;
 - `eigsh`, `evolve`, `Floquet`, `spectral_function`,
   `subspace_fidelity`, and `LindbladGenerator`.
 

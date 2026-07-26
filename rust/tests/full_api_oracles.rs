@@ -5,7 +5,7 @@ use std::time::{SystemTime, UNIX_EPOCH};
 use qmbed::archive::{load_zip, save_zip, OperatorArchive};
 use qmbed::basis::{
     Basis, BasisProjector, BosonBasis1D, ClosureSymmetryMap, GeneralBasis, PhotonBasis,
-    SpinBasis1D, SpinfulFermionBasis1D, SymmetrySector, UserBasis, WideSpinBasis256, U256,
+    SpinBasis1D, SpinfulFermionBasis1D, SymmetryReducer, UserBasis, WideSpinBasis256, U256,
 };
 use qmbed::measure::{
     diagonal_ensemble_density, entanglement_entropy, entanglement_spectrum_density,
@@ -13,7 +13,7 @@ use qmbed::measure::{
 };
 use qmbed::operator::{
     AssemblyChecks, Coupling, LinearOperator, MatrixFormat, Operator, OperatorBuilder,
-    OperatorTerm, QuantumComponent, QuantumLinearOperator, QuantumOperator, TimeOperator,
+    OperatorSpec, QuantumComponent, QuantumLinearOperator, QuantumOperator, TimeOperator,
 };
 use qmbed::solve::{
     eigsh, lanczos_full, EigshOptions, ExpmMultiplyParallel, LanczosOptions, SpectrumTarget,
@@ -64,12 +64,12 @@ fn held_out_general_symmetry_projectors_are_isometric_and_orthogonal() {
     };
     let even = GeneralBasis::new(
         SpinBasis1D::builder(5).build().unwrap(),
-        SymmetrySector::new().with_map(reflection(), 0),
+        SymmetryReducer::new().with_map(reflection(), 0),
     )
     .unwrap();
     let odd = GeneralBasis::new(
         SpinBasis1D::builder(5).build().unwrap(),
-        SymmetrySector::new().with_map(reflection(), 1),
+        SymmetryReducer::new().with_map(reflection(), 1),
     )
     .unwrap();
     assert_eq!(even.len() + odd.len(), 32);
@@ -101,11 +101,11 @@ fn held_out_spinful_majorana_and_higher_spin_algebras_close() {
     assert_eq!(union.len(), 3 + 3 + 9);
     let fermions = SpinfulFermionBasis1D::builder(2).build().unwrap();
     let x = OperatorBuilder::on(&fermions)
-        .term(OperatorTerm::new("|x", [Coupling::new(1.0, vec![1])]).unwrap())
+        .term(OperatorSpec::new("|x", [Coupling::new(1.0, vec![1])]).unwrap())
         .build(MatrixFormat::Csc)
         .unwrap();
     let y = OperatorBuilder::on(&fermions)
-        .term(OperatorTerm::new("|y", [Coupling::new(1.0, vec![1])]).unwrap())
+        .term(OperatorSpec::new("|y", [Coupling::new(1.0, vec![1])]).unwrap())
         .build(MatrixFormat::Csc)
         .unwrap();
     assert_eq!(
@@ -127,17 +127,17 @@ fn held_out_spinful_majorana_and_higher_spin_algebras_close() {
 
     let spin = SpinBasis1D::builder(1).spin_twice(3).build().unwrap();
     let plus = OperatorBuilder::on(&spin)
-        .term(OperatorTerm::new("+", [Coupling::new(1.0, vec![0])]).unwrap())
+        .term(OperatorSpec::new("+", [Coupling::new(1.0, vec![0])]).unwrap())
         .checks(unchecked())
         .build(MatrixFormat::Dense)
         .unwrap();
     let minus = OperatorBuilder::on(&spin)
-        .term(OperatorTerm::new("-", [Coupling::new(1.0, vec![0])]).unwrap())
+        .term(OperatorSpec::new("-", [Coupling::new(1.0, vec![0])]).unwrap())
         .checks(unchecked())
         .build(MatrixFormat::Dense)
         .unwrap();
     let z = OperatorBuilder::on(&spin)
-        .term(OperatorTerm::new("z", [Coupling::new(1.0, vec![0])]).unwrap())
+        .term(OperatorSpec::new("z", [Coupling::new(1.0, vec![0])]).unwrap())
         .build(MatrixFormat::Dense)
         .unwrap();
     let commutator = plus
@@ -159,7 +159,7 @@ fn held_out_wide_and_branching_basis_actions_assemble_directly() {
     let wide = WideSpinBasis256::new(220, Some(1), false).unwrap();
     let vacuum = WideSpinBasis256::new(220, Some(0), false).unwrap();
     let lowering = OperatorBuilder::between(&wide, &vacuum)
-        .term(OperatorTerm::new("-", [Coupling::new(-0.7, vec![219])]).unwrap())
+        .term(OperatorSpec::new("-", [Coupling::new(-0.7, vec![219])]).unwrap())
         .build(MatrixFormat::Csc)
         .unwrap();
     let high = U256::zero().with_bit(219, true).unwrap();
@@ -185,7 +185,7 @@ fn held_out_wide_and_branching_basis_actions_assemble_directly() {
         .build()
         .unwrap();
     let operator = OperatorBuilder::on(&basis)
-        .term(OperatorTerm::new("m", [Coupling::new(1.0, vec![0])]).unwrap())
+        .term(OperatorSpec::new("m", [Coupling::new(1.0, vec![0])]).unwrap())
         .checks(unchecked())
         .build(MatrixFormat::Csc)
         .unwrap();
@@ -212,8 +212,8 @@ fn held_out_photon_sector_and_exchange_match_the_explicit_two_state_model() {
     assert_eq!(basis.len(), 2);
     let exchange = OperatorBuilder::on(&basis)
         .terms([
-            OperatorTerm::new("+|-", [Coupling::new(1.0, vec![0, 0])]).unwrap(),
-            OperatorTerm::new("-|+", [Coupling::new(1.0, vec![0, 0])]).unwrap(),
+            OperatorSpec::new("+|-", [Coupling::new(1.0, vec![0, 0])]).unwrap(),
+            OperatorSpec::new("-|+", [Coupling::new(1.0, vec![0, 0])]).unwrap(),
         ])
         .build(MatrixFormat::Dense)
         .unwrap();
@@ -306,14 +306,10 @@ fn held_out_solver_and_general_exponential_oracles_pass() {
     .unwrap();
     let selected = eigsh(
         &diagonal,
-        EigshOptions {
-            eigenpairs: 3,
-            target: SpectrumTarget::SmallestMagnitude,
-            krylov_dimension: None,
-            tolerance: 1.0e-12,
-            max_iterations: 100,
-            seed: 19,
-        },
+        EigshOptions::new(3, SpectrumTarget::SmallestMagnitude)
+            .with_tolerance(1.0e-12)
+            .with_max_iterations(100)
+            .with_seed(19),
     )
     .unwrap();
     for (actual, expected) in selected.eigenvalues.iter().zip([0.2, -0.3, 2.5]) {
@@ -333,10 +329,7 @@ fn held_out_solver_and_general_exponential_oracles_pass() {
     let decomposition = lanczos_full(
         &diagonal,
         &initial,
-        LanczosOptions {
-            krylov_dimension: 5,
-            tolerance: 1.0e-13,
-        },
+        LanczosOptions::new(5).with_tolerance(1.0e-13),
     )
     .unwrap();
     for (index, vector) in decomposition.basis.iter().enumerate() {

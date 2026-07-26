@@ -2,7 +2,7 @@ use qmbed::Complex64;
 use qmbed_benchmark::candidate::QmbedAdapter;
 use qmbed_benchmark::{
     AssemblyChecks, BasisHandle, BasisSpec, ComplexCoefficient, Coupling, EigshOptions,
-    HamiltonianOptions, MatrixFormat, OperatorTerm, QmbedApi, SpectrumTarget,
+    HamiltonianOptions, MatrixFormat, OperatorSpec, QmbedApi, SpectrumTarget,
 };
 
 #[test]
@@ -29,15 +29,15 @@ fn public_candidate_is_reached_through_the_verification_adapter() {
         sites,
     };
     let terms = [
-        OperatorTerm {
+        OperatorSpec {
             operator: "zz".into(),
             couplings: vec![coupling(1.0, vec![0, 1])],
         },
-        OperatorTerm {
+        OperatorSpec {
             operator: "+-".into(),
             couplings: vec![coupling(0.5, vec![0, 1])],
         },
-        OperatorTerm {
+        OperatorSpec {
             operator: "-+".into(),
             couplings: vec![coupling(0.5, vec![0, 1])],
         },

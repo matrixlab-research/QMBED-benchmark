@@ -1,4 +1,4 @@
-//! Language-neutral verification contracts for a future Rust `QuSpin` package.
+//! Language-neutral verification contracts for the Rust QMBED package.
 //!
 //! This crate intentionally does not implement exact diagonalization. It owns
 //! the independent test-side adapter boundary, the paper-workflow catalog, and the
@@ -14,7 +14,7 @@ pub mod observation;
 
 pub use api::{
     AssemblyChecks, BasisHandle, BasisSpec, ComplexCoefficient, Coupling, EigshOptions,
-    EvolutionOptions, HamiltonianOptions, LinearOperator, MatrixFormat, OperatorTerm, QmbedApi,
+    EvolutionOptions, HamiltonianOptions, LinearOperator, MatrixFormat, OperatorSpec, QmbedApi,
     SpectrumOptions, SpectrumTarget,
 };
 pub use benchmark::{benchmark_suite, BenchmarkOptions, BenchmarkRow, WorkflowBackend};

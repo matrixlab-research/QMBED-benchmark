@@ -7,7 +7,7 @@ pub enum Capability {
     SpinlessFermionBasis,
     SpinfulFermionBasis,
     UserBasis,
-    SymmetrySector,
+    SymmetryReducer,
     CscAssembly,
     PartialEigensolver,
     ShiftInvert,
@@ -63,7 +63,7 @@ const SPINLESS_SPECTRUM_CAPS: &[Capability] = &[
 ];
 const TRANSLATION_CAPS: &[Capability] = &[
     Capability::SpinBasis,
-    Capability::SymmetrySector,
+    Capability::SymmetryReducer,
     Capability::CscAssembly,
     Capability::PartialEigensolver,
 ];
