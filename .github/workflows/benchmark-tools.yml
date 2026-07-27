@@ -3,14 +3,18 @@ name: benchmark-tooling
 on:
   pull_request:
     paths:
+      - "benchmark/catalog/**"
       - "ci/**"
+      - "docs/LKM_ED_APPLICATION_CATALOG.md"
       - ".github/workflows/verify.yml"
       - ".github/workflows/benchmark-tools.yml"
   push:
     branches:
       - main
     paths:
+      - "benchmark/catalog/**"
       - "ci/**"
+      - "docs/LKM_ED_APPLICATION_CATALOG.md"
       - ".github/workflows/verify.yml"
       - ".github/workflows/benchmark-tools.yml"
   workflow_dispatch:
@@ -23,4 +27,5 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
+      - run: python ci/check_ed_application_catalog.py
       - run: python -m unittest discover -s ci/tests -p 'test_*.py' -v

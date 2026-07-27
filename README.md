@@ -96,6 +96,13 @@ exact-diagonalization workflows. See
 [`docs/ED_WORKFLOW_COVERAGE.md`](docs/ED_WORKFLOW_COVERAGE.md) for the model,
 observable, integration size, representative paper scale, and explicit
 direct/assisted/proxy boundary of every scenario.
+An additional [LKM-derived catalog of fifty ED research
+applications](docs/LKM_ED_APPLICATION_CATALOG.md) records the next benchmark
+horizon across ten domains. It includes 21 beyond-QMBED cases and thirteen
+AD-essential workflows, with machine-readable benchmark shapes, validation
+criteria, source-family provenance, and capability gaps in
+[`benchmark/catalog/lkm_ed_applications.json`](benchmark/catalog/lkm_ed_applications.json).
+Catalog membership is not a claim that a case is already executable.
 The newer workflow-analysis capabilities use a deliberate package-test/
 independent-validation split documented in
 [`docs/LKM_WORKFLOW_VALIDATION.md`](docs/LKM_WORKFLOW_VALIDATION.md).
