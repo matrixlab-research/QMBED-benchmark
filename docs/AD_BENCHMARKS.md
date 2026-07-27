@@ -68,7 +68,7 @@ Run locally:
 
 ```bash
 QMBED_AD_SCALE=ci QMBED_AD_WARMUPS=0 QMBED_AD_SAMPLES=1 \
-  cargo run --release --manifest-path rust/Cargo.toml --bin ad_benchmark \
+  cargo run --release --locked --manifest-path rust/Cargo.toml --bin ad_benchmark \
   > ad-benchmark.csv
 python ci/check_ad_benchmark.py ad-benchmark.csv
 ```
@@ -78,7 +78,9 @@ The committed 2026-07-28 paper-size record is
 With one warm-up and three samples, its geometric-mean speedup is 7.44×
 (3.92×–13.88× across individual cases) for dimensions 495–16,384. The
 CI-size five-sample record is retained separately so the fast gate and
-paper-size evidence are not conflated.
+paper-size evidence are not conflated. The local record used one Apple M3 Max
+host (16 CPU cores, 48 GB memory), macOS 14.6.1 arm64, and Rust 1.97.1. It is
+an algorithmic same-process comparison, not a cross-machine performance claim.
 
 ## Current boundary
 

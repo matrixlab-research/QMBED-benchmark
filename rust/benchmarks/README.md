@@ -106,3 +106,32 @@ work is respectively 2 projections / 200 matrix-vector products and
 8 projections / 800 matrix-vector products. The first projection in each case
 uses the universal real-operator/real-state basis; no workflow or model name is
 used for dispatch.
+
+## Native AD records
+
+`native_ad_ci_2026-07-28.csv` is the five-sample fast-profile record for all
+twelve differentiable workflows. `native_ad_paper_2026-07-28.csv` is the
+medium-size record with one warm-up and three measured samples. The latter
+covers dimensions 495–16,384 and reports a **7.44× geometric-mean speedup**
+over centered finite differences; individual ratios are 3.92×–13.88×. It used
+the same Apple M3 Max host (macOS 14.6.1 arm64, Rust 1.97.1) as the adjacent
+local Rust records.
+
+Both files contain analytic and finite-difference median wall times,
+componentwise gradient errors, spectral gaps, residuals, parameter counts, and
+eigensolve counts. The analytic rule performs one eigensolve; the oracle
+performs four or six. They are correctness-checked AD records, not forward-only
+timings.
+
+Regenerate and validate the paper-size record with:
+
+```bash
+QMBED_AD_SCALE=paper QMBED_AD_WARMUPS=1 QMBED_AD_SAMPLES=3 \
+  cargo run --release --locked --manifest-path rust/Cargo.toml --bin ad_benchmark \
+  > native-ad.csv
+python ci/check_ad_benchmark.py native-ad.csv
+```
+
+See [`../../docs/AD_BENCHMARKS.md`](../../docs/AD_BENCHMARKS.md) for workflow
+provenance, fixed tolerances, CI tiers, and the explicit boundary of the
+implemented native rules.

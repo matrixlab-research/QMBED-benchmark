@@ -41,15 +41,15 @@ jobs:
         with:
           components: rustfmt, clippy
       - name: Check the twelve-workflow catalog
-        run: cargo test --release --manifest-path rust/Cargo.toml --test ad_workflows catalog_contains_twelve_distinct_parameterized_workflows
+        run: cargo test --release --locked --manifest-path rust/Cargo.toml --test ad_workflows catalog_contains_twelve_distinct_parameterized_workflows
       - name: Check gradients against finite differences
         if: env.QMBED_AD_SCALE == 'ci'
-        run: cargo test --release --manifest-path rust/Cargo.toml --test ad_workflows ci_workflows_match_finite_differences_and_report_algorithmic_advantage -- --ignored --exact
+        run: cargo test --release --locked --manifest-path rust/Cargo.toml --test ad_workflows ci_workflows_match_finite_differences_and_report_algorithmic_advantage -- --ignored --exact
       - name: Check paper-size gradients
         if: env.QMBED_AD_SCALE == 'paper'
-        run: cargo test --release --manifest-path rust/Cargo.toml --test ad_workflows paper_scale_workflows_match_finite_differences -- --ignored --exact
+        run: cargo test --release --locked --manifest-path rust/Cargo.toml --test ad_workflows paper_scale_workflows_match_finite_differences -- --ignored --exact
       - name: Measure analytic AD and finite differences
-        run: cargo run --release --manifest-path rust/Cargo.toml --bin ad_benchmark > ad-benchmark.csv
+        run: cargo run --release --locked --manifest-path rust/Cargo.toml --bin ad_benchmark > ad-benchmark.csv
       - name: Validate correctness and aggregate advantage
         run: python ci/check_ad_benchmark.py ad-benchmark.csv
       - name: Render timing comparison
