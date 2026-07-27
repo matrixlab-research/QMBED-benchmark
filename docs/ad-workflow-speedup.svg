@@ -1,0 +1,83 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="873" viewBox="0 0 1600 873">
+<style>
+text{font-family:Inter,Arial,sans-serif;fill:#172033}
+.title{font-size:30px;font-weight:700}.subtitle{font-size:17px;fill:#536179}
+.label{font-size:16px;font-weight:600}.value{font-size:14px}.tick{font-size:14px;fill:#69758a}
+</style>
+<rect width="100%" height="100%" fill="white"/>
+<text x="42" y="48" class="title">QMBED native AD vs central finite differences</text>
+<rect x="42" y="76" width="30" height="18" rx="4" fill="#c6ccd8"/>
+<text x="82" y="91" class="subtitle">central finite difference</text>
+<rect x="310" y="79" width="30" height="12" rx="4" fill="#2768d7"/>
+<text x="350" y="91" class="subtitle">native AD</text>
+<text x="1450" y="91" class="subtitle">FD / AD</text>
+<line x1="415.0" y1="112" x2="415.0" y2="808" stroke="#e6e9ef" stroke-width="1"/>
+<text x="415.0" y="835" text-anchor="middle" class="tick">0.01 s</text>
+<line x1="708.3" y1="112" x2="708.3" y2="808" stroke="#e6e9ef" stroke-width="1"/>
+<text x="708.3" y="835" text-anchor="middle" class="tick">0.1 s</text>
+<line x1="1001.7" y1="112" x2="1001.7" y2="808" stroke="#e6e9ef" stroke-width="1"/>
+<text x="1001.7" y="835" text-anchor="middle" class="tick">1 s</text>
+<line x1="1295.0" y1="112" x2="1295.0" y2="808" stroke="#e6e9ef" stroke-width="1"/>
+<text x="1295.0" y="835" text-anchor="middle" class="tick">10 s</text>
+<text x="42" y="136" class="label">tfim</text>
+<rect x="415" y="115" width="810.7" height="30" rx="6" fill="#c6ccd8"/>
+<rect x="415" y="122" width="526.5" height="16" rx="5" fill="#2768d7"/>
+<text x="1215.7" y="135" text-anchor="end" class="value">0.6235 / 5.802 s</text>
+<text x="1450" y="136" class="label">9.31×</text>
+<text x="42" y="190" class="label">xxz sector</text>
+<rect x="415" y="169" width="778.9" height="30" rx="6" fill="#c6ccd8"/>
+<rect x="415" y="176" width="496.4" height="16" rx="5" fill="#2768d7"/>
+<text x="1183.9" y="189" text-anchor="end" class="value">0.4922 / 4.521 s</text>
+<text x="1450" y="190" class="label">9.19×</text>
+<text x="42" y="244" class="label">j1 j2 frustrated</text>
+<rect x="415" y="223" width="786.3" height="30" rx="6" fill="#c6ccd8"/>
+<rect x="415" y="230" width="499.8" height="16" rx="5" fill="#2768d7"/>
+<text x="1191.3" y="243" text-anchor="end" class="value">0.5057 / 4.793 s</text>
+<text x="1450" y="244" class="label">9.48×</text>
+<text x="42" y="298" class="label">translation xxz</text>
+<rect x="415" y="277" width="464.8" height="30" rx="6" fill="#c6ccd8"/>
+<rect x="415" y="284" width="290.9" height="16" rx="5" fill="#2768d7"/>
+<text x="889.8" y="297" text-anchor="start" class="value">0.09812 / 0.3842 s</text>
+<text x="1450" y="298" class="label">3.92×</text>
+<text x="42" y="352" class="label">interacting ssh</text>
+<rect x="415" y="331" width="715.5" height="30" rx="6" fill="#c6ccd8"/>
+<rect x="415" y="338" width="496.7" height="16" rx="5" fill="#2768d7"/>
+<text x="1120.5" y="351" text-anchor="end" class="value">0.4936 / 2.748 s</text>
+<text x="1450" y="352" class="label">5.57×</text>
+<text x="42" y="406" class="label">disordered tv</text>
+<rect x="415" y="385" width="543.4" height="30" rx="6" fill="#c6ccd8"/>
+<rect x="415" y="392" width="318.4" height="16" rx="5" fill="#2768d7"/>
+<text x="968.4" y="405" text-anchor="start" class="value">0.1217 / 0.7119 s</text>
+<text x="1450" y="406" class="label">5.85×</text>
+<text x="42" y="460" class="label">triangular fermion</text>
+<rect x="415" y="439" width="349.2" height="30" rx="6" fill="#c6ccd8"/>
+<rect x="415" y="446" width="122.2" height="16" rx="5" fill="#2768d7"/>
+<text x="774.2" y="459" text-anchor="start" class="value">0.02609 / 0.1551 s</text>
+<text x="1450" y="460" class="label">5.94×</text>
+<text x="42" y="514" class="label">hubbard</text>
+<rect x="415" y="493" width="589.9" height="30" rx="6" fill="#c6ccd8"/>
+<rect x="415" y="500" width="374.8" height="16" rx="5" fill="#2768d7"/>
+<text x="1014.9" y="513" text-anchor="start" class="value">0.1896 / 1.026 s</text>
+<text x="1450" y="514" class="label">5.41×</text>
+<text x="42" y="568" class="label">ionic hubbard</text>
+<rect x="415" y="547" width="652.4" height="30" rx="6" fill="#c6ccd8"/>
+<rect x="415" y="554" width="378.6" height="16" rx="5" fill="#2768d7"/>
+<text x="1077.4" y="567" text-anchor="start" class="value">0.1953 / 1.675 s</text>
+<text x="1450" y="568" class="label">8.58×</text>
+<text x="42" y="622" class="label">bose hubbard</text>
+<rect x="415" y="601" width="641.5" height="30" rx="6" fill="#c6ccd8"/>
+<rect x="415" y="608" width="306.4" height="16" rx="5" fill="#2768d7"/>
+<text x="1066.5" y="621" text-anchor="start" class="value">0.1108 / 1.538 s</text>
+<text x="1450" y="622" class="label">13.88×</text>
+<text x="42" y="676" class="label">trapped bose hubbard</text>
+<rect x="415" y="655" width="532.0" height="30" rx="6" fill="#c6ccd8"/>
+<rect x="415" y="662" width="310.0" height="16" rx="5" fill="#2768d7"/>
+<text x="957.0" y="675" text-anchor="start" class="value">0.1139 / 0.651 s</text>
+<text x="1450" y="676" class="label">5.71×</text>
+<text x="42" y="730" class="label">pxp detuning</text>
+<rect x="415" y="709" width="841.1" height="30" rx="6" fill="#c6ccd8"/>
+<rect x="415" y="716" width="516.9" height="16" rx="5" fill="#2768d7"/>
+<text x="1246.1" y="729" text-anchor="end" class="value">0.5785 / 7.371 s</text>
+<text x="1450" y="730" class="label">12.74×</text>
+<text x="42" y="856" class="subtitle">Bars share a logarithmic time axis. Labels show native AD / finite-difference median wall time; lower is better.</text>
+</svg>

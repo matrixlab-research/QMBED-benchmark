@@ -1,0 +1,63 @@
+name: Native AD workflows
+
+on:
+  pull_request:
+    paths:
+      - "rust/**"
+      - "ci/check_ad_benchmark.py"
+      - "docs/AD_BENCHMARKS.md"
+      - ".github/workflows/ad-benchmarks.yml"
+  push:
+    branches:
+      - main
+    paths:
+      - "rust/**"
+      - "ci/check_ad_benchmark.py"
+      - "docs/AD_BENCHMARKS.md"
+      - ".github/workflows/ad-benchmarks.yml"
+  schedule:
+    - cron: "17 3 * * 1"
+  workflow_dispatch:
+    inputs:
+      scale:
+        description: "CI or paper-size Hilbert spaces"
+        required: true
+        default: "paper"
+        type: choice
+        options:
+          - ci
+          - paper
+
+jobs:
+  native-ad:
+    runs-on: ubuntu-latest
+    env:
+      QMBED_AD_SCALE: ${{ github.event_name == 'schedule' && 'paper' || (inputs.scale || 'ci') }}
+      QMBED_AD_WARMUPS: ${{ (github.event_name == 'schedule' || inputs.scale == 'paper') && '1' || '0' }}
+      QMBED_AD_SAMPLES: ${{ (github.event_name == 'schedule' || inputs.scale == 'paper') && '3' || '1' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+      - name: Check the twelve-workflow catalog
+        run: cargo test --release --manifest-path rust/Cargo.toml --test ad_workflows catalog_contains_twelve_distinct_parameterized_workflows
+      - name: Check gradients against finite differences
+        if: env.QMBED_AD_SCALE == 'ci'
+        run: cargo test --release --manifest-path rust/Cargo.toml --test ad_workflows ci_workflows_match_finite_differences_and_report_algorithmic_advantage -- --ignored --exact
+      - name: Check paper-size gradients
+        if: env.QMBED_AD_SCALE == 'paper'
+        run: cargo test --release --manifest-path rust/Cargo.toml --test ad_workflows paper_scale_workflows_match_finite_differences -- --ignored --exact
+      - name: Measure analytic AD and finite differences
+        run: cargo run --release --manifest-path rust/Cargo.toml --bin ad_benchmark > ad-benchmark.csv
+      - name: Validate correctness and aggregate advantage
+        run: python ci/check_ad_benchmark.py ad-benchmark.csv
+      - name: Render timing comparison
+        run: python ci/render_ad_benchmark.py ad-benchmark.csv ad-workflow-speedup.svg
+      - uses: actions/upload-artifact@v4
+        with:
+          name: native-ad-${{ env.QMBED_AD_SCALE }}
+          path: |
+            ad-benchmark.csv
+            ad-workflow-speedup.svg
+          if-no-files-found: error

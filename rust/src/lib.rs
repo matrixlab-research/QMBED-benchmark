@@ -5,6 +5,7 @@
 //! timing protocol. A candidate package supplies an adapter that implements
 //! [`WorkflowBackend`] and, for API-level tests, [`QmbedApi`].
 
+pub mod ad_workflows;
 pub mod api;
 pub mod benchmark;
 pub mod candidate;
