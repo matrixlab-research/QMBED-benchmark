@@ -1,5 +1,7 @@
 # QMBED Benchmark — public correctness and performance suite
 
+[![Native AD workflows](https://github.com/matrixlab-research/QMBED-benchmark/actions/workflows/ad-benchmarks.yml/badge.svg?branch=main)](https://github.com/matrixlab-research/QMBED-benchmark/actions/workflows/ad-benchmarks.yml)
+
 This public repository independently verifies the QMBED simulator family. It
 currently contains the original Python-to-Julia QuSpin compatibility campaign,
 the Rust QMBED contract and adapter, and literature-derived exact-diagonalization
@@ -87,6 +89,31 @@ The performance job is observational: it reports `Python median / Julia
 median` but does not fail a candidate on noisy hosted-runner timing. The CSV
 artifacts are retained for 90 days. A regression threshold should only be
 introduced after enough runs establish runner variance.
+
+### Native AD acceptance
+
+Native AD is accepted separately from ordinary forward performance. Twelve
+parameterized ED workflows cover unrestricted and symmetry-reduced spins,
+spinless and spinful fermions, bosons, triangular geometry, and a
+callback-defined constrained PXP basis. Every case compares the analytic
+Hellmann--Feynman gradient with a central finite-difference oracle and records
+the spectral gap, residual, wall time, and eigensolve count.
+
+The analytic route performs one eigensolve plus one component action per
+parameter. The oracle performs two complete eigensolves per parameter. The
+pull-request profile uses smaller nontrivial spaces; weekly and manual
+`paper` runs use medium ED sizes. CI requires all gradients and solver evidence
+to pass and requires the geometric-mean measured speedup over finite
+differences to exceed one. See
+[`docs/AD_BENCHMARKS.md`](docs/AD_BENCHMARKS.md) for the twelve cases,
+precommitted tolerances, commands, and explicit capability boundary.
+
+The latest committed same-machine paper-size record has a 7.44× geometric-mean
+speedup (one warm-up and three measured samples per workflow). Hilbert-space
+dimensions range from 495 to 16,384; individual speedups range from 3.92× to
+13.88×. Every case passes the precommitted gradient, gap, and residual gates.
+
+![Native AD and central finite-difference timings across twelve workflows](docs/ad-workflow-speedup.svg)
 
 ### Literature-derived ED coverage
 

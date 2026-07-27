@@ -77,6 +77,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9330f8b2ff13f34540b44e946ef35111825727b38d33286ef986142615121801"
 
 [[package]]
+name = "chainrules-core"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "059cc45029b8cfd0f76484ee7d3ea9412d02c77002391e471fb0ccb34c5f64bf"
+dependencies = [
+ "num-complex",
+]
+
+[[package]]
 name = "crc32fast"
 version = "1.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -689,8 +698,9 @@ dependencies = [
 [[package]]
 name = "qmbed"
 version = "0.2.0"
-source = "git+https://github.com/matrixlab-research/QMBED.git?rev=a5731e070227b59abebb47521e2768ac5acc4dbb#a5731e070227b59abebb47521e2768ac5acc4dbb"
+source = "git+https://github.com/matrixlab-research/QMBED.git?rev=baa4d988bbbf03bb266d9360e7c85245a087ce70#baa4d988bbbf03bb266d9360e7c85245a087ce70"
 dependencies = [
+ "chainrules-core",
  "faer",
  "nalgebra",
  "num-bigint",

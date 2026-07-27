@@ -10,7 +10,7 @@ path = "src/lib.rs"
 
 [dependencies]
 num-bigint = "0.4"
-qmbed = { git = "https://github.com/matrixlab-research/QMBED.git", rev = "a5731e070227b59abebb47521e2768ac5acc4dbb" }
+qmbed = { git = "https://github.com/matrixlab-research/QMBED.git", rev = "baa4d988bbbf03bb266d9360e7c85245a087ce70", features = ["chainrules"] }
 
 [lints.rust]
 unsafe_code = "forbid"
